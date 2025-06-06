@@ -4,12 +4,14 @@
   <meta charset="utf-8">
   <title>The Golden Rose Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
-  
-<script src="https://unpkg.com/lucide@latest"></script>
-<link rel="stylesheet" href="style.css">
-<link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- External Styles & Scripts -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js" defer></script>
+  <script src="script.js" defer></script>
 </head>
 <body>
 
@@ -18,230 +20,19 @@
 
   <!-- Bottom Navigation -->
   <nav id="bottom-nav">
-  <button title="Favourites"><i data-lucide="star"></i></button>
-  <button title="Add Location"><i data-lucide="plus-circle"></i></button>
+    <button title="Favourites"><i data-lucide="star"></i></button>
+    <button title="Add Location"><i data-lucide="plus-circle"></i></button>
 
-  <div class="search-wrapper">
-    <input type="text" id="search" placeholder="Search..." />
-    <div id="suggestions"></div>
-  </div>
+    <div class="search-wrapper">
+  <input type="text" id="search" placeholder="Search..." />
+  <div id="suggestions"></div>
 
-  <button title="My Location"><i data-lucide="map-pin"></i></button>
-  <button title="Profile"><i data-lucide="user"></i></button>
-</nav>
 
-</nav>
+    </div>
 
+    <button title="My Location"><i data-lucide="map-pin"></i></button>
+    <button title="Profile"><i data-lucide="user"></i></button>
   </nav>
 
-  <!-- Map Script -->
-  <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoiaG93ZWxsdHJ1c3QiLCJhIjoiY21iZ3FtNGdqMDF4YjJsc2d4Z3JwZGJ2MiJ9.8u6Y-_RYGb-qxODBGT5-LA';
-
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/howelltrust/cmbkwcx8f00oq01qw9wxy8uw4',
-      center: [0.033431609683219676,
-          51.09798270711917],
-
-      zoom: 15
-    });
-
-    map.on('load', () => {
-      // Load GeoJSON file safely
-      fetch('locations.geojson')
-        .then(res => res.json())
-        .then(data => {
-          map.addSource('locations', {
-            type: 'geojson',
-            data
-          });
-
-          // Try to load the rose icon
-          map.loadImage('flower.png', (error, image) => {
-            if (error || !image) {
-              console.warn('⚠️ flower.png failed to load. Using default marker.');
-              map.addLayer({
-                id: 'locations',
-                type: 'circle',
-                source: 'locations',
-                paint: {
-                  'circle-radius': 6,
-                  'circle-color': 'gold'
-                }
-              });
-              return;
-            }
-
-            if (!map.hasImage('rose-icon')) {
-              map.addImage('rose-icon', image);
-            }
-
-            map.addLayer({
-              id: 'locations',
-              type: 'symbol',
-              source: 'locations',
-              layout: {
-                'icon-image': 'rose-icon',
-                'icon-size': 0.2,
-                'icon-allow-overlap': true
-              }
-            });
-          });
-
-          // Interactions
-          map.on('click', 'locations', (e) => {
-            const props = e.features[0].properties;
-            new mapboxgl.Popup()
-              .setLngLat(e.lngLat)
-              .setHTML(`
-  <div style="
-    background-color: #000;
-    border: 1px solid gold;
-    padding: 10px;
-    border-radius: 8px;
-    color: gold;
-    font-family: sans-serif;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-  ">
-    <h3 style="margin: 0 0 5px 0; font-size: 16px;">${props.title}</h3>
-    <p style="margin: 0; font-size: 14px; color: #aaa;">${props.description}</p>
-  </div>
-`)
-              .addTo(map);
-          });
-
-          map.on('mouseenter', 'locations', () => {
-            map.getCanvas().style.cursor = 'pointer';
-          });
-
-          map.on('mouseleave', 'locations', () => {
-            map.getCanvas().style.cursor = '';
-          });
-        })
-        .catch(err => {
-          console.error('❌ Failed to load locations.geojson:', err);
-        });
-    });
-  </script>
-
-  <!-- Autocomplete Search Script -->
-<script>
-  const searchInput = document.getElementById('search');
-  const searchContainer = document.querySelector('.search-wrapper'); // was .search-container
-
-  const suggestions = document.createElement('div');
-  suggestions.id = 'suggestions';
-  suggestions.style.position = 'absolute';
-  suggestions.style.bottom = '50px';
-  suggestions.style.width = '100%';
-  suggestions.style.maxWidth = '500px';
-  suggestions.style.background = '#111';
-  suggestions.style.border = '1px solid gold';
-  suggestions.style.borderTop = '1px solid gold';
-  suggestions.style.zIndex = '999';
-  suggestions.style.color = 'gold';
-  suggestions.style.borderRadius = '0 0 10px 10px';
-  suggestions.style.overflow = 'hidden';
-  suggestions.style.display = 'none';
-  suggestions.style.maxHeight = '150px';
-suggestions.style.overflowY = 'auto';
-suggestions.style.width = '90%';
-suggestions.style.maxWidth = '500px';
-suggestions.style.minWidth = '300px'; // NEW
-
-
-  searchContainer.appendChild(suggestions);
-
-  let searchMarker = null;
-
-  function dropSearchMarker(coords, name) {
-    if (searchMarker) searchMarker.remove();
-
-    searchMarker = new mapboxgl.Marker({ color: 'gold' })
-      .setLngLat(coords)
-      .setPopup(new mapboxgl.Popup().setHTML(`
-  <div style="
-    background-color: #000;
-    border: 1px solid gold;
-    padding: 10px;
-    border-radius: 8px;
-    color: gold;
-    font-family: sans-serif;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-  ">
-    <h3 style="margin: 0; font-size: 16px;">${name}</h3>
-  </div>
-`))
-
-      .addTo(map)
-      .togglePopup();
-  }
-
-  searchInput.addEventListener('input', async () => {
-    const query = searchInput.value.trim();
-    if (query.length < 3) {
-      suggestions.style.display = 'none';
-      return;
-    }
-
-    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&limit=5`);
-    const data = await res.json();
-
-    suggestions.innerHTML = '';
-    if (data.features.length > 0) {
-      data.features.forEach(place => {
-        const option = document.createElement('div');
-        option.textContent = place.place_name;
-option.style.padding = '6px 12px';
-option.style.fontSize = '13px';
-option.style.lineHeight = '1.4';
-option.style.color = 'gold';
-option.style.whiteSpace = 'normal';
-option.style.overflow = 'visible';
-option.style.textOverflow = 'clip';
-option.style.borderBottom = '1px solid gold';
-option.style.background = 'transparent';
-option.style.width = '100%';
-option.style.boxSizing = 'border-box';
-option.addEventListener('mouseover', () => {
-  option.style.background = '#222';
-});
-option.addEventListener('mouseout', () => {
-  option.style.background = 'transparent';
-});
-
-
-        option.addEventListener('click', () => {
-          map.flyTo({
-            center: place.center,
-            zoom: 14
-          });
-          searchInput.value = place.place_name;
-          suggestions.style.display = 'none';
-          dropSearchMarker(place.center, place.place_name);
-        });
-
-        suggestions.appendChild(option);
-      });
-
-      suggestions.style.display = 'block';
-    } else {
-      suggestions.style.display = 'none';
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!searchContainer.contains(e.target)) {
-      suggestions.style.display = 'none';
-    }
-  });
-</script>
-
-</script>
-
 </body>
-<script>
-  lucide.createIcons();
-</script>
-</html> 
+</html>

@@ -92,3 +92,12 @@ html, body {
   padding: 0 !important;
   border: none !important;
 }
+.popup-style {
+  background-color: #000;
+  border: 1px solid gold;
+  padding: 10px;
+  border-radius: 8px;
+  color: gold;
+  font-family: sans-serif;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}

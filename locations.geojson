@@ -1,0 +1,35 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Tablehurst Farm",
+        "description": "Biodynamic Community Farm"
+      },
+      "geometry": {
+        "coordinates": [
+          0.04543228546728528,
+          51.098736489356355
+        ],
+        "type": "Point"
+      },
+      "id": 0
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The HopYard",
+        "description": "Bar"
+      },
+      "geometry": {
+        "coordinates": [
+          0.034166761110071775,
+          51.09740485952858
+        ],
+        "type": "Point"
+      },
+      "id": 1
+    }
+  ]
+}

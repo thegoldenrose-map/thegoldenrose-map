@@ -101,3 +101,42 @@ html, body {
   font-family: sans-serif;
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
 }
+#submission-form {
+  position: absolute;
+  bottom: 80px;
+  left: 10px;
+  background: #000;
+  border: 1px solid gold;
+  color: gold;
+  padding: 12px;
+  border-radius: 10px;
+  z-index: 999;
+  max-width: 280px;
+  font-family: sans-serif;
+}
+
+#submission-form input {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px;
+  background: #111;
+  border: 1px solid #555;
+  color: gold;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+#submission-form button {
+  background: gold;
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#submission-form p {
+  font-size: 12px;
+  margin-top: 5px;
+}

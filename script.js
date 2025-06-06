@@ -154,5 +154,40 @@ document.addEventListener('click', (e) => {
     suggestions.style.display = 'none';
   }
 });
+// Toggle form on "+" icon click
+document.querySelector('button[title="Add Location"]').addEventListener('click', () => {
+  const form = document.getElementById('submission-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+});
+
+// Handle submission
+document.getElementById('submit-btn').addEventListener('click', () => {
+  const title = document.getElementById('title-input').value.trim();
+  const desc = document.getElementById('description-input').value.trim();
+  const msg = document.getElementById('form-message');
+
+  if (!title || !desc) {
+    msg.textContent = '⚠️ Fill in both fields.';
+    msg.style.color = 'orange';
+    return;
+  }
+
+  const center = map.getCenter();
+
+  new mapboxgl.Marker({ color: 'gold' })
+    .setLngLat([center.lng, center.lat])
+    .setPopup(new mapboxgl.Popup().setHTML(`
+      <div class="popup-style">
+        <h3>${title}</h3>
+        <p>${desc}</p>
+      </div>`))
+    .addTo(map);
+
+  msg.textContent = '✅ Added to map at current center.';
+  msg.style.color = 'lightgreen';
+
+  document.getElementById('title-input').value = '';
+  document.getElementById('description-input').value = '';
+});
 
 lucide.createIcons();

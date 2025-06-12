@@ -173,15 +173,17 @@ document.getElementById('submissionForm').addEventListener('submit', function (e
   e.preventDefault();
   const name = document.getElementById('locationName').value;
   const description = document.getElementById('locationDescription').value;
-  const coordsRaw = document.getElementById('locationCoords').value;
+  const category = document.getElementById('locationCoords').value;
 
   fetch(scriptURL, {
     method: 'POST',
     body: JSON.stringify({
-      name: name,
-      description: description,
-      coordinates: coordsRaw
-    }),
+  name: name,
+  location: description,
+  category: category
+}),
+
+
     headers: {
       'Content-Type': 'application/json'
     }

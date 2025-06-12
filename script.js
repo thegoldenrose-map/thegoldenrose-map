@@ -153,41 +153,50 @@ document.addEventListener('click', (e) => {
   if (!searchContainer.contains(e.target)) {
     suggestions.style.display = 'none';
   }
+
+
 });
-// Toggle form on "+" icon click
-document.querySelector('button[title="Add Location"]').addEventListener('click', () => {
-  const form = document.getElementById('submission-form');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+// Google Apps Script Webhook URL
+const scriptURL = 'https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec';
+
+// Modal open/close
+document.getElementById('plusNavBtn').addEventListener('click', () => {
+  document.getElementById('submissionModal').style.display = 'block';
 });
 
-// Handle submission
-document.getElementById('submit-btn').addEventListener('click', () => {
-  const title = document.getElementById('title-input').value.trim();
-  const desc = document.getElementById('description-input').value.trim();
-  const msg = document.getElementById('form-message');
+function closeModal() {
+  document.getElementById('submissionModal').style.display = 'none';
+}
 
-  if (!title || !desc) {
-    msg.textContent = '⚠️ Fill in both fields.';
-    msg.style.color = 'orange';
-    return;
-  }
+// Form submission handler
+document.getElementById('submissionForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const name = document.getElementById('locationName').value;
+  const description = document.getElementById('locationDescription').value;
+  const coordsRaw = document.getElementById('locationCoords').value;
 
-  const center = map.getCenter();
-
-  new mapboxgl.Marker({ color: 'gold' })
-    .setLngLat([center.lng, center.lat])
-    .setPopup(new mapboxgl.Popup().setHTML(`
-      <div class="popup-style">
-        <h3>${title}</h3>
-        <p>${desc}</p>
-      </div>`))
-    .addTo(map);
-
-  msg.textContent = '✅ Added to map at current center.';
-  msg.style.color = 'lightgreen';
-
-  document.getElementById('title-input').value = '';
-  document.getElementById('description-input').value = '';
+  fetch(scriptURL, {
+    method: 'POST',
+    body: JSON.stringify({
+      name: name,
+      description: description,
+      coordinates: coordsRaw
+    }),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+    .then(res => {
+      alert("✅ Location submitted!");
+      this.reset();
+      closeModal();
+    })
+    .catch(err => {
+      alert("❌ Failed to submit.");
+      console.error(err);
+    });
 });
+
+
 
 lucide.createIcons();

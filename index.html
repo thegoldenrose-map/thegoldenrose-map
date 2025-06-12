@@ -21,26 +21,29 @@
   <!-- Bottom Navigation -->
   <nav id="bottom-nav">
     <button title="Favourites"><i data-lucide="star"></i></button>
-    <button title="Add Location"><i data-lucide="plus-circle"></i></button>
+    <button id="plusNavBtn" title="Add Location"><i data-lucide="plus-circle"></i></button>
 
     <div class="search-wrapper">
-  <input type="text" id="search" placeholder="Search..." />
-  <div id="suggestions"></div>
-
-
+      <input type="text" id="search" placeholder="Search..." />
+      <div id="suggestions"></div>
     </div>
 
     <button title="My Location"><i data-lucide="map-pin"></i></button>
     <button title="Profile"><i data-lucide="user"></i></button>
   </nav>
 
-<!-- Submission Form (hidden by default) -->
-<div id="submission-form" style="display: none;">
-  <h2>Add New Place</h2>
-  <input type="text" id="title-input" placeholder="Name">
-  <input type="text" id="description-input" placeholder="Location Description">
-  <button id="submit-btn">Add to Map</button>
-  <p id="form-message"></p>
+  <!-- Location Submission Modal -->
+  <div id="submissionModal" class="modal" style="display: none;">
+  <form id="submissionForm">
+    <h2>Add New Place</h2>
+    <input type="text" id="locationName" placeholder="Name" required>
+    <input type="text" id="location" placeholder="Location" required>
+    <input type="text" id="locationCategory" placeholder="Category" required>
+    <button type="submit">Add to Map</button>
+    <button type="button" onclick="closeModal()">Cancel</button>
+  </form>
 </div>
+
+
 </body>
 </html>

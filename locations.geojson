@@ -5,14 +5,12 @@
       "type": "Feature",
       "properties": {
         "title": "Tablehurst Farm",
-        "description": "Biodynamic Community Farm"
+        "description": "Biodynamic Community Farm",
+        "category": "farm"
       },
       "geometry": {
-        "coordinates": [
-          0.04543228546728528,
-          51.098736489356355
-        ],
-        "type": "Point"
+        "type": "Point",
+        "coordinates": [0.04543228546728528, 51.098736489356355]
       },
       "id": 0
     },
@@ -20,16 +18,40 @@
       "type": "Feature",
       "properties": {
         "title": "The HopYard",
-        "description": "Bar"
+        "description": "Bar",
+        "category": "pub"
       },
       "geometry": {
-        "coordinates": [
-          0.034166761110071775,
-          51.09740485952858
-        ],
-        "type": "Point"
+        "type": "Point",
+        "coordinates": [0.034166761110071775, 51.09740485952858]
       },
       "id": 1
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Swan",
+        "description": "Pub",
+        "category": "pub"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.032787787561886717, 51.09853567380449]
+      },
+      "id": 2
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Bramblyetye",
+        "description": "Pub",
+        "category": "pub"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.03328913191833749, 51.099620769317966]
+      },
+      "id": 3
     }
   ]
 }

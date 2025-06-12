@@ -177,6 +177,7 @@ document.getElementById('submissionForm').addEventListener('submit', function (e
 
   fetch(scriptURL, {
     method: 'POST',
+    mode: 'no-cors', 
     headers: {
       'Content-Type': 'application/json'
     },

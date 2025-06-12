@@ -42,7 +42,7 @@ map.on('load', () => {
           source: 'locations',
           layout: {
             'icon-image': 'rose-icon',
-            'icon-size': 0.2,
+            'icon-size': 0.6,
             'icon-allow-overlap': true
           }
         });
@@ -188,15 +188,15 @@ document.getElementById('submissionForm').addEventListener('submit', function (e
     })
   })
     .then(res => {
-      if (!res.ok) throw new Error("Network response was not ok");
-      alert("✅ Location submitted!");
-      document.getElementById('submissionForm').reset();
-      closeModal();
-    })
-    .catch(err => {
-      alert("❌ Failed to submit.");
-      console.error(err);
-    });
+  alert("✅ Location submitted!");
+  document.getElementById('submissionForm').reset();
+  closeModal();
+})
+.catch(err => {
+  alert("❌ Failed to submit.");
+  console.error(err);
+});
+
 });
 
 

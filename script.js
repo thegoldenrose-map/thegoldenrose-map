@@ -171,26 +171,25 @@ function closeModal() {
 // Form submission handler
 document.getElementById('submissionForm').addEventListener('submit', function (e) {
   e.preventDefault();
-  const name = document.getElementById('locationName').value;
-  const description = document.getElementById('locationDescription').value;
-  const category = document.getElementById('locationCoords').value;
+  const name = document.getElementById('locationName').value.trim();
+  const description = document.getElementById('locationDescription').value.trim();
+  const category = document.getElementById('locationCoords').value.trim();
 
   fetch(scriptURL, {
     method: 'POST',
-    body: JSON.stringify({
-  name: name,
-  location: description,
-  category: category
-}),
-
-
     headers: {
       'Content-Type': 'application/json'
-    }
+    },
+    body: JSON.stringify({
+      name: name,
+      location: description,
+      category: category
+    })
   })
     .then(res => {
+      if (!res.ok) throw new Error("Network response was not ok");
       alert("✅ Location submitted!");
-      this.reset();
+      document.getElementById('submissionForm').reset();
       closeModal();
     })
     .catch(err => {
@@ -198,6 +197,7 @@ document.getElementById('submissionForm').addEventListener('submit', function (e
       console.error(err);
     });
 });
+
 
 
 

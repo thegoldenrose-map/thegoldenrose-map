@@ -7,11 +7,27 @@ const map = new mapboxgl.Map({
   center: [0.033431609683219676, 51.09798270711917],
   zoom: 15
 });
-
+let originalGeoData = null; // ⬅️ store full geojson for filtering later
+const categoryContainer = document.getElementById('categoryFilters');
 map.on('load', () => {
   fetch('locations.geojson')
     .then(res => res.json())
-    .then(data => {
+    .then(data => {const categories = [...new Set(data.features.map(f => f.properties.category))];
+      originalGeoData = data; 
+     
+categories.forEach(cat => {
+  const label = document.createElement('label');
+  label.style.display = 'block';
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = true;
+  checkbox.value = cat;
+  checkbox.addEventListener('change', filterMarkers);
+  label.appendChild(checkbox);
+  label.appendChild(document.createTextNode(' ' + cat));
+  categoryContainer.appendChild(label);
+});
+// ⬅️ Save a copy for filtering
       map.addSource('locations', {
         type: 'geojson',
         data
@@ -159,47 +175,105 @@ document.addEventListener('click', (e) => {
 // Google Apps Script Webhook URL
 const scriptURL = 'https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec';
 
-// Modal open/close
-document.getElementById('plusNavBtn').addEventListener('click', () => {
-  document.getElementById('submissionModal').style.display = 'block';
-});
+function filterMarkers() {
+  const checkedCats = Array.from(categoryContainer.querySelectorAll('input:checked'))
+    .map(input => input.value);
 
-function closeModal() {
-  document.getElementById('submissionModal').style.display = 'none';
+  const filteredFeatures = originalGeoData.features.filter(f =>
+    checkedCats.includes(f.properties.category)
+  );
+
+  map.getSource('locations').setData({
+    type: 'FeatureCollection',
+    features: filteredFeatures
+  });
 }
 
-// Form submission handler
-document.getElementById('submissionForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-  const name = document.getElementById('locationName').value.trim();
-  const description = document.getElementById('locationDescription').value.trim();
-  const category = document.getElementById('locationCoords').value.trim();
+document.addEventListener('DOMContentLoaded', () => {
+  // Filter Panel Toggle
+  const filterBtn = document.getElementById('filterBtn');
+  const filterPanel = document.getElementById('filterPanel');
+  filterBtn.addEventListener('click', () => {
+    filterPanel.classList.toggle('hidden');
+  });
 
-  fetch(scriptURL, {
-    method: 'POST',
-    mode: 'no-cors', 
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: name,
-      location: description,
-      category: category
+  // Submission Modal Open
+  document.getElementById('plusNavBtn').addEventListener('click', () => {
+    document.getElementById('submissionModal').style.display = 'block';
+  });
+
+  // Submission Modal Close
+  window.closeModal = function () {
+    document.getElementById('submissionModal').style.display = 'none';
+  };
+
+  // Form Submission
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec';
+  document.getElementById('submissionForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = document.getElementById('locationName').value.trim();
+    const description = document.getElementById('locationDescription').value.trim();
+    const category = document.getElementById('locationCoords').value.trim();
+
+    fetch(scriptURL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name,
+        location: description,
+        category
+      })
     })
-  })
-    .then(res => {
-  alert("✅ Location submitted!");
-  document.getElementById('submissionForm').reset();
-  closeModal();
-})
-.catch(err => {
-  alert("❌ Failed to submit.");
-  console.error(err);
+      .then(res => {
+        alert("✅ Location submitted!");
+        document.getElementById('submissionForm').reset();
+        closeModal();
+      })
+      .catch(err => {
+        alert("❌ Failed to submit.");
+        console.error(err);
+      });
+  });
+
+  // Locate Button
+  document.getElementById('locateBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        map.flyTo({
+          center: [longitude, latitude],
+          zoom: 15
+        });
+
+        new mapboxgl.Marker({ color: 'gold' })
+          .setLngLat([longitude, latitude])
+          .setPopup(new mapboxgl.Popup().setHTML(`<div class="popup-style"><h3>You Are Here</h3></div>`))
+          .addTo(map)
+          .togglePopup();
+      },
+      () => {
+        alert("Failed to get your location.");
+      }
+    );
+  });
+
+  // Reset Filter Button
+  const resetBtn = document.getElementById('resetFilters');
+  resetBtn.addEventListener('click', () => {
+    categoryContainer.querySelectorAll('input').forEach(cb => cb.checked = true);
+    filterMarkers();
+  });
+  
+  // Lucide Icons Render
+  lucide.createIcons();
 });
 
-});
-
-
-
-
-lucide.createIcons();

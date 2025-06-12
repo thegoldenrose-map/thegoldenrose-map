@@ -6,7 +6,7 @@
       "properties": {
         "title": "Tablehurst Farm",
         "description": "Biodynamic Community Farm",
-        "category": "farm"
+        "category": "FARMS"
       },
       "geometry": {
         "type": "Point",
@@ -19,7 +19,7 @@
       "properties": {
         "title": "The HopYard",
         "description": "Bar",
-        "category": "pub"
+        "category": "PUBS"
       },
       "geometry": {
         "type": "Point",
@@ -32,7 +32,7 @@
       "properties": {
         "title": "The Swan",
         "description": "Pub",
-        "category": "pub"
+        "category": "PUBS"
       },
       "geometry": {
         "type": "Point",
@@ -45,7 +45,7 @@
       "properties": {
         "title": "Bramblyetye",
         "description": "Pub",
-        "category": "pub"
+        "category": "PUBS"
       },
       "geometry": {
         "type": "Point",

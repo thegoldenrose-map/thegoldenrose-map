@@ -20,7 +20,7 @@
 
   <!-- Bottom Navigation -->
   <nav id="bottom-nav">
-    <button title="Favourites"><i data-lucide="star"></i></button>
+    <button id="filterBtn" title="Filter places"><i data-lucide="menu"></i></button>
     <button id="plusNavBtn" title="Add Location"><i data-lucide="plus-circle"></i></button>
 
     <div class="search-wrapper">
@@ -28,9 +28,17 @@
       <div id="suggestions"></div>
     </div>
 
-    <button title="My Location"><i data-lucide="map-pin"></i></button>
+    <button id="locateBtn" title="My Location"><i data-lucide="map-pin"></i></button>
     <button title="Profile"><i data-lucide="user"></i></button>
   </nav>
+
+  <div id="filterPanel" class="hidden filter-panel">
+  <h4>Filter Places</h4>
+  <div id="categoryFilters"></div>
+  <button id="resetFilters">Reset Filters</button>
+</div>
+
+
 
   <!-- Location Submission Modal -->
   <div id="submissionModal" class="modal" style="display: none;">
@@ -43,7 +51,6 @@
     <button type="button" onclick="closeModal()">Cancel</button>
   </form>
 </div>
-
 
 
 </body>

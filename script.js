@@ -41,7 +41,7 @@ categories.forEach(cat => {
             type: 'circle',
             source: 'locations',
             paint: {
-              'circle-radius': 6,
+              'circle-radius': 1,
               'circle-color': 'gold'
             }
           });
@@ -58,7 +58,7 @@ categories.forEach(cat => {
           source: 'locations',
           layout: {
             'icon-image': 'rose-icon',
-            'icon-size': 0.6,
+            'icon-size': 0.06,
             'icon-allow-overlap': true
           }
         });
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         new mapboxgl.Marker({ color: 'gold' })
           .setLngLat([longitude, latitude])
-          .setPopup(new mapboxgl.Popup().setHTML(`<div class="popup-style"><h3>You Are Here</h3></div>`))
+          .setPopup(new mapboxgl.Popup().setHTML(`<div class="popup-style"><h3>Current Location</h3></div>`))
           .addTo(map)
           .togglePopup();
       },

@@ -12,6 +12,7 @@
   <script src="https://unpkg.com/lucide@latest" defer></script>
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js" defer></script>
   <script src="script.js" defer></script>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
 
@@ -29,7 +30,7 @@
     </div>
 
     <button id="locateBtn" title="My Location"><i data-lucide="map-pin"></i></button>
-    <button title="Profile"><i data-lucide="user"></i></button>
+    <button id="profileToggle" title="Profile"><i data-lucide="user"></i></button>
   </nav>
 
   <div id="filterPanel" class="hidden filter-panel">
@@ -52,6 +53,74 @@
   </form>
 </div>
 
+
+<!-- Hidden Dropdown Menu -->
+<div id="profileMenu" class="absolute bottom-16 right-4 z-50 hidden">
+  <div class="bg-black rounded-2xl shadow-lg p-4 w-48 border border-yellow-500">
+    <button class="w-full text-left text-sm font-medium text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">👤 Membership</button>
+    <hr class="border-yellow-500 my-2">
+    <a href="https://instagram.com/thegoldenrose.uk/" target="_blank" class="w-full block text-left text-sm font-medium text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">
+  📸 Instagram
+</a>
+    <hr class="border-yellow-500 my-2">
+    <button id="openFeedback" class="w-full text-left text-sm font-medium text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">💬 Feedback</button>
+    <hr class="border-yellow-500 my-2">
+    <button class="w-full text-left text-sm font-medium text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">🔐 Login</button>
+  </div>
+</div>
+
+  <!-- Feedback Modal -->
+<div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-black text-yellow-400 rounded-lg p-6 w-96 border border-yellow-500">
+    <h2 class="text-lg font-semibold mb-2">Send us your feedback</h2>
+    <textarea id="feedbackMessage" rows="4" class="w-full border border-gray-300 rounded p-2 mb-4" placeholder="Your message..."></textarea>
+    <div class="flex justify-end space-x-2">
+      <button id="cancelFeedback" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Cancel</button>
+      <button id="submitFeedback" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Script comes last -->
+<script>
+  const toggleBtn = document.getElementById('profileToggle');
+  const menu = document.getElementById('profileMenu');
+
+  toggleBtn.addEventListener('click', () => {
+    menu.classList.toggle('hidden');
+  });
+
+</script><script>
+  const openBtn = document.getElementById('openFeedback');
+  const modal = document.getElementById('feedbackModal');
+  const cancelBtn = document.getElementById('cancelFeedback');
+
+  openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+  cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+
+  document.getElementById('submitFeedback').addEventListener('click', () => {
+    const message = document.getElementById('feedbackMessage').value;
+    if (message.trim() === "") return alert("Please enter a message.");
+
+    fetch('https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec', {
+      method: 'POST',
+      body: new URLSearchParams({
+        type: 'feedback',
+        message: message
+      })
+    })
+    .then(response => response.text())
+    .then(result => {
+      alert("Thanks for your feedback!");
+      modal.classList.add('hidden');
+      document.getElementById('feedbackMessage').value = '';
+    })
+    .catch(error => {
+      alert("Error sending feedback.");
+      console.error(error);
+    });
+  });
+</script>
 
 </body>
 </html>

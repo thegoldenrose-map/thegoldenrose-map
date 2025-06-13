@@ -6,11 +6,11 @@
       "properties": {
         "title": "Tablehurst Farm",
         "description": "Biodynamic Community Farm",
-        "category": "FARMS"
+        "category": "🚜 FARMS"
       },
       "geometry": {
         "type": "Point",
-        "coordinates": [0.04543228546728528, 51.098736489356355]
+        "coordinates": [0.045554809389905714, 51.09873855938196]
       },
       "id": 0
     },
@@ -19,11 +19,11 @@
       "properties": {
         "title": "The HopYard",
         "description": "Bar",
-        "category": "PUBS"
+        "category": "🍺 PUBS"
       },
       "geometry": {
         "type": "Point",
-        "coordinates": [0.034166761110071775, 51.09740485952858]
+        "coordinates": [0.03410110754440962, 51.09760093833534]
       },
       "id": 1
     },
@@ -32,11 +32,11 @@
       "properties": {
         "title": "The Swan",
         "description": "Pub",
-        "category": "PUBS"
+        "category": "🍺 PUBS"
       },
       "geometry": {
         "type": "Point",
-        "coordinates": [0.032787787561886717, 51.09853567380449]
+        "coordinates": [0.0328782247301093, 51.0986806846148]
       },
       "id": 2
     },
@@ -45,13 +45,104 @@
       "properties": {
         "title": "Bramblyetye",
         "description": "Pub",
-        "category": "PUBS"
+        "category": "🍺 PUBS"
       },
       "geometry": {
         "type": "Point",
-        "coordinates": [0.03328913191833749, 51.099620769317966]
+        "coordinates": [0.033232384426263875, 51.09967990285643]
       },
       "id": 3
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Ralph’s Cafe",
+        "description": "Cafe",
+        "category": "☕ CAFES"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.034514768344435114, 51.097152374753904]
+      },
+      "id": 4
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Maria’s Cafe",
+        "description": "Cafe",
+        "category": "☕ CAFES"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.03377891123542157, 51.10046816788147]
+      },
+      "id": 5
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Cafe Coco",
+        "description": "Cafe",
+        "category": "☕ CAFES"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.03366892753502851, 51.09864854522999]
+      },
+      "id": 6
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "River View Cafe",
+        "description": "Cafe",
+        "category": "☕ CAFES"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.03765098200845745, 51.098999026913155]
+      },
+      "id": 7
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Java & Jazz",
+        "description": "Cafe with live music",
+        "category": "☕ CAFES"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.03375535257614275, 51.09943624973958]
+      },
+      "id": 8
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Shearer’s Fine Foods",
+        "description": "Deli and Charcuterie",
+        "category": "🛍️ SHOPS"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.033216795631935005, 51.09945125092517]
+      },
+      "id": 9
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Bazaar",
+        "description": "Artisan Marketplace",
+        "category": "🛍️ SHOPS"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.0373289232349814, 51.13842647224371]
+      },
+      "id": 10
     }
   ]
 }

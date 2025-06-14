@@ -67,7 +67,9 @@
     <hr class="border-yellow-500 my-2">
     <button id="openFeedback" class="w-full text-left text-sm font-medium text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">💬 Feedback</button>
     <hr class="border-yellow-500 my-2">
-    <button class="w-full text-left text-sm font-medium text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">🔐 Login</button>
+    <a href="https://x.com/thegoldenrose" target="_blank" class="w-full block text-left text-sm font-medium text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">
+  Ｘ Twitter
+</a>
   </div>
 </div>
 
@@ -123,6 +125,84 @@
     });
   });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+
+  // PROFILE DROPDOWN
+  const toggleBtn = document.getElementById('profileToggle');
+  const menu = document.getElementById('profileMenu');
+  toggleBtn?.addEventListener('click', () => {
+    menu?.classList.toggle('hidden');
+  });
+
+  // FEEDBACK MODAL
+  const openBtn = document.getElementById('openFeedback');
+  const modal = document.getElementById('feedbackModal');
+  const cancelBtn = document.getElementById('cancelFeedback');
+
+  openBtn?.addEventListener('click', () => modal?.classList.remove('hidden'));
+  cancelBtn?.addEventListener('click', () => modal?.classList.add('hidden'));
+
+  document.getElementById('submitFeedback')?.addEventListener('click', () => {
+    const message = document.getElementById('feedbackMessage').value;
+    if (message.trim() === "") return alert("Please enter a message.");
+
+    fetch('https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec', {
+      method: 'POST',
+      body: new URLSearchParams({
+        type: 'feedback',
+        message: message
+      })
+    })
+    .then(res => res.text())
+    .then(() => {
+      alert("Thanks for your feedback!");
+      modal.classList.add('hidden');
+      document.getElementById('feedbackMessage').value = '';
+    })
+    .catch(err => {
+      alert("Error sending feedback.");
+      console.error(err);
+    });
+  });
+
+  // SUBMISSION MODAL
+  const plusBtn = document.getElementById('plusNavBtn');
+  plusBtn?.addEventListener('click', () => {
+    document.getElementById('submissionModal').style.display = 'block';
+  });
+
+  window.closeModal = function () {
+    document.getElementById('submissionModal').style.display = 'none';
+  };
+
+  // FILTER PANEL TOGGLE
+  const filterBtn = document.getElementById('filterBtn');
+  const filterPanel = document.getElementById('filterPanel');
+  filterBtn?.addEventListener('click', () => {
+    filterPanel.classList.toggle('hidden');
+  });
+
+  // LOCATE BUTTON
+  document.getElementById('locateBtn')?.addEventListener('click', () => {
+    if (!navigator.geolocation) return alert("Geolocation not supported.");
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        map.flyTo({ center: [longitude, latitude], zoom: 15 });
+        new mapboxgl.Marker({ color: 'gold' })
+          .setLngLat([longitude, latitude])
+          .setPopup(new mapboxgl.Popup().setHTML(`<div class="popup-style"><h3>Current Location</h3></div>`))
+          .addTo(map)
+          .togglePopup();
+      },
+      () => alert("Failed to get location.")
+    );
+  });
+});
+</script>
+
 
 </body>
 </html>

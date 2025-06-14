@@ -4,9 +4,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Tablehurst Farm",
-        "description": "Biodynamic Community Farm",
-        "category": "🚜 FARMS"
+        "title": "🚜 Tablehurst Farm",
+        "description": "",
+        "category": "🚜 FARMS",
+        "verified": true
       },
       "geometry": {
         "type": "Point",
@@ -17,9 +18,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "The HopYard",
-        "description": "Bar",
-        "category": "🍺 PUBS"
+        "title": "🍺 The HopYard",
+        "description": "",
+        "category": "🍺 PUBS",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -30,9 +32,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "The Swan",
-        "description": "Pub",
-        "category": "🍺 PUBS"
+        "title": "🍺 The Swan",
+        "description": "",
+        "category": "🍺 PUBS",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -43,9 +46,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Bramblyetye",
-        "description": "Pub",
-        "category": "🍺 PUBS"
+        "title": "🍺 Bramblyetye",
+        "description": "",
+        "category": "🍺 PUBS",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -56,9 +60,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Ralph’s Cafe",
-        "description": "Cafe",
-        "category": "☕ CAFES"
+        "title": "☕ Ralph’s Cafe",
+        "description": "",
+        "category": "☕ CAFES",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -69,9 +74,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Maria’s Cafe",
-        "description": "Cafe",
-        "category": "☕ CAFES"
+        "title": "☕ Maria’s Cafe",
+        "description": "",
+        "category": "☕ CAFES",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -82,9 +88,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Cafe Coco",
-        "description": "Cafe",
-        "category": "☕ CAFES"
+        "title": "☕ Cafe Coco",
+        "description": "",
+        "category": "☕ CAFES",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -95,9 +102,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "River View Cafe",
-        "description": "Cafe",
-        "category": "☕ CAFES"
+        "title": "☕ River View Cafe",
+        "description": "",
+        "category": "☕ CAFES",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -108,9 +116,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Java & Jazz",
-        "description": "Cafe with live music",
-        "category": "☕ CAFES"
+        "title": "☕ Java & Jazz",
+        "description": "",
+        "category": "☕ CAFES",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -121,9 +130,10 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Shearer’s Fine Foods",
-        "description": "Deli and Charcuterie",
-        "category": "🛍️ SHOPS"
+        "title": "🛍️ Shearer’s Fine Foods",
+        "description": "",
+        "category": "🛍️ SHOPS",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
@@ -134,15 +144,30 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "The Bazaar",
-        "description": "Artisan Marketplace",
-        "category": "🛍️ SHOPS"
+        "title": "🛍️ The Bazaar",
+        "description": "",
+        "category": "🛍️ SHOPS",
+        "verified": false
       },
       "geometry": {
         "type": "Point",
         "coordinates": [0.0373289232349814, 51.13842647224371]
       },
       "id": 10
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": " Forest Row Festival",
+        "description": "",
+        "category": "📍 EVENTS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.035668269464622426, 51.09693948979029]
+      },
+      "id": 11
     }
   ]
 }

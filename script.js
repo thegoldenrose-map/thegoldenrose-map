@@ -18,6 +18,29 @@ map.on('load', () => {
 
       map.addSource('locations', { type: 'geojson', data });
 
+      // 🔥 Glowing pulse behind verified markers
+map.addLayer({
+  id: 'verified-pulse',
+  type: 'circle',
+  source: 'locations',
+  filter: ['==', ['get', 'verified'], true],
+  paint: {
+    'circle-color': 'gold',
+    'circle-opacity': 0.2,
+    'circle-radius': 8,
+    'circle-blur': 1
+  }
+});
+
+function animatePulse() {
+  const radius = 8 + Math.sin(Date.now() / 500) * 2;
+  map.setPaintProperty('verified-pulse', 'circle-radius', radius);
+  requestAnimationFrame(animatePulse);
+}
+animatePulse();
+
+
+
       // Filter checkboxes
       const categories = [...new Set(data.features.map(f => f.properties.category))];
       categories.forEach(cat => {
@@ -53,13 +76,12 @@ map.on('load', () => {
           id: 'locations',
           type: 'symbol',
           source: 'locations',
-          layout: {
-  'icon-image': [
-    'case',
-    ['==', ['get', 'verified'], true], 'verified-shop-icon',
-    ['==', ['get', 'category'], '📍 EVENTS'], 'event-icon',
-    'rose-icon'
-  ],
+          layout: {'icon-image': [
+  'case',
+  ['==', ['get', 'verified'], true], 'verified-shop-icon',
+  ['==', ['get', 'category'], '📍 EVENTS'], 'event-icon',
+  'rose-icon'
+],
   'icon-size': 0.06,
   'icon-allow-overlap': true
 }
@@ -71,7 +93,13 @@ map.on('load', () => {
           const props = e.features[0].properties;
           new mapboxgl.Popup()
             .setLngLat(e.lngLat)
-            .setHTML(`<div class="popup-style"><h3>${props.title}</h3><p>${props.description}</p></div>`)
+            .setHTML(`
+  <div class="${props.verified === true ? 'popup-verified-style' : 'popup-style'}">
+    <h3>${props.title}</h3>
+    <p>${props.description}</p>
+    ${props.verified === true ? '<div class="verified-tag">✔ VERIFIED LOCATION</div>' : ''}
+  </div>
+`)
             .addTo(map);
         });
 

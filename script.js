@@ -214,7 +214,7 @@ function unlockFeatures() {
     document.getElementById('memberInfo')?.classList.remove('hidden');
 
     [
-      'favouritesBtn',
+      
       'newsfeedBtn',
       'requestsBtn',
       'affiliatesBtn',
@@ -228,23 +228,30 @@ function unlockFeatures() {
     });
   }
 }
-
-  
 function unlockFeatures() {
   const lvl = localStorage.getItem('membershipLevel');
   if (lvl === 'premium') {
+    // Hide guest-only buttons
     [
-  'profileLoginBtn',
-  'instagramBtn',
-  'twitterBtn',
-  'openFeedback',
-  'membershipBtn',
-  'donateBtnGuest',
-].forEach(id => {
-  document.getElementById(id)?.remove();
-});
+      'profileLoginBtn',
+      'instagramBtn',
+      'twitterBtn',
+      'openFeedback',
+      'membershipBtn',
+      'donateBtnGuest',
+    ].forEach(id => document.getElementById(id)?.remove());
 
+    // Show member-only buttons
+    [
+      'favouritesBtn',
+      'newsfeedBtn',
+      'requestsBtn',
+      'affiliatesBtn',
+      'donateBtnMember',
+      'logoutBtn',
+    ].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
 
+    // Update member info
     const nameEl = document.getElementById('memberName');
     const metaEl = document.getElementById('memberMeta');
     const memberName = localStorage.getItem('memberName');
@@ -257,19 +264,7 @@ function unlockFeatures() {
 
     document.getElementById('memberInfo')?.classList.remove('hidden');
 
-    const showIds = [
-      'favouritesBtn',
-      'newsfeedBtn',
-      'requestsBtn',
-      'affiliatesBtn',
-      'donateBtnMember',
-      'logoutBtn',
-  
-    ];
-
-    showIds.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
-
-    // ✅ Set up logout again
+    // Setup logout
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
       localStorage.clear();
       location.reload();
@@ -277,3 +272,4 @@ function unlockFeatures() {
   }
 }
 
+  

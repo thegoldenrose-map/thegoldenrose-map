@@ -83,18 +83,27 @@ map.on('load', () => {
         });
 
         map.on('click', 'locations', (e) => {
-          const props = e.features[0].properties;
-          new mapboxgl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div class="${props.verified === true ? 'popup-verified-style' : 'popup-style'}">
-                <h3>${props.title}</h3>
-                <p>${props.description}</p>
-                ${props.verified === true ? '<div class="verified-tag">✔ VERIFIED LOCATION</div>' : ''}
-              </div>
-            `)
-            .addTo(map);
-        });
+  const props = e.features[0].properties;
+
+  const popup = new mapboxgl.Popup()
+    .setLngLat(e.lngLat)
+    .setHTML(`
+      <div class="popup-style relative">
+        <button onclick="saveToFavourites('${props.title}', ${e.lngLat.lng}, ${e.lngLat.lat})"
+          class="absolute top-1 right-3 text-yellow-400 hover:text-red-500 z-10">
+          <i data-lucide="heart"></i>
+        </button>
+        <h3 class="mt-6">${props.title}</h3>
+        <p>${props.description}</p>
+        ${props.verified === true ? '<div class="verified-tag">✔ VERIFIED LOCATION</div>' : ''}
+      </div>
+    `)
+    .addTo(map);
+
+  // ✅ Now that popup is rendered, create icons
+  lucide.createIcons();
+});
+
 
         map.on('mouseenter', 'locations', () => map.getCanvas().style.cursor = 'pointer');
         map.on('mouseleave', 'locations', () => map.getCanvas().style.cursor = '');
@@ -153,6 +162,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setTimeout(unlockFeatures, 200);
 });
+document.getElementById('locateBtn')?.addEventListener('click', () => {
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(position => {
+      const lng = position.coords.longitude;
+      const lat = position.coords.latitude;
+
+      map.flyTo({ center: [lng, lat], zoom: 16 });
+
+      // Remove previous location marker if it exists
+      if (window.currentLocationMarker) {
+        window.currentLocationMarker.remove();
+      }
+
+      // Add marker and styled popup
+      window.currentLocationMarker = new mapboxgl.Marker({ color: 'blue' })
+        .setLngLat([lng, lat])
+        .setPopup(new mapboxgl.Popup().setHTML(`
+          <div class="popup-style">
+            <h3> Current Location</h3>
+          </div>
+        `))
+        .addTo(map);
+
+      window.currentLocationMarker.togglePopup();
+    }, () => {
+      alert('Unable to retrieve your location');
+    });
+  } else {
+    alert('Geolocation is not supported by your browser');
+  }
+});
+
 
 function unlockFeatures() {
   const lvl = localStorage.getItem('membershipLevel');
@@ -171,13 +212,68 @@ function unlockFeatures() {
     }
 
     document.getElementById('memberInfo')?.classList.remove('hidden');
-    ['favouritesBtn', 'newsfeedBtn', 'requestsBtn', 'affiliatesBtn', 'logoutBtn']
-      .forEach(id => document.getElementById(id)?.classList.remove('hidden'));
 
-    document.getElementById('logoutBtn').onclick = () => {
-      localStorage.clear();
-      location.reload();
-    };
-
+    [
+      'favouritesBtn',
+      'newsfeedBtn',
+      'requestsBtn',
+      'affiliatesBtn',
+      'logoutBtn',
+      'instagramBtn',
+      'twitterBtn',
+      'openFeedback',
+      'membershipBtn'
+    ].forEach(id => {
+      document.getElementById(id)?.classList.remove('hidden');
+    });
   }
 }
+
+  
+function unlockFeatures() {
+  const lvl = localStorage.getItem('membershipLevel');
+  if (lvl === 'premium') {
+    [
+  'profileLoginBtn',
+  'instagramBtn',
+  'twitterBtn',
+  'openFeedback',
+  'membershipBtn',
+  'donateBtnGuest',
+].forEach(id => {
+  document.getElementById(id)?.remove();
+});
+
+
+    const nameEl = document.getElementById('memberName');
+    const metaEl = document.getElementById('memberMeta');
+    const memberName = localStorage.getItem('memberName');
+    const memberNumber = localStorage.getItem('memberNumber');
+
+    if (nameEl && metaEl) {
+      nameEl.innerText = memberName;
+      metaEl.innerText = `#${memberNumber} • Check‑ins: 0`;
+    }
+
+    document.getElementById('memberInfo')?.classList.remove('hidden');
+
+    const showIds = [
+      'favouritesBtn',
+      'newsfeedBtn',
+      'requestsBtn',
+      'affiliatesBtn',
+      'donateBtnMember',
+      'logoutBtn',
+  
+    ];
+
+    showIds.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+
+    // ✅ Set up logout again
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      localStorage.clear();
+      location.reload();
+    });
+  }
+}
+

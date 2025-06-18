@@ -50,55 +50,89 @@
   </div>
 
   <div id="profileMenu" class="absolute bottom-16 right-4 z-50 hidden">
-  <div class="bg-black rounded-2xl shadow-lg p-4 w-48 border border-yellow-500">
- 
+  <div class="divide-y divide-yellow-500 rounded-2xl overflow-hidden">
 
-  <!-- Member Info -->
-  <div id="memberInfo" class="text-yellow-400 hidden mb-2">
+    <div id="favouritesDropdown" class="hidden absolute right-4 bottom-32 w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-lg shadow-lg p-3 z-50 text-yellow-400 space-y-2">
+  <div class="flex justify-between items-center mb-2">
+    <h3 class="text-sm font-semibold">Saved Favourites</h3>
+    <button onclick="document.getElementById('favouritesDropdown').classList.add('hidden')" class="text-yellow-400 hover:text-red-500 text-sm">✕</button>
+  </div>
+  <div id="favouritesList" class="space-y-2"></div>
+</div>
+
+
+
+  <div id="memberInfo" class="text-yellow-400 px-4 py-2 bg-black">
     <div id="memberName" class="text-sm font-semibold"></div>
     <div id="memberMeta" class="text-xs"></div>
   </div>
-  <hr class="border-yellow-500 my-1">
 
-  <!-- Premium Features -->
-<button id="favouritesBtn" class="hidden text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1 w-full text-left">❤️ Favourites</button>
-<hr class="border-yellow-500 my-1">
-<button id="newsfeedBtn" class="hidden text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1 w-full text-left">📰 Newsfeed</button>
-<hr class="border-yellow-500 my-1">
-<button id="requestsBtn" class="hidden text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1 w-full text-left">📬 Requests</button>
-<hr class="border-yellow-500 my-1">
-<button id="affiliatesBtn" class="hidden text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1 w-full text-left">🤝 Affiliates</button>
-<hr class="border-yellow-500 my-1">
-<button id="logoutBtn" class="hidden text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1 w-full text-left">🚪 Logout</button>
-<!-- Removed final <hr> -->
+  <div class="space-y-1 bg-black px-4 py-2">
+    <button id="favouritesBtn" class="hiddwszen flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="heart"></i> Favourites
+    </button>
+
+    <button id="newsfeedBtn" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="newspaper"></i> Newsfeed
+    </button>
+    <button id="requestsBtn" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="inbox"></i> Requests
+    </button>
+    <!-- Requests Submenu -->
+<div id="requestsSubMenu" class="hidden space-y-2 px-4 pt-1">
+  
+  <button class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+    <i data-lucide="coins"></i> Request Donations
+  </button>
+  <button class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+    <i data-lucide="badge-check"></i> Request Verification
+  </button>
+  <button class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+    <i data-lucide="calendar-days"></i> Request an Event
+  </button>
+</div>
+
+    <button id="affiliatesBtn" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="handshake"></i> Affiliates
+    </button>
+    <a id="donateBtnMember" href="https://buy.stripe.com/eVq9ASdi6fDSenU754cwg01" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="heart-handshake"></i> Donate
+    </a>
+    <button id="logoutBtn" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="log-out"></i> Logout
+    </button>
+  </div>
+
+</div>
+
 
 
   <!-- Membership / Login -->
-    <!-- Social Buttons -->
-<a href="https://instagram.com/thegoldenrose.uk/" target="_blank" class="flex items-center gap-2 text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
-  <i data-lucide="instagram"></i> Instagram
-</a>
-<hr class="border-yellow-500 my-2">
+   <div class="divide-y divide-yellow-500 rounded-2xl overflow-hidden">
+  <div class="space-y-1 bg-black px-4 py-2">
+    <a id="donateBtnGuest" href="https://buy.stripe.com/eVq9ASdi6fDSenU754cwg01" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="heart-handshake"></i> Donate
+    </a>
+    <a id="instagramBtn" href="https://instagram.com/thegoldenrose" target="_blank" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="instagram"></i> Instagram
+    </a>
+    <a id="twitterBtn" href="https://x.com/_thegoldenrose" target="_blank" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="twitter"></i> Twitter
+    </a>
+    <button id="openFeedback" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="message-circle"></i> Feedback
+    </button>
+    <a id="membershipBtn" href="#membership" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="users"></i> Membership
+    </a>
+    <button id="profileLoginBtn" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <i data-lucide="log-in"></i> Member Login
+    </button>
+  </div>
 
-<a href="https://x.com/thegoldenrose" target="_blank" class="flex items-center gap-2 text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
-  <i data-lucide="twitter"></i> Twitter
-</a>
-<hr class="border-yellow-500 my-2">
+</div>
 
-<button id="openFeedback" class="flex items-center gap-2 text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1 w-full text-left">
-  <i data-lucide="message-circle"></i> Feedback
-</button>
 
-<hr class="border-yellow-500 my-2">
-
-<a href="https://buy.stripe.com/28E9ASgui2R67ZwfBAcwg00" target="_blank" class="flex items-center gap-2 text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
-  <i data-lucide="user"></i> Membership
-</a>
-<hr class="border-yellow-500 my-2">
-<button id="profileLoginBtn" class="flex items-center gap-2 text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1 w-full text-left">
-  <i data-lucide="lock"></i> Member Login
-</button>
-<hr class="border-yellow-500 my-2">
 
   <!-- Membership Login Modal -->
   <div id="loginModal" class="hidden fixed top-1/3 left-10 right-10 bg-black p-4 border-2 border-yellow-500 rounded-lg z-50">
@@ -122,6 +156,19 @@
       </div>
     </div>
   </div>
+
+  <div id="requestModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-black text-yellow-400 rounded-lg p-6 w-96 border border-yellow-500">
+    <h2 id="requestModalTitle" class="text-lg font-semibold mb-2">Request</h2>
+    <textarea id="requestMessage" rows="4" class="w-full border border-gray-300 rounded p-2 mb-4" placeholder="Enter your request..."></textarea>
+    <div class="flex justify-end space-x-2">
+      <button id="cancelRequest" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Cancel</button>
+      <button id="submitRequest" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded">Send</button>
+    </div>
+  </div>
+</div>
+
+
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
@@ -175,6 +222,120 @@
       .catch(() => alert("Error sending feedback."));
     });
   });
+document.getElementById('loginForm')?.addEventListener('submit', e => {
+  e.preventDefault();
+  const name = document.getElementById('nameInput').value.trim().toLowerCase();
+  const num = document.getElementById('numberInput').value.trim();
+
+  const m = {
+    Name: name,
+    Number: num,
+    Status: 'active',
+    Level: 'premium'
+  };
+
+  if (m) {
+    localStorage.setItem('membershipLevel', m.Level);
+    localStorage.setItem('memberName', m.Name);
+    localStorage.setItem('memberNumber', m.Number);
+    alert(`Logged in as ${m.Name}`);
+    document.getElementById('loginModal').classList.add('hidden');
+    
+    
+    // ✅ This was missing!
+    if (typeof unlockFeatures === 'function') unlockFeatures();
+  } else {
+    alert('Invalid membership');
+  }
+});
+document.getElementById('requestsBtn')?.addEventListener('click', () => {
+  const menu = document.getElementById('requestsSubMenu');
+  menu.classList.toggle('hidden');
+});
+const requestModal = document.getElementById('requestModal');
+const requestTitle = document.getElementById('requestModalTitle');
+const requestMsg = document.getElementById('requestMessage');
+
+document.querySelectorAll('#requestsSubMenu button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const label = btn.textContent.trim();
+    requestTitle.textContent = label;
+    requestMsg.value = '';
+    requestModal.classList.remove('hidden');
+  });
+});
+
+document.getElementById('cancelRequest').addEventListener('click', () => {
+  requestModal.classList.add('hidden');
+});
+
+document.getElementById('submitRequest').addEventListener('click', () => {
+  const type = requestTitle.textContent;
+  const message = requestMsg.value.trim();
+  const member = localStorage.getItem('memberName') || 'Anonymous';
+
+  if (message === '') return alert('Please enter a message.');
+
+  fetch('https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec', {
+    method: 'POST',
+    body: new URLSearchParams({
+      type,
+      message,
+      member
+    })
+  })
+  .then(() => {
+    alert('Request submitted!');
+    requestModal.classList.add('hidden');
+  })
+  .catch(() => alert('Error sending request.'));
+});
+['affiliatesBtn', 'newsfeedBtn',].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', () => {
+    alert('🚧 Coming Soon... This feature is launching shortly!');
+  });
+});
+document.getElementById('favouritesBtn')?.addEventListener('click', () => {
+  const dropdown = document.getElementById('favouritesDropdown');
+  dropdown.classList.toggle('hidden');
+  refreshFavouritesList();
+});
+function saveToFavourites(title, lng, lat) {
+  const favourites = JSON.parse(localStorage.getItem('favourites') || '[]');
+  favourites.push({ title, lng, lat });
+  localStorage.setItem('favourites', JSON.stringify(favourites));
+  alert('Saved to favourites!');
+  refreshFavouritesList?.(); // refresh list if function exists
+}
+
+function refreshFavouritesList() {
+  const list = document.getElementById('favouritesList');
+  const favourites = JSON.parse(localStorage.getItem('favourites') || '[]');
+  list.innerHTML = '';
+
+  if (!favourites.length) {
+    list.innerHTML = '<p class="text-sm">No favourites yet.</p>';
+    return;
+  }
+
+  favourites.forEach((fav, index) => {
+    const item = document.createElement('div');
+    item.className = 'flex justify-between items-center bg-yellow-900 bg-opacity-10 p-2 rounded';
+    item.innerHTML = `
+      <span class="text-sm">${fav.title}</span>
+      <button onclick="removeFavourite(${index})" class="text-red-500 text-xs hover:text-red-700">❌</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function removeFavourite(index) {
+  const favourites = JSON.parse(localStorage.getItem('favourites') || '[]');
+  favourites.splice(index, 1);
+  localStorage.setItem('favourites', JSON.stringify(favourites));
+  refreshFavouritesList();
+}
+
 </script>
 </body>
 </html>

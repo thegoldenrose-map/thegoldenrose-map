@@ -308,7 +308,46 @@ html, body {
   width: 16px;
   height: 16px;
 }
+/* === NEWSFEED SIDEBAR === */
+#newsfeed-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 28rem; /* Tailwind's max-w-md */
+  height: 100%;
+  background: #000;
+  color: #facc15; /* Tailwind yellow-400 */
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #facc15;
+}
+#newsfeed-sidebar.active {
+  transform: translateX(0);
+}
 
+.newsfeed-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+/* === POST FORM === */
+#postForm {
+  background: black;
+  padding: 1rem;
+  border-top: 1px solid #facc15;
+  flex-shrink: 0;
+  margin-top: auto;
+  z-index: 10;
+}
+
+/* === BUTTON STYLING === */
 #close-newsfeed {
   position: absolute;
   top: 0.75rem;
@@ -319,6 +358,4 @@ html, body {
   border: none;
   cursor: pointer;
 }
-html {
-  scroll-behavior: smooth;
-}
+

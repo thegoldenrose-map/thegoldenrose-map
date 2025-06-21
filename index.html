@@ -20,13 +20,26 @@
   <div id="map"></div>
 
 <!-- EXPANDED NEWSFEED SIDEBAR -->
-<div id="newsfeed-sidebar" class="fixed top-0 right-0 w-full max-w-md h-full bg-black text-yellow-400 z-50">
+<div id="newsfeed-sidebar" class="fixed top-0 right-0 w-full max-w-md h-full bg-black text-yellow-400 z-50 transform translate-x-full transition-transform duration-300">
   <button id="close-newsfeed" class="absolute top-2 right-4 text-2xl text-yellow-400 hover:text-red-500">
-  <i data-lucide="x"></i>
-</button>
-  <div class="newsfeed-content p-4 overflow-y-auto h-full pt-10"></div>
-  <button id="refreshFeed" class="bg-yellow-500 text-black p-2 m-2 rounded">🔄 Refresh</button>
+    <i data-lucide="x"></i>
+  </button>
+
+<!-- This is scrollable post content -->
+<div id="newsfeedContent" class="newsfeed-content p-4 overflow-y-auto h-full pt-10">
+  <div id="loadingPosts" class="text-center text-yellow-400">Loading posts...</div>
 </div>
+
+<!-- This stays fixed below the scrollable content -->
+<form id="postForm" class="mt-4 border-t border-yellow-400 pt-4 px-4 bg-black">
+  <textarea id="postInput" rows="3" class="w-full p-2 rounded bg-black border border-yellow-500 text-yellow-400" placeholder="Write your post..." required></textarea>
+  <button type="submit" class="mt-2 bg-yellow-500 text-black px-4 py-1 rounded hover:bg-yellow-600">Post</button>
+</form>
+
+<!-- Refresh Button -->
+<button id="refreshFeed" class="bg-yellow-500 text-black p-2 m-2 rounded">🔄 Refresh</button>
+</div> <!-- closes #newsfeed-sidebar -->
+
 
 
 
@@ -354,12 +367,14 @@ function removeFavourite(index) {
 const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec';
 
 async function loadNewsfeed() {
+  const feed = document.getElementById('newsfeedContent');
+  feed.innerHTML = '<p>Loading…</p>';
   try {
     const res = await fetch(SHEET_API_URL);
     const posts = await res.json();
+    feed.innerHTML = ''; // clear loading message only
 
-    const feedContainer = document.querySelector('.newsfeed-content');
-    feedContainer.innerHTML = ''; // Clear old posts
+    const fragment = document.createDocumentFragment();
 
     posts.forEach(post => {
       const postDiv = document.createElement('div');
@@ -373,47 +388,41 @@ async function loadNewsfeed() {
 
       const likeBtn = document.createElement('button');
       likeBtn.className = 'like-btn';
-      likeBtn.innerHTML = `<i data-lucide="heart"></i> ${post.likes}`; // ✅ FIXED
+      likeBtn.innerHTML = `<i data-lucide="heart"></i> ${post.likes}`;
 
       likeBtn.onclick = async () => {
         const liked = likeBtn.classList.toggle('liked');
         const action = liked ? 'like' : 'unlike';
-
         try {
           const response = await fetch(SHEET_API_URL, {
             method: 'POST',
-            body: new URLSearchParams({
-              type: 'like',
-              postId: post.postId,
-              action
-            })
+            body: new URLSearchParams({ type: 'like', postId: post.postId, action })
           });
-
           const result = await response.json();
-
           if (result.success) {
             likeBtn.innerHTML = `<i data-lucide="heart"></i> ${result.likes}`;
-            lucide.createIcons(); // Refresh icons after update
-          } else {
-            console.error('Like failed:', result.error || 'Unknown error');
+            lucide.createIcons();
           }
-
         } catch (err) {
-          console.error('Fetch failed:', err);
+          console.error('Like error:', err);
         }
       };
 
-      postDiv.appendChild(user);
-      postDiv.appendChild(content);
-      postDiv.appendChild(likeBtn);
-      feedContainer.appendChild(postDiv);
+      postDiv.append(user, content, likeBtn);
+      fragment.appendChild(postDiv);
     });
 
-    lucide.createIcons(); // Refresh all icons after rendering posts
-  } catch (e) {
-    console.error('Newsfeed load error:', e);
+    feed.appendChild(fragment);
+    lucide.createIcons();
+    setupPostSubmission(); // only needs to run once
+  } catch (err) {
+    console.error('Newsfeed error:', err);
+    feed.innerHTML = '<p class="text-center text-red-500">Failed to load posts. Try again.</p>';
   }
 }
+
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', () => {
   const newsfeedBtn = document.getElementById('newsfeedBtn');
   const newsfeedSidebar = document.getElementById('newsfeed-sidebar');
@@ -422,31 +431,52 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('refreshFeed');
 
   newsfeedBtn?.addEventListener('click', () => {
-  loadNewsfeed?.();
-  newsfeedSidebar.style.transform = 'translateX(0)';
+    newsfeedSidebar.classList.add('active');
+    loadNewsfeed();
+    setTimeout(() => {
+      profileMenu?.classList.add('hidden');
+    }, 300);
+  });
 
-  // Wait a bit longer so sidebar has time to render
-  setTimeout(() => {
-    profileMenu?.classList.add('hidden');
-  }, 300); // 300ms matches your CSS transition
-});
-
-
-  // CLOSE Sidebar
   closeBtn?.addEventListener('click', () => {
-    newsfeedSidebar.style.transform = 'translateX(100%)';
+    newsfeedSidebar.classList.remove('active');
     profileMenu?.classList.remove('hidden');
   });
 
-  // REFRESH POSTS
   refreshBtn?.addEventListener('click', () => {
-    loadNewsfeed?.();
+    loadNewsfeed();
   });
 });
+function setupPostSubmission() {
+  const form = document.getElementById('postForm');
+  const input = document.getElementById('postInput');
 
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const post = input.value.trim();
+    const username = localStorage.getItem('memberName') || 'Anonymous';
+    const timestamp = new Date().toLocaleString();
 
+    if (!post) return alert('Post cannot be empty.');
 
-
+    try {
+      await fetch(SHEET_API_URL, {
+        method: 'POST',
+        body: new URLSearchParams({
+          type: 'post',
+          username,
+          post,
+          timestamp
+        })
+      });
+      input.value = '';
+      loadNewsfeed(); // reload posts
+    } catch (err) {
+      console.error('Post failed:', err);
+      alert('Failed to submit post. Try again.');
+    }
+  });
+}
 
 </script>
 </body>

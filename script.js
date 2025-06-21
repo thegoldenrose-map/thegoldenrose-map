@@ -273,3 +273,6 @@ function unlockFeatures() {
   document.getElementById('refreshFeed')?.addEventListener('click', () => {
   loadNewsfeed?.();
 });
+const feedContainer = document.querySelector('.newsfeed-content');
+feedContainer.innerHTML = '<div id="loadingPosts" class="text-center text-yellow-400">Loading posts...</div>';
+document.getElementById('loadingPosts')?.remove();

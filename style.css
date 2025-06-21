@@ -264,3 +264,61 @@ html, body {
   display: inline-block;
   box-shadow: 0 0 8px gold;
 }
+.like-btn.liked {
+  background-color: #f87171; /* red-400 */
+}
+
+.newsfeed-content {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+}
+#newsfeed-sidebar.active {
+  transform: translateX(0);
+}
+
+#newsfeed-sidebar {
+  background: #000;
+  color: #facc15; /* Tailwind's yellow-400/gold */
+  border-left: 2px solid #facc15;
+}
+
+.post {
+  background: #000;
+  color: #facc15;
+  border: 1px solid #facc15;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid #facc15;
+  color: #facc15;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+
+.like-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+#close-newsfeed {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  color: #facc15;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+html {
+  scroll-behavior: smooth;
+}

@@ -15,8 +15,20 @@
   <script src="script.js" defer></script>
 </head>
 <body>
+
   <!-- Map -->
   <div id="map"></div>
+
+<!-- EXPANDED NEWSFEED SIDEBAR -->
+<div id="newsfeed-sidebar" class="fixed top-0 right-0 w-full max-w-md h-full bg-black text-yellow-400 z-50">
+  <button id="close-newsfeed" class="absolute top-2 right-4 text-2xl text-yellow-400 hover:text-red-500">
+  <i data-lucide="x"></i>
+</button>
+  <div class="newsfeed-content p-4 overflow-y-auto h-full pt-10"></div>
+  <button id="refreshFeed" class="bg-yellow-500 text-black p-2 m-2 rounded">🔄 Refresh</button>
+</div>
+
+
 
   <!-- Bottom Navigation -->
   <nav id="bottom-nav">
@@ -75,6 +87,10 @@
     <button id="newsfeedBtn" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
       <i data-lucide="newspaper"></i> Newsfeed
     </button>
+
+    <div id="newsfeedContainer" class="mt-4"></div>
+
+    
     <button id="requestsBtn" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
       <i data-lucide="inbox"></i> Requests
     </button>
@@ -290,7 +306,7 @@ document.getElementById('submitRequest').addEventListener('click', () => {
   })
   .catch(() => alert('Error sending request.'));
 });
-['affiliatesBtn', 'newsfeedBtn',].forEach(id => {
+['affiliatesBtn'].forEach(id => {
   document.getElementById(id)?.addEventListener('click', () => {
     alert('🚧 Coming Soon... This feature is launching shortly!');
   });
@@ -335,6 +351,102 @@ function removeFavourite(index) {
   localStorage.setItem('favourites', JSON.stringify(favourites));
   refreshFavouritesList();
 }
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzXwEdCZzAM1Hwt0es9jo71Tfc-LV3mqF_2xjuJPx7CDtaEi4Jnh4Xfpna76h4tDDVatg/exec';
+
+async function loadNewsfeed() {
+  try {
+    const res = await fetch(SHEET_API_URL);
+    const posts = await res.json();
+
+    const feedContainer = document.querySelector('.newsfeed-content');
+    feedContainer.innerHTML = ''; // Clear old posts
+
+    posts.forEach(post => {
+      const postDiv = document.createElement('div');
+      postDiv.className = 'post border p-3 rounded mb-3';
+
+      const user = document.createElement('strong');
+      user.textContent = post.username;
+
+      const content = document.createElement('p');
+      content.textContent = post.post;
+
+      const likeBtn = document.createElement('button');
+      likeBtn.className = 'like-btn';
+      likeBtn.innerHTML = `<i data-lucide="heart"></i> ${post.likes}`; // ✅ FIXED
+
+      likeBtn.onclick = async () => {
+        const liked = likeBtn.classList.toggle('liked');
+        const action = liked ? 'like' : 'unlike';
+
+        try {
+          const response = await fetch(SHEET_API_URL, {
+            method: 'POST',
+            body: new URLSearchParams({
+              type: 'like',
+              postId: post.postId,
+              action
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            likeBtn.innerHTML = `<i data-lucide="heart"></i> ${result.likes}`;
+            lucide.createIcons(); // Refresh icons after update
+          } else {
+            console.error('Like failed:', result.error || 'Unknown error');
+          }
+
+        } catch (err) {
+          console.error('Fetch failed:', err);
+        }
+      };
+
+      postDiv.appendChild(user);
+      postDiv.appendChild(content);
+      postDiv.appendChild(likeBtn);
+      feedContainer.appendChild(postDiv);
+    });
+
+    lucide.createIcons(); // Refresh all icons after rendering posts
+  } catch (e) {
+    console.error('Newsfeed load error:', e);
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const newsfeedBtn = document.getElementById('newsfeedBtn');
+  const newsfeedSidebar = document.getElementById('newsfeed-sidebar');
+  const profileMenu = document.getElementById('profileMenu');
+  const closeBtn = document.getElementById('close-newsfeed');
+  const refreshBtn = document.getElementById('refreshFeed');
+
+  newsfeedBtn?.addEventListener('click', () => {
+  loadNewsfeed?.();
+  newsfeedSidebar.style.transform = 'translateX(0)';
+
+  // Wait a bit longer so sidebar has time to render
+  setTimeout(() => {
+    profileMenu?.classList.add('hidden');
+  }, 300); // 300ms matches your CSS transition
+});
+
+
+  // CLOSE Sidebar
+  closeBtn?.addEventListener('click', () => {
+    newsfeedSidebar.style.transform = 'translateX(100%)';
+    profileMenu?.classList.remove('hidden');
+  });
+
+  // REFRESH POSTS
+  refreshBtn?.addEventListener('click', () => {
+    loadNewsfeed?.();
+  });
+});
+
+
+
+
 
 </script>
 </body>

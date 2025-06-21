@@ -269,7 +269,7 @@ function unlockFeatures() {
       localStorage.clear();
       location.reload();
     });
-  }
-}
-
-  
+  }}
+  document.getElementById('refreshFeed')?.addEventListener('click', () => {
+  loadNewsfeed?.();
+});

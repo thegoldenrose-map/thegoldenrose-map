@@ -358,4 +358,15 @@ html, body {
   border: none;
   cursor: pointer;
 }
+#helpJoinBtn {
+  position: fixed !important;
+  z-index: 9999 !important;
+  bottom: 8rem !important; /* you can tweak this */
+  right: 1rem !important;
+  pointer-events: auto !important;
+}
+#profileMenu.hidden {
+  display: none !important;
+}
+
 

@@ -194,40 +194,6 @@ document.getElementById('locateBtn')?.addEventListener('click', () => {
   }
 });
 
-
-function unlockFeatures() {
-  const lvl = localStorage.getItem('membershipLevel');
-  if (lvl === 'premium') {
-    document.querySelector('a[href*="stripe.com"]')?.remove();
-    document.getElementById('profileLoginBtn')?.remove();
-
-    const nameEl = document.getElementById('memberName');
-    const metaEl = document.getElementById('memberMeta');
-    const memberName = localStorage.getItem('memberName');
-    const memberNumber = localStorage.getItem('memberNumber');
-
-    if (nameEl && metaEl) {
-      nameEl.innerText = memberName;
-      metaEl.innerText = `#${memberNumber} • Check‑ins: 0`;
-    }
-
-    document.getElementById('memberInfo')?.classList.remove('hidden');
-
-    [
-      
-      'newsfeedBtn',
-      'requestsBtn',
-      'affiliatesBtn',
-      'logoutBtn',
-      'instagramBtn',
-      'twitterBtn',
-      'openFeedback',
-      'membershipBtn'
-    ].forEach(id => {
-      document.getElementById(id)?.classList.remove('hidden');
-    });
-  }
-}
 function unlockFeatures() {
   const lvl = localStorage.getItem('membershipLevel');
   if (lvl === 'premium') {
@@ -276,3 +242,23 @@ function unlockFeatures() {
 const feedContainer = document.querySelector('.newsfeed-content');
 feedContainer.innerHTML = '<div id="loadingPosts" class="text-center text-yellow-400">Loading posts...</div>';
 document.getElementById('loadingPosts')?.remove();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const helpBtn = document.getElementById('helpJoinBtn');
+
+  if (!helpBtn) return;
+
+  const isLoggedIn = localStorage.getItem('membershipLevel') === 'premium';
+
+  if (!isLoggedIn) {
+    helpBtn.classList.remove('hidden');
+    helpBtn.onclick = () => {
+      document.getElementById('joinNowModal')?.classList.remove('hidden');
+    };
+  } else {
+    helpBtn.classList.add('hidden');
+  }
+});
+document.querySelector('#joinNowModal .absolute.top-3.right-3')?.addEventListener('click', () => {
+  document.getElementById('joinNowModal')?.classList.add('hidden');
+});

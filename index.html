@@ -13,6 +13,9 @@
   <script src="https://unpkg.com/lucide@latest" defer></script>
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js" defer></script>
   <script src="script.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>body { font-family: 'Inter', sans-serif; }</style>
+
 </head>
 <body>
 
@@ -31,10 +34,14 @@
 </div>
 
 <!-- This stays fixed below the scrollable content -->
-<form id="postForm" class="mt-4 border-t border-yellow-400 pt-4 px-4 bg-black">
-  <textarea id="postInput" rows="3" class="w-full p-2 rounded bg-black border border-yellow-500 text-yellow-400" placeholder="Write your post..." required></textarea>
-  <button type="submit" class="mt-2 bg-yellow-500 text-black px-4 py-1 rounded hover:bg-yellow-600">Post</button>
+<form id="postForm" class="flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20">
+  <input id="postInput" type="text" placeholder="Write your post..." required
+    class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
+  <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
+    <i data-lucide="send" class="w-5 h-5 text-black"></i>
+  </button>
 </form>
+
 
 <!-- Refresh Button -->
 <button id="refreshFeed" class="bg-yellow-500 text-black p-2 m-2 rounded">🔄 Refresh</button>
@@ -52,8 +59,61 @@
       <div id="suggestions"></div>
     </div>
     <button id="locateBtn" title="My Location"><i data-lucide="map-pin"></i></button>
+    <button id="newsfeedBtn" class="hidden flex items-center justify-center" title="Newsfeed">
+  <i data-lucide="newspaper" class="w-6 h-6"></i>
+</button>
     <button id="profileToggle" title="Profile"><i data-lucide="user"></i></button>
-  </nav>
+</nav>
+
+<!-- 🟡 Floating Help/Join Button -->
+<button id="helpJoinBtn"
+  class="fixed bottom-24 right-4 bg-yellow-500 text-black w-12 h-12 rounded-full shadow-lg z-[9999] text-2xl font-bold hover:bg-yellow-600 hidden">
+  ?
+</button>
+
+<!-- Join Modal -->
+<div id="joinNowModal" class="fixed inset-0 flex items-center justify-center pb-12 bg-black/70 z-[9999] hidden">
+
+<div class="relative bg-black text-yellow-400 rounded-lg shadow-lg max-w-sm w-full max-h-[85vh] overflow-y-auto p-6">
+    <!-- Close Button -->
+    <button class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl leading-none">&times;</button>
+
+    <!-- Title -->
+    <h2 class="text-xl font-bold mb-2">THE GOLDEN ROSE</h2>
+
+    <!-- Body Copy -->
+    <p class="text-sm mb-4">
+    Built for the people, by the people — The Golden Rose is a British-made social map linking locals to real stories, real places, and real change. No fluff. Just power to the community.
+</p>
+
+
+    <!-- Benefits List (condensed) -->
+   <ul class="text-sm list-disc list-inside space-y-1 mb-4">
+  <li>✅ See what’s happening locally — real-time verified hotspots, events & meetups</li>
+  <li>📰 Unlock exclusive map layers, intel zones, and community-only newsfeeds</li>
+  <li>🛡️ Represent your area: post directly, shape local narratives, & spotlight causes</li>
+  <li>💼 Get verified on the map — elevate your presence as a local leader or organisation</li>
+  <li>🤝 Request donations & support for grassroots projects, ideas, or businesses</li>
+  <li>🇬🇧 Save favourite locations, community votes, and back independent British Business</li>
+</ul>
+
+
+    <!-- Join Button -->
+    <a href="https://buy.stripe.com/28E9ASgui2R67ZwfBAcwg00" class="block text-center bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-2 rounded-full shadow transition">
+      🌹 Join Now — Support the Movement 🌹
+    </a>
+
+  </div>
+</div>
+
+
+
+  <!-- 🟡 Floating Profile Menu -->
+<div id="profileMenu" class="fixed bottom-16 right-4 z-50 hidden">
+  <div class="divide-y divide-yellow-500 rounded-2xl overflow-hidden bg-black shadow-lg">
+
+
+
 
   <!-- Filter Panel -->
   <div id="filterPanel" class="hidden filter-panel">
@@ -74,8 +134,6 @@
     </form>
   </div>
 
-  <div id="profileMenu" class="absolute bottom-16 right-4 z-50 hidden">
-  <div class="divide-y divide-yellow-500 rounded-2xl overflow-hidden">
 
     <div id="favouritesDropdown" class="hidden absolute right-4 bottom-32 w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-lg shadow-lg p-3 z-50 text-yellow-400 space-y-2">
   <div class="flex justify-between items-center mb-2">
@@ -151,7 +209,7 @@
     <button id="openFeedback" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
       <i data-lucide="message-circle"></i> Feedback
     </button>
-    <a id="membershipBtn" href="#membership" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+    <a id="membershipBtn" href="https://buy.stripe.com/28E9ASgui2R67ZwfBAcwg00" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
       <i data-lucide="users"></i> Membership
     </a>
     <button id="profileLoginBtn" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
@@ -199,9 +257,19 @@
 
 
 <script>
+  
   document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
+  lucide.createIcons();
 
+  })  
+    
+// ✅ Show Newsfeed button if user is already premium
+if (localStorage.getItem('membershipLevel') === 'premium') {
+  document.getElementById('newsfeedBtn')?.classList.remove('hidden');
+}
+
+
+    
     // Toggle Profile Dropdown
     document.getElementById('profileToggle')?.addEventListener('click', () => {
       document.getElementById('profileMenu')?.classList.toggle('hidden');
@@ -250,7 +318,7 @@
       })
       .catch(() => alert("Error sending feedback."));
     });
-  });
+  
 document.getElementById('loginForm')?.addEventListener('submit', e => {
   e.preventDefault();
   const name = document.getElementById('nameInput').value.trim().toLowerCase();
@@ -265,6 +333,9 @@ document.getElementById('loginForm')?.addEventListener('submit', e => {
 
   if (m) {
     localStorage.setItem('membershipLevel', m.Level);
+    if (m.Level === 'premium') {
+  document.getElementById('newsfeedBtn')?.classList.remove('hidden');
+}
     localStorage.setItem('memberName', m.Name);
     localStorage.setItem('memberNumber', m.Number);
     alert(`Logged in as ${m.Name}`);
@@ -372,46 +443,119 @@ async function loadNewsfeed() {
   try {
     const res = await fetch(SHEET_API_URL);
     const posts = await res.json();
+    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     feed.innerHTML = ''; // clear loading message only
 
     const fragment = document.createDocumentFragment();
 
-    posts.forEach(post => {
-      const postDiv = document.createElement('div');
-      postDiv.className = 'post border p-3 rounded mb-3';
+   posts.forEach(post => {
+  const postDiv = document.createElement('div');
+  postDiv.className = 'relative border border-yellow-500 rounded-xl p-4 mb-4 bg-black/60 backdrop-blur-sm text-yellow-300 space-y-2 shadow-sm';
 
-      const user = document.createElement('strong');
-      user.textContent = post.username;
+  // 🧑‍🤝‍🧑 Username
+  const user = document.createElement('div');
+  user.className = 'font-semibold text-yellow-400';
+  user.textContent = post.username;
 
-      const content = document.createElement('p');
-      content.textContent = post.post;
+  // 📝 Content
+  const content = document.createElement('p');
+  content.className = 'text-sm leading-relaxed pr-10';
+  content.textContent = post.post;
 
-      const likeBtn = document.createElement('button');
-      likeBtn.className = 'like-btn';
-      likeBtn.innerHTML = `<i data-lucide="heart"></i> ${post.likes}`;
+  // 🕒 Time ago
+  const timeAgo = document.createElement('div');
+  timeAgo.className = 'text-xs text-yellow-500';
+  timeAgo.textContent = timeSince(new Date(post.timestamp)) + ' ago';
 
-      likeBtn.onclick = async () => {
-        const liked = likeBtn.classList.toggle('liked');
-        const action = liked ? 'like' : 'unlike';
-        try {
-          const response = await fetch(SHEET_API_URL, {
-            method: 'POST',
-            body: new URLSearchParams({ type: 'like', postId: post.postId, action })
-          });
-          const result = await response.json();
-          if (result.success) {
-            likeBtn.innerHTML = `<i data-lucide="heart"></i> ${result.likes}`;
-            lucide.createIcons();
-          }
-        } catch (err) {
-          console.error('Like error:', err);
-        }
-      };
-
-      postDiv.append(user, content, likeBtn);
-      fragment.appendChild(postDiv);
+  // ❤️ Likes
+  const likeBtn = document.createElement('button');
+  likeBtn.className = 'absolute bottom-3 right-3 flex items-center gap-1 text-sm text-yellow-400 hover:text-red-500';
+  likeBtn.innerHTML = `<i data-lucide="heart" class="w-4 h-4"></i> ${post.likes}`;
+  likeBtn.onclick = async () => {
+    const liked = likeBtn.classList.toggle('liked');
+    const action = liked ? 'like' : 'unlike';
+    const response = await fetch(SHEET_API_URL, {
+      method: 'POST',
+      body: new URLSearchParams({ type: 'like', postId: post.postId, action })
     });
+    const result = await response.json();
+    if (result.success) {
+      likeBtn.innerHTML = `<i data-lucide="heart" class="w-4 h-4"></i> ${result.likes}`;
+      lucide.createIcons();
+    }
+  };
 
+  // 💬 Comments
+  const comments = post.comments ? JSON.parse(post.comments).reverse() : [];
+  const commentsDiv = document.createElement('div');
+  commentsDiv.className = 'mt-2 space-y-1 ml-2 hidden';
+
+  comments.forEach(c => {
+    const cdiv = document.createElement('div');
+    cdiv.className = 'text-xs text-yellow-200';
+    cdiv.innerHTML = `<span class="font-semibold text-yellow-400">${c.user}:</span> ${c.text}`;
+    commentsDiv.append(cdiv);
+  });
+
+  // 💬 Toggle + count
+  const toggleCommentsBtn = document.createElement('button');
+  toggleCommentsBtn.className = 'text-xs text-yellow-300 hover:text-yellow-100';
+  toggleCommentsBtn.textContent = `💬 ${comments.length} comment${comments.length !== 1 ? 's' : ''}`;
+  toggleCommentsBtn.onclick = () => {
+    commentsDiv.classList.toggle('hidden');
+  };
+
+  // ➕ Reply input
+  const replyInput = document.createElement('input');
+  replyInput.type = 'text';
+  replyInput.placeholder = 'Write a reply…';
+  replyInput.className = 'hidden mt-1 w-full text-sm p-2 bg-zinc-900 border border-yellow-500 rounded';
+
+  toggleCommentsBtn.onclick = () => {
+    commentsDiv.classList.toggle('hidden');
+    replyInput.classList.toggle('hidden');
+  };
+
+  replyInput.addEventListener('keypress', async e => {
+    if (e.key === 'Enter' && replyInput.value.trim()) {
+      const text = replyInput.value.trim();
+      replyInput.disabled = true;
+      await fetch(SHEET_API_URL, {
+        method: 'POST',
+        body: new URLSearchParams({
+          type: 'comment',
+          username: localStorage.getItem('memberName') || 'Anonymous',
+          postId: post.postId,
+          commentText: text
+        })
+      });
+      replyInput.value = '';
+      replyInput.disabled = false;
+      loadNewsfeed();
+    }
+  });
+
+  postDiv.append(user, content, timeAgo, likeBtn, toggleCommentsBtn, commentsDiv, replyInput);
+  fragment.append(postDiv);
+});
+function timeSince(date) {
+  const seconds = Math.floor((new Date() - date) / 1000);
+  const intervals = {
+    year: 31536000,
+    month: 2592000,
+    week: 604800,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+    second: 1
+  };
+
+  for (const key in intervals) {
+    const interval = Math.floor(seconds / intervals[key]);
+    if (interval >= 1) return `${interval} ${key}${interval > 1 ? 's' : ''}`;
+  }
+  return 'just now';
+}
     feed.appendChild(fragment);
     lucide.createIcons();
     setupPostSubmission(); // only needs to run once
@@ -422,6 +566,7 @@ async function loadNewsfeed() {
 }
 
 </script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const newsfeedBtn = document.getElementById('newsfeedBtn');
@@ -447,7 +592,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNewsfeed();
   });
 });
+let submissionSetup = false;
+
 function setupPostSubmission() {
+  if (submissionSetup) return;
+  submissionSetup = true;
+
   const form = document.getElementById('postForm');
   const input = document.getElementById('postInput');
 
@@ -455,7 +605,7 @@ function setupPostSubmission() {
     e.preventDefault();
     const post = input.value.trim();
     const username = localStorage.getItem('memberName') || 'Anonymous';
-    const timestamp = new Date().toLocaleString();
+    const timestamp = new Date().toISOString();
 
     if (!post) return alert('Post cannot be empty.');
 
@@ -478,6 +628,25 @@ function setupPostSubmission() {
   });
 }
 
+
+</script>
+
+
+
+<script>
+  const helpBtn = document.getElementById('helpJoinBtn');
+
+  if (!helpBtn) {
+    console.warn('❌ helpJoinBtn not found.');
+  } else {
+    const isPremium = localStorage.getItem('membershipLevel') === 'premium';
+    if (!isPremium) {
+      helpBtn.classList.remove('hidden');
+      helpBtn.onclick = () => {
+        document.getElementById('joinNowModal')?.classList.remove('hidden');
+      };
+    }
+  }
 </script>
 </body>
 </html>

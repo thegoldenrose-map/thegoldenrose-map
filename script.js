@@ -16,6 +16,7 @@ map.on('load', () => {
     .then(res => res.json())
     .then(data => {
       originalGeoData = data;
+      
       map.addSource('locations', { type: 'geojson', data });
 
       map.addLayer({
@@ -138,27 +139,41 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     });
 
-  form?.addEventListener('submit', e => {
-    e.preventDefault();
-    const name = document.getElementById('nameInput').value.trim().toLowerCase();
-    const num = document.getElementById('numberInput').value.trim();
-    const m = membershipData.find(x =>
-      x.Name?.toLowerCase() === name &&
-      String(x.Number) === num &&
-      x.Status?.toLowerCase() === 'active'
-    );
+  document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('loginForm');
 
-    if (m) {
-      localStorage.setItem('membershipLevel', m.Level);
-      localStorage.setItem('memberName', m.Name);
-      localStorage.setItem('memberNumber', m.Number);
-      alert(`Logged in as ${m.Name}`);
-      modal.style.display = 'none';
-      setTimeout(unlockFeatures, 100);
-    } else alert('Invalid membership');
-  });
+  if (!form) return;
 
-  loginBtn?.addEventListener('click', () => modal.style.display = 'block');
+  // Prevent multiple listeners
+  if (!form.dataset.listenerAttached) {
+    form.dataset.listenerAttached = 'true';
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const name = document.getElementById('nameInput').value.trim().toLowerCase();
+      const num = document.getElementById('numberInput').value.trim();
+
+      const m = membershipData.find(x =>
+        x.Name?.toLowerCase() === name &&
+        String(x.Number) === num &&
+        x.Status?.toLowerCase() === 'active'
+      );
+
+      if (m) {
+  localStorage.setItem('membershipLevel', m.Level);
+  localStorage.setItem('memberName', m.Name);
+  localStorage.setItem('memberNumber', m.Number);
+  alert(`Logged in as ${m.Name}`);
+  document.getElementById('loginModal').classList.add('hidden');
+  document.getElementById('helpJoinBtn')?.classList.add('hidden')
+  setTimeout(unlockFeatures, 100);
+}
+    });
+  }
+});
+
+  
 
   setTimeout(unlockFeatures, 200);
 });
@@ -259,6 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
     helpBtn.classList.add('hidden');
   }
 });
-document.querySelector('#joinNowModal .absolute.top-3.right-3')?.addEventListener('click', () => {
-  document.getElementById('joinNowModal')?.classList.add('hidden');
+document.addEventListener('DOMContentLoaded', () => {
+  const joinModal = document.getElementById('joinNowModal');
+  const joinCloseBtn = joinModal.querySelector('button');
+
+  joinCloseBtn?.addEventListener('click', () => {
+    joinModal.classList.add('hidden');
+  });
 });
+

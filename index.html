@@ -55,9 +55,9 @@
     <button id="filterBtn" title="Filter places"><i data-lucide="menu"></i></button>
     <button id="plusNavBtn" title="Add Location"><i data-lucide="plus-circle"></i></button>
     <div class="search-wrapper">
-      <input type="text" id="search" placeholder="Search..." />
-      <div id="suggestions"></div>
-    </div>
+  <input type="text" id="search" placeholder="Search..." autocomplete="off"/>
+  <div id="suggestions"></div>
+</div>
     <button id="locateBtn" title="My Location"><i data-lucide="map-pin"></i></button>
     <button id="newsfeedBtn" class="hidden flex items-center justify-center" title="Newsfeed">
   <i data-lucide="newspaper" class="w-6 h-6"></i>
@@ -65,9 +65,18 @@
     <button id="profileToggle" title="Profile"><i data-lucide="user"></i></button>
 </nav>
 
+
+
 <!-- 🟡 Floating Help/Join Button -->
+<style>
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+</style>
+
 <button id="helpJoinBtn"
-  class="fixed bottom-24 right-4 bg-yellow-500 text-black w-12 h-12 rounded-full shadow-lg z-[9999] text-2xl font-bold hover:bg-yellow-600 hidden">
+  class="fixed bottom-24 right-4 w-12 h-12 rounded-full shadow-xl text-2xl font-bold z-[9999] bg-yellow-500 hover:bg-yellow-600 animate-[floatBounce_2s_infinite] text-black backdrop-blur-md border border-yellow-400/50 hidden">
   ?
 </button>
 
@@ -108,31 +117,35 @@
 
 
 
-  <!-- 🟡 Floating Profile Menu -->
-<div id="profileMenu" class="fixed bottom-16 right-4 z-50 hidden">
-  <div class="divide-y divide-yellow-500 rounded-2xl overflow-hidden bg-black shadow-lg">
-
-
-
 
   <!-- Filter Panel -->
-  <div id="filterPanel" class="hidden filter-panel">
-    <h4>Filter Places</h4>
-    <div id="categoryFilters"></div>
-    <button id="resetFilters">Reset Filters</button>
-  </div>
+<div id="filterPanel" class="hidden filter-panel">
+  <h4>Filter Places</h4>
+  <div id="categoryFilters"></div>
+  <button id="resetFilters">Reset Filters</button>
+</div>
 
-  <!-- Location Submission Modal -->
-  <div id="submissionModal" class="modal hidden">
-    <form id="submissionForm">
-      <h2>Add New Place</h2>
-      <input type="text" id="locationName" placeholder="Name" required>
-      <input type="text" id="locationDescription" placeholder="Location" required>
-      <input type="text" id="locationCoords" placeholder="Category (e.g. Pub, Farm)" required>
-      <button type="submit">Add to Map</button>
-      <button type="button" onclick="closeModal()">Cancel</button>
-    </form>
-  </div>
+
+  <!-- Location Submission Modal (Glassmorphic) -->
+<div id="submissionModal" class="modal hidden fixed bottom-24 left-4 max-w-sm w-80 bg-black/70 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6 z-50">
+  <h2 class="text-lg font-semibold text-yellow-400 mb-4 flex items-center gap-2">
+    <i data-lucide="map-pin"></i> Add New Place
+  </h2>
+  <form id="submissionForm">
+    <input type="text" id="locationName" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Name" required>
+    <input type="text" id="locationDescription" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Location" required>
+    <input type="text" id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Category (e.g. Pub, Farm)" required>
+    <div class="flex justify-between gap-2">
+      <button type="submit" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-lg">Add to Map</button>
+      <button type="button" onclick="closeModal()" class="flex-1 bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-300 hover:text-black font-bold py-2 rounded-lg">Cancel</button>
+    </div>
+  </form>
+</div>
+
+
+<!-- 🟡 Floating Profile Menu -->
+<div id="profileMenu" class="fixed bottom-16 right-4 z-50 hidden">
+  <div class=" rounded-2xl overflow-hidden bg-black shadow-lg">
 
 
     <div id="favouritesDropdown" class="hidden absolute right-4 bottom-32 w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-lg shadow-lg p-3 z-50 text-yellow-400 space-y-2">
@@ -189,7 +202,6 @@
       <i data-lucide="log-out"></i> Logout
     </button>
   </div>
-
 </div>
 
 
@@ -277,7 +289,7 @@ if (localStorage.getItem('membershipLevel') === 'premium') {
 
     // Show Login Modal
     document.getElementById('profileLoginBtn')?.addEventListener('click', () => {
-      document.getElementById('loginModal').classList.remove('hidden');
+      document.getElementById('loginModal').classList.add('hidden');
     });
 
     // Show Submission Modal
@@ -318,36 +330,7 @@ if (localStorage.getItem('membershipLevel') === 'premium') {
       })
       .catch(() => alert("Error sending feedback."));
     });
-  
-document.getElementById('loginForm')?.addEventListener('submit', e => {
-  e.preventDefault();
-  const name = document.getElementById('nameInput').value.trim().toLowerCase();
-  const num = document.getElementById('numberInput').value.trim();
 
-  const m = {
-    Name: name,
-    Number: num,
-    Status: 'active',
-    Level: 'premium'
-  };
-
-  if (m) {
-    localStorage.setItem('membershipLevel', m.Level);
-    if (m.Level === 'premium') {
-  document.getElementById('newsfeedBtn')?.classList.remove('hidden');
-}
-    localStorage.setItem('memberName', m.Name);
-    localStorage.setItem('memberNumber', m.Number);
-    alert(`Logged in as ${m.Name}`);
-    document.getElementById('loginModal').classList.add('hidden');
-    
-    
-    // ✅ This was missing!
-    if (typeof unlockFeatures === 'function') unlockFeatures();
-  } else {
-    alert('Invalid membership');
-  }
-});
 document.getElementById('requestsBtn')?.addEventListener('click', () => {
   const menu = document.getElementById('requestsSubMenu');
   menu.classList.toggle('hidden');
@@ -636,17 +619,151 @@ function setupPostSubmission() {
 <script>
   const helpBtn = document.getElementById('helpJoinBtn');
 
-  if (!helpBtn) {
-    console.warn('❌ helpJoinBtn not found.');
+if (helpBtn) {
+  const isPremium = localStorage.getItem('membershipLevel') === 'premium';
+
+  if (!isPremium) {
+    helpBtn.classList.remove('hidden');
+    helpBtn.onclick = () => {
+      document.getElementById('joinNowModal')?.classList.remove('hidden');
+    };
   } else {
-    const isPremium = localStorage.getItem('membershipLevel') === 'premium';
-    if (!isPremium) {
-      helpBtn.classList.remove('hidden');
-      helpBtn.onclick = () => {
-        document.getElementById('joinNowModal')?.classList.remove('hidden');
-      };
-    }
+    helpBtn.classList.add('hidden');
+    document.getElementById('newsfeedBtn')?.classList.remove('hidden');
   }
+}
+
+</script><script>
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('search');
+  const suggestionsBox = document.getElementById('suggestions');
+
+  searchInput.addEventListener('input', async () => {
+    const query = searchInput.value.trim().toLowerCase();
+    suggestionsBox.innerHTML = '';
+
+    if (!query) {
+      suggestionsBox.style.display = 'none';
+      return;
+    }
+
+    // 🌐 Global Mapbox matches
+    const mapboxRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=pk.eyJ1IjoiaG93ZWxsdHJ1c3QiLCJhIjoiY21iZ3FtNGdqMDF4YjJsc2d4Z3JwZGJ2MiJ9.8u6Y-_RYGb-qxODBGT5-LA&autocomplete=true&limit=3`);
+    const mapboxData = await mapboxRes.json();
+
+    // 🌹 Local GeoJSON matches
+    if (typeof originalGeoData !== 'undefined') {
+      const localMatches = originalGeoData.features
+        .filter(f => f.properties.title.toLowerCase().includes(query))
+        .slice(0, 3);
+
+      if (localMatches.length) {
+        const divider = document.createElement('div');
+        divider.textContent = '🌹 Local Matches';
+        divider.className = 'text-xs text-yellow-600 px-2 py-1';
+        suggestionsBox.appendChild(divider);
+
+        localMatches.forEach(loc => {
+          const div = document.createElement('div');
+          div.className = 'suggestion-item text-sm text-yellow-400 bg-black hover:bg-yellow-500 p-2 rounded cursor-pointer';
+          div.textContent = loc.properties.title;
+          div.addEventListener('click', () => {
+            map.flyTo({ center: loc.geometry.coordinates, zoom: 16 });
+            searchInput.value = '';
+            suggestionsBox.innerHTML = '';
+            suggestionsBox.style.display = 'none';
+          });
+          suggestionsBox.appendChild(div);
+        });
+      }
+    }
+
+    // 🌍 Global Suggestions
+    if (mapboxData.features.length) {
+      const divider = document.createElement('div');
+      divider.textContent = '🌍 Global Locations';
+      divider.className = 'text-xs text-yellow-600 px-2 py-1';
+      suggestionsBox.appendChild(divider);
+
+      mapboxData.features.forEach(feature => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item text-sm text-yellow-300 bg-black hover:bg-yellow-500 p-2 rounded cursor-pointer';
+        div.textContent = feature.place_name;
+        div.addEventListener('click', () => {
+          map.flyTo({ center: feature.center, zoom: 14 });
+          searchInput.value = '';
+          suggestionsBox.innerHTML = '';
+          suggestionsBox.style.display = 'none';
+        });
+        suggestionsBox.appendChild(div);
+      });
+    }
+
+    // ✅ Show dropdown
+    suggestionsBox.style.display = 'block';
+  });
+
+  // ❌ Hide suggestions if clicking outside
+  document.addEventListener('click', (e) => {
+    if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
+      suggestionsBox.style.display = 'none';
+    }
+  });
+});
+
 </script>
+<!-- CLEAN FIX: Login modal now checks Google Sheet, blocks fakes, and hides properly -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  const form = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('profileLoginBtn');
+  const modal = document.getElementById('loginModal');
+  let membershipData = [];
+
+  // Load membership data from Google Sheets
+  fetch('https://docs.google.com/spreadsheets/d/1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw/gviz/tq?tqx=out:json&gid=1384164876')
+    .then(res => res.text())
+    .then(txt => {
+      const json = JSON.parse(txt.match(/\((.*)\)/s)[1]);
+      const cols = json.table.cols.map(c => c.label);
+      membershipData = json.table.rows.map(r =>
+        r.c.reduce((acc, cell, i) => {
+          acc[cols[i]] = cell?.v;
+          return acc;
+        }, {})
+      );
+    });
+
+  // Show modal on login button click
+  loginBtn?.addEventListener('click', () => modal.classList.remove('hidden'));
+
+  // Handle form submit
+  form?.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('nameInput').value.trim().toLowerCase();
+    const num = document.getElementById('numberInput').value.trim();
+
+    const m = membershipData.find(x =>
+      x.Name?.toLowerCase() === name &&
+      String(x.Number) === num &&
+      x.Status?.toLowerCase() === 'active'
+    );
+
+    if (m) {
+      localStorage.setItem('membershipLevel', m.Level);
+      localStorage.setItem('memberName', m.Name);
+      localStorage.setItem('memberNumber', m.Number);
+      alert(`Logged in as ${m.Name}`);
+      modal.classList.add('hidden');
+      document.getElementById('helpJoinBtn')?.classList.add('hidden');
+      unlockFeatures?.();
+    } else {
+      alert('Invalid membership');
+    }
+  });
+});
+</script>
+
 </body>
 </html>

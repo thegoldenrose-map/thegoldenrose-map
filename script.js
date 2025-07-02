@@ -7,6 +7,17 @@ window.isPremium = (localStorage.getItem('membershipLevel') || '').toLowerCase()
 
 
 window.SHEET_API_URL = window.SHEET_API_URL || 'https://script.google.com/macros/s/AKfycbyIqpE0QffyefE_zybPLTVMOOoDeA7snugUDJWbnUBR1SmeBRSWXHLbpcRLaTPJrdUKBA/exec';
+
+
+// ───────── JSONP + POST ─────────
+// 🔁 Load favourites (called on login or after adding/removing)
+function loadUserFavourites(user) {
+  const safeUser = encodeURIComponent(user.trim().toLowerCase());
+  const url = `${window.SHEET_API_URL}?type=getFavourites&user=${safeUser}&callback=handleFavouritesResponse`;
+  jsonp(url);
+}
+
+// 🔧 Callback: handle favourites array
 function handleFavouritesResponse(data) {
   if (data.success) {
     const favs = data.favourites.split('|').map(f => f.trim()).filter(Boolean);
@@ -15,14 +26,38 @@ function handleFavouritesResponse(data) {
     console.warn('⚠️ No favourites found or user not found:', data.message);
   }
 }
+function bindSubmissionForm() {
+  const form = document.getElementById('submissionForm');
+  if (!form) return;
 
-function loadUserFavourites(user) {
-  const safeUser = encodeURIComponent(user.trim().toLowerCase());
-  jsonp(`${window.SHEET_API_URL}?type=getFavourites&user=${safeUser}&callback=handleFavouritesResponse`);
+  form.addEventListener('submit', e => {
+    e.preventDefault(); // ✅ this now works!
+
+    const name = document.getElementById('locationName').value.trim();
+    const location = document.getElementById('locationDescription').value.trim();
+    const category = document.getElementById('locationCoords').value.trim();
+
+    const url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
+              + `&name=${encodeURIComponent(name)}`
+              + `&location=${encodeURIComponent(location)}`
+              + `&category=${encodeURIComponent(category)}`;
+
+    jsonp(url);
+  });
 }
 
-window.SHEET_API_URL = window.SHEET_API_URL ||
-  'https://script.google.com/macros/s/AKfycbyIqpE0QffyefE_zybPLTVMOOoDeA7snugUDJWbnUBR1SmeBRSWXHLbpcRLaTPJrdUKBA/exec';
+
+// 🗑 Remove a favourite
+window.removeFavourite = function(title) {
+  const user = localStorage.getItem('username');
+  if (!user) return alert('Please log in.');
+
+  const safeUser = encodeURIComponent(user.trim().toLowerCase());
+  const safeTitle = encodeURIComponent(title.trim());
+
+  const url = `${window.SHEET_API_URL}?type=removeFavourite&user=${safeUser}&title=${safeTitle}&callback=handleRemoveFavouriteResponse`;
+  jsonp(url);
+};
 
 // (2) JSONP helper – injects a <script> tag so you bypass CORS
 window.jsonp = function(url) {
@@ -31,6 +66,88 @@ window.jsonp = function(url) {
   s.src = url;
   document.head.appendChild(s);
 }
+
+// 📩 Callback after removing a favourite
+function handleRemoveFavouriteResponse(data) {
+  if (data.success) {
+    setTimeout(() => loadUserFavourites(localStorage.getItem('username')), 500);
+  } else {
+    alert('❌ Could not remove favourite.');
+  }
+}
+
+// 🌹 Add a favourite (also JSONP now)
+window.addToFavourites = function(title) {
+  const user = localStorage.getItem('username');
+  if (!user) return alert('Please log in first.');
+
+  const safeUser = encodeURIComponent(user.trim().toLowerCase());
+  const safeTitle = encodeURIComponent(title.trim());
+
+  const url = `${window.SHEET_API_URL}?type=favourite&user=${safeUser}&title=${safeTitle}&callback=handleAddFavouriteResponse`;
+  jsonp(url);
+};
+
+// 📩 Callback after adding a favourite
+function handleAddFavouriteResponse(data) {
+  if (data.success) {
+    alert(`🌹 Added to your favourites.`);
+    setTimeout(() => loadUserFavourites(localStorage.getItem('username')), 800);
+  } else {
+    alert(`❌ Already in your favourites or failed to save.`);
+  }
+}
+
+// 🔽 Renders the dropdown list of favourites
+function renderFavouritesDropdown(favs) {
+  const container = document.getElementById('favouritesDropdown');
+  container.innerHTML = '';
+
+  if (favs.length === 0) {
+    container.innerHTML = '<div class="text-sm px-4 py-2 text-yellow-400">No favourites yet.</div>';
+    return;
+  }
+
+  favs.forEach(title => {
+    const div = document.createElement('div');
+    div.className = 'text-sm px-4 py-2 text-yellow-400 flex justify-between items-center';
+    div.innerHTML = `
+      ${title}
+      <button onclick="removeFavourite('${title.replace(/'/g, "\\'")}')">
+        <i data-lucide="x" class="w-4 h-4 text-yellow-500 hover:text-red-500"></i>
+      </button>
+    `;
+    container.appendChild(div);
+  });
+
+  lucide.createIcons?.();
+}
+
+window.submitRequest = function (requestType, message) {
+  const user = localStorage.getItem('memberName') || 'Anonymous';
+  const encodedMsg = encodeURIComponent(message.trim());
+
+  if (!encodedMsg) return alert('Please enter your request.');
+
+  const url = `${window.SHEET_API_URL}?type=request&username=${encodeURIComponent(user)}&requestType=${encodeURIComponent(requestType)}&message=${encodedMsg}&callback=handleRequestResponse`;
+
+  console.log('📤 Sending request via JSONP:', url);
+  jsonp(url);
+};
+
+function handleSubmissionResponse(data) {
+  if (data.success) {
+    alert('✅ Location submitted!');
+    document.getElementById('submissionForm').reset();
+    closeModal(); // if this exists
+  } else {
+    alert('❌ Error submitting location.');
+  }
+}
+
+
+
+
 
 // Helper to fire off any “write” action
 window.post = function(type, data = {}) {
@@ -255,10 +372,127 @@ function handlePostResponse(resp) {
   }
 }
 
+function handleRequestResponse(data) {
+  console.log('📥 handleRequestResponse received:', data);
+
+  if (data.success) {
+    alert('✅ Request submitted successfully!');
+    document.getElementById('requestModal')?.classList.add('hidden');
+    document.getElementById('requestMessage').value = '';
+  } else {
+    alert('❌ Error submitting request.');
+  }
+}
 
 function bindUIButtons() {
   console.log('🔗 bindUIButtons() running');
+  
+  bindSubmissionForm();
 
+  document.getElementById('affiliatesBtn')?.addEventListener('click', () => {
+  const level = (localStorage.getItem('membershipLevel') || '').toLowerCase();
+  if (level === 'affiliate') {
+    // Ask permission and send desktop notification
+    if (Notification.permission === 'granted') {
+      new Notification('🌹 Affiliates', {
+        body: 'Coming soon...',
+        icon: 'flower.png' // optional
+      });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          new Notification('🌹 Affiliates', {
+            body: 'Coming soon...',
+            icon: 'flower.png'
+          });
+        }
+      });
+    }
+  } else {
+    alert('🔒 COMING SOON...');
+  }
+});
+
+
+  document.getElementById('requestsBtn')?.addEventListener('click', () => {
+  const submenu = document.getElementById('requestsSubMenu');
+  submenu?.classList.toggle('hidden');
+});
+
+
+document.querySelectorAll('#requestsSubMenu button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const label = btn.textContent.trim();
+    const typeMap = {
+      'Request Verification': 'Verification',
+      'Request Donations': 'Donations',
+      'Request an Event': 'Event'
+    };
+    const type = typeMap[label] || 'Verification'; // fallback
+    window.selectedRequestType = type;
+    document.getElementById('requestModalTitle').textContent = label;
+    document.getElementById('requestMessage').value = '';
+    document.getElementById('requestModal')?.classList.remove('hidden');
+  });
+});
+
+document.getElementById('cancelRequest')?.addEventListener('click', () => {
+  document.getElementById('requestModal')?.classList.add('hidden');
+});
+
+document.getElementById('closeRequestModal')?.addEventListener('click', () => {
+  document.getElementById('requestModal')?.classList.add('hidden');
+});
+
+document.getElementById('submitRequest')?.addEventListener('click', () => {
+  const message = document.getElementById('requestMessage').value.trim();
+  const username = localStorage.getItem('memberName') || 'Anonymous';
+  const type = window.selectedRequestType || 'Verification';
+
+  if (!message) return alert('Please write a message before submitting.');
+
+  const params = new URLSearchParams({
+    type,
+    member: username,
+    message,
+    callback: 'handleRequestResponse'
+  });
+
+  jsonp(`${window.SHEET_API_URL}?${params.toString()}`);
+});
+
+// Optional: handle success/failure
+window.handleRequestResponse = function (resp) {
+  console.log('📥 handleRequestResponse received:', resp);
+  if (resp.success) {
+    alert('✅ Request submitted successfully!');
+    document.getElementById('requestModal')?.classList.add('hidden');
+  } else {
+    alert('❌ Error submitting request.');
+  }
+};
+
+document.getElementById('submitFeedback')?.addEventListener('click', () => {
+  const msg = document.getElementById('feedbackMessage').value.trim();
+  if (!msg) return alert('Please enter a message.');
+
+  jsonp(`${SHEET_API_URL}?type=feedback&message=${encodeURIComponent(msg)}&callback=handleFeedbackResponse`);
+});
+
+window.handleFeedbackResponse = function(resp) {
+  console.log('📥 Feedback response:', resp);
+  if (resp.success) {
+    alert('✅ Thank you for your feedback!');
+    document.getElementById('feedbackMessage').value = '';
+    document.getElementById('feedbackModal')?.classList.add('hidden');
+  } else {
+    alert('❌ Failed to send feedback. Try again later.');
+  }
+};
+
+document.getElementById('cancelFeedback')?.addEventListener('click', () => {
+  document.getElementById('feedbackModal')?.classList.add('hidden');
+});
 
   document.querySelectorAll('.closeBtn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -313,56 +547,8 @@ document.getElementById('closeLockedModal')?.addEventListener('click', () => {
 });
 
 
-}
-
-window.removeFavourite = function(title) {
-  const user = localStorage.getItem('username');
-  fetch(SHEET_API_URL, {
-    method: 'POST',
-    body: new URLSearchParams({
-      type: 'removeFavourite',
-      user,
-      title
-    })
-  })
-  .then(() => {
-    setTimeout(() => loadUserFavourites(user), 500); // ⏳ slight delay
-  });
-};
-
-
-function renderFavouritesDropdown(favs) {
-  const container = document.getElementById('favouritesDropdown');
-  container.innerHTML = '';
-
-  if (favs.length === 0) {
-    container.innerHTML = '<div class="text-sm px-4 py-2 text-yellow-400">No favourites yet.</div>';
-    return;
-  }
-
-  favs.forEach(title => {
-    const div = document.createElement('div');
-    div.className = 'text-sm px-4 py-2 text-yellow-400 flex justify-between items-center';
-    div.innerHTML = `
-      ${title}
-      <button onclick="removeFavourite('${title}')">
-        <i data-lucide="x" class="w-4 h-4 text-yellow-500 hover:text-red-500"></i>
-      </button>
-    `;
-    container.appendChild(div);
-  });
-
-  lucide.createIcons();
 
 }
-
-
-
-
-
-
-
-
 
 
 function setupApp() {
@@ -455,40 +641,7 @@ marker.getElement().addEventListener('click', () => {
 
       // Optional: also populate category filters here
     });
-window.addToFavourites = async function(title) {
-  const userName = localStorage.getItem('username');
-  if (!userName) return alert('Please log in first.');
-
-  console.log(`📤 Sending favourite: ${title} for user: ${userName}`);
-
-  try {
-    const res = await fetch(SHEET_API_URL, {
-      method: 'POST',
-      body: new URLSearchParams({
-        type: 'favourite',
-        user: userName,
-        title: title
-      })
-    });
-
-    const data = await res.json();
-    console.log('🔥 raw response from sheet:', data);
-
-    if (data.success) {
-      alert(`🌹 '${title}' added to your favourites.`);
-      console.log('⏳ Waiting before loading favourites...');
-      setTimeout(() => {
-        console.log('🔄 Calling loadUserFavourites...');
-        loadUserFavourites(userName);
-      }, 800);
-    } else {
-      alert(`❌ '${title}' is already in your favourites.`);
-    }
-  } catch (err) {
-    console.error('❌ Failed to save favourite:', err);
-    alert('Error saving favourite. Try again later.');
-  }
-};
+  
 
   document.querySelectorAll('.closeBtn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -499,22 +652,6 @@ window.addToFavourites = async function(title) {
     });
   });
 
-  
-  // 🔹 Toggle the request submenu
-  document.getElementById('requestsBtn')?.addEventListener('click', () => {
-    document.getElementById('requestsSubMenu')?.classList.toggle('hidden');
-  });
-
-  // 🔹 Handle submenu item clicks → open modal
-  document.querySelectorAll('#requestsSubMenu button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const label = btn.textContent.trim();
-      document.getElementById('requestModalTitle').textContent = label;
-      document.getElementById('requestMessage').value = '';
-      document.getElementById('requestModal')?.classList.remove('hidden');
-      document.getElementById('requestsSubMenu')?.classList.add('hidden');
-    });
-  });
 
   // 🔹 Manual cancel + close buttons on modal
   document.getElementById('cancelRequest')?.addEventListener('click', () => {
@@ -527,21 +664,39 @@ window.addToFavourites = async function(title) {
 
 
  document.getElementById('floatingLocateBtn')?.addEventListener('click', () => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(position => {
-        const { latitude, longitude } = position.coords;
-        map.flyTo({ center: [longitude, latitude], zoom: 14 });
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(position => {
+      const { latitude, longitude } = position.coords;
+      map.flyTo({ center: [longitude, latitude], zoom: 14 });
 
-        new mapboxgl.Marker({ color: 'gold' })
-          .setLngLat([longitude, latitude])
-          .setPopup(new mapboxgl.Popup().setHTML(`<h3>CURRENT LOCATION</h3>`))
-          .addTo(map)
-          .togglePopup();
-      });
-    } else {
-      alert('Geolocation is not supported by your browser.');
-    }
-  });
+      const popupHTML = `
+        <div style="
+          background: black;
+          color: gold;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: bold;
+          border: 1px solid gold;
+          box-shadow: 0 0 10px gold;
+        ">
+          📍 Current Location
+        </div>
+      `;
+
+      new mapboxgl.Marker({
+        color: 'gold'
+      })
+        .setLngLat([longitude, latitude])
+        .setPopup(new mapboxgl.Popup({ closeButton: false }).setHTML(popupHTML))
+        .addTo(map)
+        .togglePopup();
+    });
+  } else {
+    alert('Geolocation is not supported by your browser.');
+  }
+});
+
   
 
   if (localStorage.getItem('membershipLevel')) showMemberOptions();
@@ -723,7 +878,8 @@ function showMemberOptions() {
   console.log('🧠 Show member UI for:', name, '| Premium:', window.isPremium);
 
   document.getElementById('memberName').textContent = `🌹 ${name}`;
-  document.getElementById('memberMeta').textContent = `Level: ${level}`;
+  const checkins = localStorage.getItem('checkinCount') || 0;
+document.getElementById('memberMeta').textContent = `Check-ins: ${checkins}`;
   document.getElementById('memberOptions')?.classList.remove('hidden');
   document.getElementById('guestOptions')?.classList.add('hidden');
     updateHelpJoinBtn(); // ⬅️ add here
@@ -742,13 +898,8 @@ document.getElementById('favouritesBtn')?.addEventListener('click', () => {
   const dropdown = document.getElementById('favouritesDropdown');
   dropdown?.classList.toggle('hidden');
 });
-document.getElementById('requestsSubMenu')?.querySelectorAll('button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.getElementById('requestModal')?.classList.remove('hidden');
-    document.getElementById('requestModalTitle').textContent = btn.textContent.trim();
-    document.getElementById('requestMessage').value = '';
-  });
-});
+
+
 
 document.getElementById('closeRequestModal')?.addEventListener('click', () => {
   document.getElementById('requestModal')?.classList.add('hidden');
@@ -786,15 +937,6 @@ document.querySelectorAll('#cancelFeedback, #feedbackModal .closeBtn').forEach(b
   btn.addEventListener('click', () => {
     document.getElementById('feedbackModal')?.classList.add('hidden');
   });
-});
-
-// Optional: Submit handler
-document.getElementById('submitFeedback')?.addEventListener('click', () => {
-  const message = document.getElementById('feedbackMessage')?.value.trim();
-  if (!message) return alert('Please enter your feedback.');
-  
-  alert('Feedback sent. Thank you!');
-  document.getElementById('feedbackModal')?.classList.add('hidden');
 });
 
 document.getElementById('searchButton')?.addEventListener('click', () => {

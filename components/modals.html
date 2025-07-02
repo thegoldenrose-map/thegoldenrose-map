@@ -1,0 +1,151 @@
+<!-- 🔸 Login Modal -->
+<div id="loginModal" class="modal hidden fixed inset-0 flex items-center justify-center z-[9999] bg-black/70">
+  <div class="bg-black border-2 border-yellow-500 rounded-lg p-6 w-full max-w-md relative">
+    <button type="button" class="absolute top-2 right-3 text-yellow-400 text-lg closeBtn">×</button>
+    <h2 class="text-yellow-400 mb-4 text-lg font-semibold">Member Login</h2>
+    <form id="loginForm" class="space-y-3">
+      <input id="nameInput" placeholder="Card Name" required class="w-full p-2 rounded text-black" />
+      <input id="numberInput" placeholder="Number" required class="w-full p-2 rounded text-black" />
+      <button type="submit" class="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded w-full">
+        Login
+      </button>
+    </form>
+  </div>
+</div>
+
+
+<button id="helpJoinBtn"
+  class="fixed bottom-24 right-4 w-12 h-12 rounded-full shadow-xl text-2xl font-bold z-[9999] bg-yellow-500 hover:bg-yellow-600 animate-[floatBounce_2s_infinite] text-black backdrop-blur-md border border-yellow-400/50 hidden">
+  ?
+</button>
+
+<!-- 🔸 Join Now Modal -->
+<div id="joinNowModal" class="modal hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
+  <div class="bg-black border-2 border-yellow-500 rounded-lg p-6 w-full max-w-sm relative">
+    <button type="button" class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl closeBtn">&times;</button>
+    <h2 class="text-xl font-bold mb-2 text-yellow-300">🌹 THE GOLDEN ROSE</h2>
+    <p class="text-sm mb-4">Built for the people, by the people...</p>
+    <ul class="text-sm list-disc list-inside space-y-1 mb-4">
+      <li>✅ Real-time hotspots, events & meetups</li>
+      <li>📰 Exclusive map layers, intel & newsfeed</li>
+      <li>🛡️ Post directly to shape local narratives</li>
+      <li>💼 Get verified — lead your area</li>
+      <li>🤝 Request donations & promote causes</li>
+      <li>🇬🇧 Support independent British business</li>
+    </ul>
+    <a href="https://buy.stripe.com/..." class="block text-center bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-2 rounded-full shadow transition">
+      🌹 Join Now — Support the Movement 🌹
+    </a>
+  </div>
+</div>
+
+
+
+
+
+
+<!-- 🔸 Feedback Modal -->
+<div id="feedbackModal" class="modal hidden fixed inset-0 flex items-center justify-center z-[9999] bg-black/70">
+  <div class="bg-black text-yellow-400 rounded-lg p-6 w-96 border border-yellow-500">
+    <h2 class="text-lg font-semibold mb-2">Send us your feedback</h2>
+    <textarea id="feedbackMessage" rows="4" class="w-full border border-gray-300 rounded p-2 mb-4" placeholder="Your message..."></textarea>
+    <div class="flex justify-end space-x-2">
+      <button id="cancelFeedback" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Cancel</button>
+      <button id="submitFeedback" class="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded">Submit</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- 🔸 Request Modal -->
+<div id="requestModal" class="fixed inset-0 z-[9999] bg-black/80 hidden flex items-center justify-center">
+  <div class="relative w-full max-w-md bg-black border border-yellow-500 rounded-xl p-6 text-yellow-300 shadow-lg">
+    
+    <button type="button" id="closeRequestModal" class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl">&times;</button>
+    
+    <h3 id="requestModalTitle" class="text-xl font-bold mb-4">Submit a Request</h3>
+    
+    <textarea id="requestMessage" rows="4" class="w-full p-2 mb-4 bg-zinc-900 border border-yellow-500 rounded resize-none" placeholder="Type your request..."></textarea>
+    
+    <div class="flex justify-end gap-3">
+      <button id="cancelRequest" class="border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500 hover:text-black">Cancel</button>
+      <button id="submitRequest" class="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600">Send</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="requestsSubMenu" class="absolute bottom-32 right-4 z-[9999] w-72 bg-black border border-yellow-500 
+     rounded-xl shadow-lg p-4 text-yellow-400 hidden space-y-2">
+  <h3 class="text-sm font-semibold mb-2">🌹 Submit a Request</h3>
+  <button class="w-full text-left hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">
+    <i data-lucide="coins" class="inline w-4 h-4 mr-1"></i> Request Donations
+  </button>
+  <button class="w-full text-left hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">
+    <i data-lucide="badge-check" class="inline w-4 h-4 mr-1"></i> Request Verification
+  </button>
+  <button class="w-full text-left hover:bg-yellow-500 hover:text-black rounded-md px-2 py-1">
+    <i data-lucide="calendar-days" class="inline w-4 h-4 mr-1"></i> Request an Event
+  </button>
+</div>
+
+
+<!-- 🔸 Location Submission Modal -->
+<div id="submissionModal" class="modal hidden fixed bottom-24 left-4 z-[9999] max-w-sm w-80 bg-black/70 backdrop-blur-md border border-yellow-500/30 rounded-2xl shadow-xl p-6">
+  <h2 class="text-lg font-semibold text-yellow-400 mb-4 flex items-center gap-2">
+    <i data-lucide="map-pin"></i> Add New Place
+  </h2>
+  <form id="submissionForm">
+    <input type="text" id="locationName" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Name" required>
+    <input type="text" id="locationDescription" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Location" required>
+    <input type="text" id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Category (e.g. Pub, Farm)" required>
+    <div class="flex justify-between gap-2">
+      <button type="submit" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-lg">Add to Map</button>
+      <button type="button" onclick="closeModal()" class="flex-1 bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-300 hover:text-black font-bold py-2 rounded-lg">Cancel</button>
+    </div>
+  </form>
+</div>
+
+
+<!-- filterPanel.html -->
+<div id="filterPanel" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[99999] w-[90%] max-w-sm bg-black text-yellow-300 border-2 border-yellow-500 p-6 rounded-xl shadow-2xl">
+  <h2 class="text-xl font-semibold mb-4 text-yellow-400">Filter Categories</h2>
+  <div id="categoryFilters" class="space-y-3 text-sm"></div>
+  <div class="mt-4 flex justify-between">
+    <button onclick="filterByCategory()" class="bg-yellow-500 text-black px-4 py-1 rounded font-semibold hover:bg-yellow-600">Apply</button>
+    <button onclick="showAllLocations()" class="text-yellow-400 underline hover:text-yellow-200">Reset All</button>
+  </div>
+</div>
+
+
+<div id="addLocationModal" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
+     z-[9999] w-[22rem] bg-black border border-yellow-500 rounded-xl shadow-lg p-6 text-yellow-400 hidden space-y-4">
+   <button class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl closeBtn">
+      &times;
+    </button>
+     <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
+  <form id="locationForm" class="space-y-3">
+    <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500">
+    <input id="locationDescription" type="text" placeholder="Short description" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500">
+    <input id="locationCategory" type="text" placeholder="Category (e.g. Farm, Pub)" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500">
+    <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
+  </form>
+</div>
+
+
+
+<div id="favouritesDropdown" class="fixed bottom-24 right-4 z-[9999] w-72 max-h-64 overflow-y-auto 
+     bg-black border border-yellow-500 rounded-xl shadow-lg p-4 text-yellow-400 hidden space-y-2">
+  <div class="flex justify-between items-center mb-2">
+    <h3 class="text-sm font-semibold">🌹 Saved Favourites</h3>
+    <button onclick="document.getElementById('favouritesDropdown').classList.add('hidden')" class="text-yellow-400 hover:text-red-500 text-sm">
+      ✕
+    </button>
+  </div>
+  <div id="favouritesList" class="space-y-2 text-sm">
+    <p class="text-yellow-600 italic">No favourites yet.</p>
+  </div>
+</div>
+
+

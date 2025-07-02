@@ -1,0 +1,92 @@
+<!-- 🔸 Profile Menu -->
+<div id="profileMenu" class="fixed bottom-16 right-4 z-50 z-[9999] hidden">
+  <div class="rounded-2xl overflow-hidden bg-black shadow-lg">
+
+
+
+
+    <!-- 🔹 Favourites Dropdown -->
+    <div id="favouritesDropdown" class="hidden absolute right-4 bottom-32 w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-lg shadow-lg p-3 z-50 text-yellow-400 space-y-2">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-sm font-semibold">Saved Favourites</h3>
+        <button onclick="document.getElementById('favouritesDropdown').classList.add('hidden')" class="text-yellow-400 hover:text-red-500 text-sm">✕</button>
+      </div>
+      <div id="favouritesList" class="space-y-2"></div>
+    </div>
+
+    <!-- 🔹 Member Info -->
+    <div id="memberInfo" class="text-yellow-400 px-4 py-2 bg-black">
+      <div id="memberName" class="text-sm font-semibold"></div>
+      <div id="memberMeta" class="text-xs"></div>
+    </div>
+
+    <!-- 🔹 Menu Buttons -->
+<div id="memberOptions" class="hidden">
+
+    <div class="space-y-1 bg-black px-4 py-2">
+      <button id="favouritesBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="heart"></i> Favourites
+      </button>
+
+      <button id="addLocationBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="plus-circle"></i> Add Location
+      </button>
+
+      <button id="requestsBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="inbox"></i> Requests
+      </button>
+
+      <!-- 🔹 Requests Submenu -->
+      <div id="requestsSubMenu" class=" space-y-2 px-4 pt-1">
+        <button class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+          <i data-lucide="coins"></i> Request Donations
+        </button>
+        <button class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+          <i data-lucide="badge-check"></i> Request Verification
+        </button>
+        <button class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+          <i data-lucide="calendar-days"></i> Request an Event
+        </button>
+      </div>
+
+
+      <button id="affiliatesBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="handshake"></i> Affiliates
+      </button>
+
+      <a id="donateBtnMember" href="https://buy.stripe.com/eVq9ASdi6fDSenU754cwg01" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="heart-handshake"></i> Donate
+      </a>
+
+      <button id="logoutBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="log-out"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- 🔹 Guest Menu -->
+   <div id="guestOptions">
+  <div class="divide-y divide-yellow-500 rounded-2xl overflow-hidden">
+    <div class="space-y-1 bg-black px-4 py-2">
+      <a id="donateBtnGuest" href="https://buy.stripe.com/eVq9ASdi6fDSenU754cwg01" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="heart-handshake"></i> Donate
+      </a>
+      <a id="instagramBtn" href="https://instagram.com/thegoldenrose" target="_blank" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="instagram"></i> Instagram
+      </a>
+      <a id="twitterBtn" href="https://x.com/_thegoldenrose" target="_blank" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="twitter"></i> Twitter
+      </a>
+      <button id="openFeedback" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="message-circle"></i> Feedback
+      </button>
+      <a id="membershipBtn" href="https://buy.stripe.com/8x2fZg0vk8bqenUfBAcwg02" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="users"></i> Membership
+      </a>
+      <button id="profileLoginBtn" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="log-in"></i> Member Login
+      </button>
+    </div>
+  </div>
+</div>
+

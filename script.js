@@ -1,12 +1,50 @@
+console.log("✅ Script loaded");
+
 let map;
 let geoMarkers = [];
 let membershipData = [];
 let originalGeoData = null;
 
-window.isPremium = (localStorage.getItem('membershipLevel') || '').toLowerCase() === 'premium';
-
-
 window.SHEET_API_URL = window.SHEET_API_URL || 'https://script.google.com/macros/s/AKfycbyIqpE0QffyefE_zybPLTVMOOoDeA7snugUDJWbnUBR1SmeBRSWXHLbpcRLaTPJrdUKBA/exec';
+window.isPremium = false;
+function checkPremiumStatus() {
+  const trialExpires = parseInt(localStorage.getItem('premiumTrialExpires'), 10);
+  const now = Date.now();
+
+  if (localStorage.getItem('membershipLevel') === 'premium') {
+    if (trialExpires && now > trialExpires) {
+      // Trial expired
+      localStorage.removeItem('membershipLevel');
+      localStorage.removeItem('premiumTrialExpires');
+      window.isPremium = false;
+    } else {
+      window.isPremium = true;
+    }
+  } else {
+    window.isPremium = false;
+  }
+
+  console.log('🔁 checkPremiumStatus() ran — isPremium =', window.isPremium);
+}
+window.updateHelpJoinBtn = function () {
+  const btn = document.getElementById('helpJoinBtn');
+  if (!btn) {
+    console.warn('❌ helpJoinBtn not found');
+    return;
+  }
+
+  if (window.isPremium) {
+    btn.classList.add('hidden');
+    console.log('🙈 Premium – hiding helpJoinBtn');
+  } else {
+    btn.classList.remove('hidden');
+    btn.style.display = 'block';
+    btn.style.visibility = 'visible';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    console.log('🎯 Free user – showing helpJoinBtn');
+  }
+};
 
 
 // ───────── JSONP + POST ─────────
@@ -75,6 +113,20 @@ function handleRemoveFavouriteResponse(data) {
     alert('❌ Could not remove favourite.');
   }
 }
+
+document.querySelectorAll('.categoryBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cat = btn.getAttribute('data-cat');
+    window.marketplaceFilter = cat;
+    loadMarketplace();
+
+    // 🔁 Update active button highlight
+    document.querySelectorAll('.categoryBtn').forEach(b => b.classList.remove('active-category'));
+    btn.classList.add('active-category');
+  });
+});
+
+
 
 // 🌹 Add a favourite (also JSONP now)
 window.addToFavourites = function(title) {
@@ -180,6 +232,12 @@ function timeSince(date) {
 
 // ─────────── MARKETPLACE ───────────
 
+window.setMarketplaceFilter = function (category) {
+  window.marketplaceFilter = category;
+  loadMarketplace(); // ← fetch again using updated filter
+};
+
+
 // Callback that your server will invoke with the raw 2D array
 function handleMarketplace(rawRows) {
   console.log('🟢 handleMarketplace() called with:', rawRows);
@@ -189,12 +247,11 @@ function handleMarketplace(rawRows) {
     return;
   }
 
-  // Drop header row if present
   if (rawRows[0] && rawRows[0][0] === 'Username') {
     rawRows = rawRows.slice(1);
   }
 
-  const posts = rawRows
+  const allMarketplacePosts = rawRows
     .map(r => ({
       username:  r[0],
       post:      r[1],
@@ -202,10 +259,19 @@ function handleMarketplace(rawRows) {
       postId:    r[3],
       timestamp: r[4],
       comments:  r[5],
-      category:  r[6] || 'marketplace'
+      category:  r[6]?.toLowerCase() || 'marketplace'
     }))
-    .filter(p => p.category === 'marketplace')
+    .filter(p => ['marketplace', 'job', 'trade'].includes(p.category))
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+const selectedCategory = window.marketplaceFilter || 'job';
+
+const visiblePosts = allMarketplacePosts.filter(p => p.category === selectedCategory);
+
+
+
+  console.log('📛 Current filter:', selectedCategory);
+  console.log('📋 Found posts:', visiblePosts.length);
 
   const feed = document.getElementById('marketplaceContent');
   if (!feed) {
@@ -215,28 +281,95 @@ function handleMarketplace(rawRows) {
 
   feed.innerHTML = '';
 
-  posts.forEach(post => {
-    const div = document.createElement('div');
-    div.className = 'border border-yellow-500 rounded-xl p-4 mb-4 bg-black/60 text-yellow-300 shadow-sm';
-    div.innerHTML = `
-      <div class="font-semibold text-yellow-400 mb-1">${post.username}</div>
-      <p class="text-sm leading-relaxed">${post.post}</p>
-      <div class="text-xs text-yellow-500 mt-2">${timeSince(new Date(post.timestamp))} ago</div>
-    `;
-    feed.appendChild(div);  // ✅ Now inside the loop, after div is defined
+  visiblePosts.forEach(post => {
+    // Render post DOM...
+    const postDiv = document.createElement('div');
+    postDiv.className = 'relative border border-yellow-500 rounded-2xl p-5 bg-black/70 text-yellow-300 shadow-lg transition hover:border-yellow-400';
+
+    const header = document.createElement('div');
+    header.className = 'flex justify-between items-center mb-2';
+
+    const user = document.createElement('div');
+    user.className = 'text-sm font-semibold text-yellow-400';
+    user.textContent = post.username;
+
+    const timeAgo = document.createElement('div');
+    timeAgo.className = 'text-xs text-yellow-500';
+    timeAgo.textContent = timeSince(new Date(post.timestamp)) + ' ago';
+
+    header.append(user, timeAgo);
+
+    const content = document.createElement('p');
+    content.className = 'text-sm leading-relaxed mb-3 text-yellow-200';
+    content.textContent = post.post;
+
+    const likeBtn = document.createElement('button');
+    likeBtn.className = 'flex items-center gap-1 text-sm text-yellow-400 hover:text-red-500';
+    likeBtn.innerHTML = `<i data-lucide="heart" class="w-4 h-4"></i> ${post.likes}`;
+    likeBtn.onclick = () => {
+      const liked = likeBtn.classList.toggle('liked');
+      const type = liked ? 'like' : 'unlike';
+      window.lastLikedBtn = likeBtn;
+      window.post(type, { postId: post.postId, category: post.category });
+    };
+
+    const comments = post.comments ? JSON.parse(post.comments).reverse() : [];
+    const commentsDiv = document.createElement('div');
+    commentsDiv.className = 'mt-2 space-y-1 ml-2 hidden';
+
+    comments.forEach(c => {
+      const cdiv = document.createElement('div');
+      cdiv.className = 'text-xs text-yellow-200';
+      cdiv.innerHTML = `<span class='font-semibold text-yellow-400'>${c.user}:</span> ${c.text}`;
+      commentsDiv.appendChild(cdiv);
+    });
+
+    const toggleCommentsBtn = document.createElement('button');
+    toggleCommentsBtn.className = 'text-xs text-yellow-300 hover:text-yellow-100';
+    toggleCommentsBtn.textContent = `💬 ${comments.length} comment${comments.length !== 1 ? 's' : ''}`;
+    toggleCommentsBtn.onclick = () => {
+      commentsDiv.classList.toggle('hidden');
+      replyInput.classList.toggle('hidden');
+    };
+
+    const replyInput = document.createElement('input');
+    replyInput.type = 'text';
+    replyInput.placeholder = 'Write a reply…';
+    replyInput.className = 'hidden mt-2 w-full text-sm p-2 bg-zinc-900 border border-yellow-500/40 rounded focus:outline-none focus:ring focus:border-yellow-400';
+    replyInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter' && replyInput.value.trim()) {
+        const text = replyInput.value.trim();
+        replyInput.disabled = true;
+        window.post('comment', {
+          username: localStorage.getItem('memberName') || 'Anonymous',
+          postId: post.postId,
+          commentText: text,
+          category: post.category
+        });
+        replyInput.value = '';
+        replyInput.disabled = false;
+      }
+    });
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'flex items-center justify-between mt-3';
+    actionsRow.append(toggleCommentsBtn, likeBtn);
+
+    postDiv.append(header, content, actionsRow, commentsDiv, replyInput);
+    feed.appendChild(postDiv);
+    lucide.createIcons();
   });
 
-  console.log('📦 Marketplace rendered:', posts.length);
+  console.log(`📦 Rendered ${visiblePosts.length} posts in category:`, selectedCategory);
 }
 
 
-// Call this when you want to load
-function loadMarketplace() {
-   console.log('🟡 loadMarketplace() called');
-  jsonp(
-    `${window.SHEET_API_URL}?type=getMarketplace&callback=handleMarketplace`
-  );
+function loadMarketplace(category = 'job') {
+  window.currentMarketplaceCategory = category;
+  jsonp(`${window.SHEET_API_URL}?type=getMarketplace&callback=handleMarketplace`);
 }
+
+
 
 // ─────────── NEWSFEED ───────────
 
@@ -273,74 +406,85 @@ function handleNewsfeed(rawRows) {
   feed.innerHTML = '';
 
   posts.forEach(post => {
-    const postDiv = document.createElement('div');
-    postDiv.className = 'relative border border-yellow-500 rounded-xl p-4 mb-4 bg-black/60 backdrop-blur-sm text-yellow-300 shadow-sm';
+  const postDiv = document.createElement('div');
+  postDiv.className = 'relative border border-yellow-500 rounded-2xl p-5 bg-black/70 text-yellow-300 shadow-lg transition hover:border-yellow-400';
 
-    const user = document.createElement('div');
-    user.className = 'font-semibold text-yellow-400';
-    user.textContent = post.username;
+  const header = document.createElement('div');
+  header.className = 'flex justify-between items-center mb-2';
 
-    const content = document.createElement('p');
-    content.className = 'text-sm leading-relaxed pr-10';
-    content.textContent = post.post;
+  const user = document.createElement('div');
+  user.className = 'text-sm font-semibold text-yellow-400';
+  user.textContent = post.username;
 
-    const timeAgo = document.createElement('div');
-    timeAgo.className = 'text-xs text-yellow-500';
-    timeAgo.textContent = timeSince(new Date(post.timestamp)) + ' ago';
+  const timeAgo = document.createElement('div');
+  timeAgo.className = 'text-xs text-yellow-500';
+  timeAgo.textContent = timeSince(new Date(post.timestamp)) + ' ago';
 
-    // LIKE BUTTON
-    const likeBtn = document.createElement('button');
-    likeBtn.className = 'absolute bottom-3 right-3 flex items-center gap-1 text-sm text-yellow-400 hover:text-red-500';
-    likeBtn.innerHTML = `<i data-lucide="heart" class="w-4 h-4"></i> ${post.likes}`;
-    likeBtn.onclick = () => {
-      const liked = likeBtn.classList.toggle('liked');
-      const type = liked ? 'like' : 'unlike';
-      window.lastLikedBtn = likeBtn;
-      window.post(type, { postId: post.postId });
-    };
+  header.append(user, timeAgo);
 
-    // COMMENTS
-    const commentsDiv = document.createElement('div');
-    commentsDiv.className = 'mt-2 space-y-1 ml-2 hidden';
-    const comments = post.comments ? JSON.parse(post.comments).reverse() : [];
+  const content = document.createElement('p');
+  content.className = 'text-sm leading-relaxed mb-3 text-yellow-200';
+  content.textContent = post.post;
 
-    comments.forEach(c => {
-      const cdiv = document.createElement('div');
-      cdiv.className = 'text-xs text-yellow-200';
-      cdiv.innerHTML = `<span class='font-semibold text-yellow-400'>${c.user}:</span> ${c.text}`;
-      commentsDiv.appendChild(cdiv);
-    });
+  // LIKE BUTTON
+  const likeBtn = document.createElement('button');
+  likeBtn.className = 'flex items-center gap-1 text-sm text-yellow-400 hover:text-red-500';
+  likeBtn.innerHTML = `<i data-lucide="heart" class="w-4 h-4"></i> ${post.likes}`;
+  likeBtn.onclick = () => {
+    const liked = likeBtn.classList.toggle('liked');
+    const type = liked ? 'like' : 'unlike';
+    window.lastLikedBtn = likeBtn;
+    window.post(type, { postId: post.postId, category: 'marketplace' });
+  };
 
-    const toggleCommentsBtn = document.createElement('button');
-    toggleCommentsBtn.className = 'text-xs text-yellow-300 hover:text-yellow-100';
-    toggleCommentsBtn.textContent = `💬 ${comments.length} comment${comments.length !== 1 ? 's' : ''}`;
-    toggleCommentsBtn.onclick = () => {
-      commentsDiv.classList.toggle('hidden');
-      replyInput.classList.toggle('hidden');
-    };
+  // COMMENTS
+  const comments = post.comments ? JSON.parse(post.comments).reverse() : [];
+  const commentsDiv = document.createElement('div');
+  commentsDiv.className = 'mt-2 space-y-1 ml-2 hidden';
 
-    const replyInput = document.createElement('input');
-    replyInput.type = 'text';
-    replyInput.placeholder = 'Write a reply…';
-    replyInput.className = 'hidden mt-1 w-full text-sm p-2 bg-zinc-900 border border-yellow-500 rounded';
-    replyInput.addEventListener('keypress', e => {
-      if (e.key === 'Enter' && replyInput.value.trim()) {
-        const text = replyInput.value.trim();
-        replyInput.disabled = true;
-        window.post('comment', {
-          username: localStorage.getItem('memberName') || 'Anonymous',
-          postId: post.postId,
-          commentText: text
-        });
-        replyInput.value = '';
-        replyInput.disabled = false;
-      }
-    });
-
-    // Append everything
-    postDiv.append(user, content, timeAgo, likeBtn, toggleCommentsBtn, commentsDiv, replyInput);
-    feed.appendChild(postDiv);
+  comments.forEach(c => {
+    const cdiv = document.createElement('div');
+    cdiv.className = 'text-xs text-yellow-200';
+    cdiv.innerHTML = `<span class='font-semibold text-yellow-400'>${c.user}:</span> ${c.text}`;
+    commentsDiv.appendChild(cdiv);
   });
+
+  const toggleCommentsBtn = document.createElement('button');
+  toggleCommentsBtn.className = 'text-xs text-yellow-300 hover:text-yellow-100';
+  toggleCommentsBtn.textContent = `💬 ${comments.length} comment${comments.length !== 1 ? 's' : ''}`;
+  toggleCommentsBtn.onclick = () => {
+    commentsDiv.classList.toggle('hidden');
+    replyInput.classList.toggle('hidden');
+  };
+
+  const replyInput = document.createElement('input');
+  replyInput.type = 'text';
+  replyInput.placeholder = 'Write a reply…';
+  replyInput.className = 'hidden mt-2 w-full text-sm p-2 bg-zinc-900 border border-yellow-500/40 rounded focus:outline-none focus:ring focus:border-yellow-400';
+  replyInput.addEventListener('keypress', e => {
+    if (e.key === 'Enter' && replyInput.value.trim()) {
+      const text = replyInput.value.trim();
+      replyInput.disabled = true;
+      window.post('comment', {
+        username: localStorage.getItem('memberName') || 'Anonymous',
+        postId: post.postId,
+        commentText: text,
+        category: 'marketplace'
+      });
+      replyInput.value = '';
+      replyInput.disabled = false;
+    }
+  });
+
+  const actionsRow = document.createElement('div');
+  actionsRow.className = 'flex items-center justify-between mt-3';
+  actionsRow.append(toggleCommentsBtn, likeBtn);
+
+  postDiv.append(header, content, actionsRow, commentsDiv, replyInput);
+  feed.appendChild(postDiv);
+  lucide.createIcons();
+});
+
 
   console.log('📦 Newsfeed rendered to DOM');
 }
@@ -386,8 +530,53 @@ function handleRequestResponse(data) {
 
 function bindUIButtons() {
   console.log('🔗 bindUIButtons() running');
+
   
   bindSubmissionForm();
+
+function bindMarketplacePostForm() {
+  const form = document.getElementById('marketplacePostForm');
+  const input = document.getElementById('marketplacePostInput');
+
+  if (!form || !input) return;
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    const username = localStorage.getItem('memberName') || 'Anonymous';
+    const category = window.marketplaceFilter || 'job';
+
+    window.post('post', {
+      username,
+      post: text,
+      category
+    });
+
+    input.value = '';
+  });
+}
+
+
+document.querySelectorAll('.categoryBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cat = btn.getAttribute('data-cat');
+    window.currentMarketplaceCategory = cat;
+    loadMarketplace(cat); // reload filtered posts
+  });
+});
+
+
+
+bindMarketplacePostForm();
+
+
+document.getElementById('closeOnboarding')?.addEventListener('click', () => {
+  document.getElementById('onboardingModal')?.classList.add('hidden');
+});
+
 
   document.getElementById('affiliatesBtn')?.addEventListener('click', () => {
   const level = (localStorage.getItem('membershipLevel') || '').toLowerCase();
@@ -545,9 +734,35 @@ document.getElementById('newsfeedBtn')?.addEventListener('click', () => {
 document.getElementById('closeLockedModal')?.addEventListener('click', () => {
   document.getElementById('lockedNewsModal')?.classList.add('hidden');
 });
+document.getElementById('tryPremiumBtn')?.addEventListener('click', () => {
+  if (localStorage.getItem('usedTryPremium')) {
+    alert('⚠️ You’ve already used your free trial.');
+    return;
+  }
 
+  // Store expiration and mark as used
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+  localStorage.setItem('usedTryPremium', 'true');
+  localStorage.setItem('premiumTrialExpires', expiresAt.toString());
+  localStorage.setItem('membershipLevel', 'premium');
 
-
+  alert('✅ You now have 5 minutes of premium access. Enjoy!');
+  window.location.reload();
+});
+  const helpBtn = document.getElementById('helpJoinBtn');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', () => {
+      const modal = document.getElementById('onboardingModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        console.log('✅ Onboarding modal opened');
+      } else {
+        console.warn('❌ Onboarding modal not found');
+      }
+    });
+  } else {
+    console.warn('❌ helpJoinBtn not found');
+  }
 }
 
 
@@ -565,6 +780,7 @@ console.log('🧠 isPremium:', isPremium);
     center: [0.0334, 51.0979],
     zoom: 15
   });
+  
 
   // 🔥 Fetch and add markers AFTER map is initialized
   fetch('locations.geojson')
@@ -629,12 +845,16 @@ marker.getElement().addEventListener('click', () => {
 });
 
 
-        geoMarkers.push({
-          title: title.toLowerCase(),
-          coords,
-          marker,
-          feature
-        });
+ geoMarkers.push({
+  title: title.toLowerCase().trim().replace(/\s+/g, ' '), // clean title
+  coords,
+  marker,
+  feature
+});
+
+
+        console.log('📍 geoMarker added:', title.toLowerCase(), coords);
+
       });
 
       if (window.lucide) lucide.createIcons();
@@ -652,6 +872,10 @@ marker.getElement().addEventListener('click', () => {
     });
   });
 
+if (!localStorage.getItem('hasSeenOnboarding')) {
+  document.getElementById('onboardingModal')?.classList.remove('hidden');
+  localStorage.setItem('hasSeenOnboarding', 'true');
+}
 
   // 🔹 Manual cancel + close buttons on modal
   document.getElementById('cancelRequest')?.addEventListener('click', () => {
@@ -711,42 +935,65 @@ marker.getElement().addEventListener('click', () => {
       marker.getElement().style.display = 'none';
     }
   });
-};
-
+};// Show all markers
 window.showAllLocations = () => {
   geoMarkers.forEach(({ marker }) => {
     marker.getElement().style.display = 'block';
   });
-};
-// 🔍 Location Search
-const searchInput = document.getElementById('search');
+};const searchInput = document.getElementById('search');
 const suggestionsBox = document.getElementById('suggestions');
 
 searchInput.addEventListener('input', async () => {
-  const query = searchInput.value.trim().toLowerCase();
+  const query = searchInput.value.trim().toLowerCase().replace(/\s+/g, ' ');
   suggestionsBox.innerHTML = '';
-  if (!query) return (suggestionsBox.style.display = 'none');
+  if (!query || geoMarkers.length === 0) {
+    suggestionsBox.style.display = 'none';
+    return;
+  }
 
-  // Fetch global results
-  const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&limit=3`);
-  const mapboxData = await res.json();
+  const matches = geoMarkers.filter(m => m.title.includes(query)).slice(0, 3);
+  console.log('🔍 Search query:', query);
+  console.log('📍 Local Matches:', matches);
 
-  // 🔹 Local Matches
-  if (originalGeoData) {
-    const localMatches = originalGeoData.features.filter(f => f.properties.title.toLowerCase().includes(query)).slice(0, 3);
-    if (localMatches.length) {
-      suggestionsBox.innerHTML += '<div class="text-xs text-yellow-600 px-2 py-1">🌹 Local Matches</div>';
-      localMatches.forEach(loc => {
+  if (matches.length > 0) {
+    suggestionsBox.innerHTML += '<div class="text-xs text-yellow-600 px-2 py-1">🌹 Local Matches</div>';
+    
+    matches.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'suggestion-item text-sm text-yellow-400 bg-black hover:bg-yellow-500 p-2 rounded cursor-pointer';
+      div.textContent = m.title;
+      
+      div.addEventListener('click', () => {
+        console.log('🛫 Flying to:', m.coords);
+        if (map && m.marker) {
+          map.flyTo({ center: m.coords, zoom: 16 });
+          setTimeout(() => m.marker.togglePopup(), 300);
+        } else {
+          console.warn('⚠️ Marker or map not ready');
+        }
+
+        searchInput.value = '';
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.style.display = 'none';
+      });
+
+      suggestionsBox.appendChild(div);
+    });
+  }
+
+  // 🌍 MAPBOX GLOBAL SEARCH
+  try {
+    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&limit=3`);
+    const mapboxData = await res.json();
+
+    if (mapboxData.features.length) {
+      suggestionsBox.innerHTML += '<div class="text-xs text-yellow-600 px-2 py-1">🌍 Global Locations</div>';
+      mapboxData.features.forEach(feature => {
         const div = document.createElement('div');
-        div.className = 'suggestion-item text-sm text-yellow-400 bg-black hover:bg-yellow-500 p-2 rounded cursor-pointer';
-        div.textContent = loc.properties.title;
+        div.className = 'suggestion-item text-sm text-yellow-300 bg-black hover:bg-yellow-500 p-2 rounded cursor-pointer';
+        div.textContent = feature.place_name;
         div.onclick = () => {
-          const match = geoMarkers.find(m =>
-  m.title.toLowerCase() === loc.properties.title.toLowerCase()
-);          if (match) {
-            map.flyTo({ center: match.coords, zoom: 16 });
-            setTimeout(() => match.marker.togglePopup(), 300);
-          }
+          map.flyTo({ center: feature.center, zoom: 14 });
           searchInput.value = '';
           suggestionsBox.innerHTML = '';
           suggestionsBox.style.display = 'none';
@@ -754,52 +1001,14 @@ searchInput.addEventListener('input', async () => {
         suggestionsBox.appendChild(div);
       });
     }
-  }
-
-  // 🔹 Global Matches
-  if (mapboxData.features.length) {
-    suggestionsBox.innerHTML += '<div class="text-xs text-yellow-600 px-2 py-1">🌍 Global Locations</div>';
-    mapboxData.features.forEach(feature => {
-      const div = document.createElement('div');
-      div.className = 'suggestion-item text-sm text-yellow-300 bg-black hover:bg-yellow-500 p-2 rounded cursor-pointer';
-      div.textContent = feature.place_name;
-      div.onclick = () => {
-        map.flyTo({ center: feature.center, zoom: 14 });
-        searchInput.value = '';
-        suggestionsBox.innerHTML = '';
-        suggestionsBox.style.display = 'none';
-      };
-      suggestionsBox.appendChild(div);
-    });
+  } catch (err) {
+    console.error('🌍 Mapbox error:', err);
   }
 
   suggestionsBox.classList.remove('hidden');
   suggestionsBox.style.display = 'block';
 });
 
-// ✅ ENTER KEY TO TRIGGER SEARCH
-searchInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const query = searchInput.value.trim().toLowerCase();
-    const match = geoMarkers.find(m => m.title.includes(query));
-    if (match) {
-      map.flyTo({ center: match.coords, zoom: 16 });
-      setTimeout(() => match.marker.togglePopup(), 300);
-    } else {
-      console.warn('❌ No local match found for:', query);
-    }
-    suggestionsBox.innerHTML = '';
-    suggestionsBox.style.display = 'none';
-  }
-});
-
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-  if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
-    suggestionsBox.style.display = 'none';
-  }
-});
 window.setupLogin = function () {
   console.log('🧠 setupLogin() running...');
   const loginForm = document.getElementById('loginForm');
@@ -872,20 +1081,19 @@ loadUserFavourites(username);
 }
 function showMemberOptions() {
   const name = localStorage.getItem('memberName') || 'Golden Rose Member';
-  const level = (localStorage.getItem('membershipLevel') || 'free').toLowerCase();
-  window.isPremium = level === 'premium';
+  
+  
+  checkPremiumStatus();            // ✅ REPLACES the old line
+  window.updateHelpJoinBtn();      // ✅ run based on updated status
 
   console.log('🧠 Show member UI for:', name, '| Premium:', window.isPremium);
 
   document.getElementById('memberName').textContent = `🌹 ${name}`;
   const checkins = localStorage.getItem('checkinCount') || 0;
-document.getElementById('memberMeta').textContent = `Check-ins: ${checkins}`;
+  document.getElementById('memberMeta').textContent = `Check-ins: ${checkins}`;
   document.getElementById('memberOptions')?.classList.remove('hidden');
   document.getElementById('guestOptions')?.classList.add('hidden');
-    updateHelpJoinBtn(); // ⬅️ add here
 }
-
-
 
 
 
@@ -925,7 +1133,7 @@ document.getElementById('logoutBtn')?.addEventListener('click', () => {
 
   // Optional: close profile menu
   document.getElementById('profileMenu')?.classList.add('hidden');
-  updateHelpJoinBtn();
+
 });
 // Open Feedback Modal
 document.getElementById('openFeedback')?.addEventListener('click', () => {
@@ -943,30 +1151,37 @@ document.getElementById('searchButton')?.addEventListener('click', () => {
   const query = searchInput.value.trim().toLowerCase();
   searchInput.dispatchEvent(new Event('input'));
 });
-updateHelpJoinBtn();
-}
-function updateHelpJoinBtn() {
-  const helpBtn = document.getElementById('helpJoinBtn');
-  if (!helpBtn) return;
 
-  const isPremium = (localStorage.getItem('membershipLevel') || '').toLowerCase() === 'premium';
-  window.isPremium = isPremium;
+// 🔒 Only show onboarding modal if NOT logged in
+const isLoggedIn = !!localStorage.getItem('memberName');
+const onboardingModal = document.getElementById('onboardingModal');
 
-  if (!isPremium) {
-    helpBtn.classList.remove('hidden');
-    helpBtn.onclick = () => {
-      document.getElementById('joinNowModal')?.classList.remove('hidden');
-    };
+if (onboardingModal) {
+  if (!isLoggedIn) {
+    onboardingModal.classList.remove('hidden'); // show
   } else {
-    helpBtn.classList.add('hidden');
-    helpBtn.onclick = null;
+    onboardingModal.classList.add('hidden'); // hide
   }
 }
-
-
+  // Close button logic
+  document.getElementById('closeOnboarding')?.addEventListener('click', () => {
+    onboardingModal.classList.add('hidden');
+  });
+}
 document.addEventListener('DOMContentLoaded', () => {
-  setupApp();
-  bindUIButtons();
-  setupLogin();
+  console.log('🔥 DOM loaded');
+
+  checkPremiumStatus();         // ✅ sets window.isPremium
+  window.updateHelpJoinBtn();   // ✅ now safe to call here
+
+  setupApp?.();
+  bindUIButtons?.();
+  setupLogin?.();
+  bindMarketplacePostForm?.();
+
+  document.getElementById('helpJoinBtn')?.addEventListener('click', () => {
+    console.log('🎯 helpJoinBtn clicked');
+    document.getElementById('onboardingModal')?.classList.remove('hidden');
+  });
 });
 

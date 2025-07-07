@@ -1,16 +1,12 @@
 <!-- 🔹 Marketplace Sidebar -->
 <div id="marketplaceSidebar" class="fixed top-0 right-0 w-full max-w-md h-full bg-black border-l border-yellow-500 z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
-
   <!-- 🔸 Close Button -->
-  <button onclick="document.getElementById('marketplaceSidebar').classList.add('translate-x-full')" 
-          class="absolute top-4 right-4 text-yellow-500 z-50">
-    × Close
-  </button>
+  <button onclick="document.getElementById('marketplaceSidebar').classList.add('translate-x-full')" class="absolute top-4 right-4 text-yellow-500 z-50 text-2xl font-bold">×</button>
 
   <!-- 🔒 Locked Marketplace Modal -->
-  <div id="lockedMarketplaceModal" class="absolute bottom-10 left-0 right-0 z-50 bg-black border-t border-yellow-500 p-20 pt-4 pb-20 text-yellow-400 hidden">
-    <div class="relative w-full max-w-none mx-auto">
-      <h2 class="text-xl font-bold mb-1">Members Only</h2>
+  <div id="lockedMarketplaceModal" class="absolute bottom-10 left-0 right-0 z-50 bg-black border-t border-yellow-500 p-6 text-yellow-400 hidden">
+    <div class="text-center">
+      <h2 class="text-xl font-bold mb-2">Members Only</h2>
       <p class="text-sm mb-4">Subscribe for £1/month to access the marketplace.</p>
       <a href="https://buy.stripe.com/..." class="block w-full bg-yellow-500 text-black py-3 rounded-full text-center font-semibold hover:bg-yellow-600">
         🌹 Join Now
@@ -18,24 +14,38 @@
     </div>
   </div>
 
+<div id="marketplaceCategoryButtons" class="flex justify-center gap-4 pt-6 pb-4">
+  <button class="categoryBtn flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg backdrop-blur-sm bg-black/40" data-cat="job">
+    <i data-lucide="briefcase" class="w-4 h-4"></i> Jobs
+  </button>
+  <button class="categoryBtn flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg backdrop-blur-sm bg-black/40" data-cat="trade">
+    <i data-lucide="hammer" class="w-4 h-4"></i> Trade
+  </button>
+</div>
+
+
   <!-- 🔸 Scrollable Marketplace Content -->
-  <div id="marketplaceContent" class="flex-1 overflow-y-auto pt-14 px-4 pb-32 text-yellow-300">
-    <div id="loadingMarketplace" class="text-center text-yellow-400">Loading posts...</div>
-  </div>
+  <div id="marketplaceContent" class="flex-1 overflow-y-auto pt-20 px-4 pb-32 text-yellow-300 space-y-4">
+<div id="loadingMarketplace" class="flex flex-col items-center justify-center py-6 text-yellow-400">
+  <svg class="animate-spin h-6 w-6 text-yellow-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+    <path class="opacity-75" fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z">
+    </path>
+  </svg>
+  <span class="text-sm font-medium">Loading posts...</span>
+</div>
+
 
   <!-- 🔸 Fixed Post Form -->
   <form id="marketplacePostForm" class="absolute bottom-12 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20">
-    <input id="marketplacePostInput" type="text" placeholder="Post a listing..." required
-      class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
+    <input id="marketplacePostInput" type="text" placeholder="Post a listing..." required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
     <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
       <i data-lucide="send" class="w-5 h-5 text-black"></i>
     </button>
   </form>
 
   <!-- 🔸 Fixed Refresh Button -->
-  <button id="refreshMarketplace" class="absolute bottom-2 right-4 bg-yellow-500 text-black px-3 py-1 rounded shadow hover:bg-yellow-600 text-sm">
-    🔄 Refresh
-  </button>
-
+  <button id="refreshMarketplace" class="absolute bottom-2 right-4 bg-yellow-500 text-black px-3 py-1 rounded shadow hover:bg-yellow-600 text-sm">🔄 Refresh</button>
 </div>
 

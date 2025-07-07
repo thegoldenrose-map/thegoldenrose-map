@@ -1,3 +1,9 @@
+<button id="helpJoinBtn"
+  class="fixed bottom-24 right-4 w-12 h-12 rounded-full shadow-xl text-2xl font-bold z-[9999] bg-yellow-500 hover:bg-yellow-600 animate-[floatBounce_2s_infinite] text-black backdrop-blur-md border border-yellow-400/50 ring ring-yellow-300/40 animate-glowPulse">
+  ?
+</button>
+
+
 <!-- 🔸 Login Modal -->
 <div id="loginModal" class="modal hidden fixed inset-0 flex items-center justify-center z-[9999] bg-black/70">
   <div class="bg-black border-2 border-yellow-500 rounded-lg p-6 w-full max-w-md relative">
@@ -14,34 +20,47 @@
 </div>
 
 
-<button id="helpJoinBtn"
-  class="fixed bottom-24 right-4 w-12 h-12 rounded-full shadow-xl text-2xl font-bold z-[9999] bg-yellow-500 hover:bg-yellow-600 animate-[floatBounce_2s_infinite] text-black backdrop-blur-md border border-yellow-400/50 hidden">
-  ?
-</button>
 
-<!-- 🔸 Join Now Modal -->
-<div id="joinNowModal" class="modal hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/70">
-  <div class="bg-black border-2 border-yellow-500 rounded-lg p-6 w-full max-w-sm relative">
-    <button type="button" class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl closeBtn">&times;</button>
-    <h2 class="text-xl font-bold mb-2 text-yellow-300">🌹 THE GOLDEN ROSE</h2>
-    <p class="text-sm mb-4">Built for the people, by the people...</p>
-    <ul class="text-sm list-disc list-inside space-y-1 mb-4">
-      <li>✅ Real-time hotspots, events & meetups</li>
-      <li>📰 Exclusive map layers, intel & newsfeed</li>
-      <li>🛡️ Post directly to shape local narratives</li>
-      <li>💼 Get verified — lead your area</li>
-      <li>🤝 Request donations & promote causes</li>
-      <li>🇬🇧 Support independent British business</li>
+<!-- 🔹 Onboarding Modal – Sabre-style Fullscreen -->
+<div id="onboardingModal" class="fixed inset-0 z-[9999] bg-black/90 overflow-y-auto px-4 py-8">
+  <div class="relative mx-auto w-full max-w-2xl bg-black border border-yellow-500 rounded-2xl p-6 sm:p-10 text-yellow-300 shadow-2xl">
+
+    <!-- ✖ Close -->
+    <button id="closeOnboarding" class="absolute top-4 right-4 text-yellow-400 hover:text-yellow-200 text-2xl font-bold">&times;</button>
+
+    <!-- 🌹 Logo -->
+    <div class="text-center mb-6">
+      <img src="favicon.png" alt="Golden Rose Logo" class="w-16 mx-auto mb-3">
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-yellow-400">Rebuild Britain. Start Local.</h1>
+      <p class="mt-2 text-sm sm:text-base text-yellow-300 max-w-xl mx-auto">
+        Join <strong>The Golden Rose</strong> — a map-powered resistance network of real people, faith, and land.
+      </p>
+    </div>
+
+    <!-- ✅ Benefits List -->
+    <ul class="text-sm sm:text-base space-y-2 font-medium max-w-lg mx-auto">
+      <li>📍 <strong>Real meetups, events & safe places</strong></li>
+      <li>🗺️ <strong>Exclusive map layers and local newsfeed</strong></li>
+      <li>✍️ <strong>Post, hire, trade, and promote your work</strong></li>
+      <li>✅ <strong>Get verified to lead your area</strong></li>
+      <li>🇬🇧 <strong>Support British-made & faith-owned businesses</strong></li>
     </ul>
-    <a href="https://buy.stripe.com/..." class="block text-center bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-2 rounded-full shadow transition">
-      🌹 Join Now — Support the Movement 🌹
-    </a>
+
+    <!-- 🌹 CTA Button -->
+    <div class="mt-8 text-center">
+      <a href="https://buy.stripe.com/..." class="inline-block w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-black font-semibold text-lg py-3 px-6 rounded-full transition shadow">
+        🌹 Join Now — £1/month 🌹
+      </a>
+    </div>
   </div>
+
+<!-- 🌟 Try Premium Button -->
+<div class="mt-4 text-center">
+  <button id="tryPremiumBtn" class="w-full sm:w-auto bg-yellow-700 hover:bg-yellow-600 text-yellow-100 font-semibold text-md py-2 px-5 rounded-full border border-yellow-500 shadow">
+    🎁 Try Premium (5 minutes free)
+  </button>
 </div>
-
-
-
-
+</div>
 
 
 <!-- 🔸 Feedback Modal -->
@@ -74,8 +93,6 @@
     </div>
   </div>
 </div>
-
-
 
 
 <!-- 🔸 Location Submission Modal -->
@@ -134,5 +151,7 @@
     <p class="text-yellow-600 italic">No favourites yet.</p>
   </div>
 </div>
+
+
 
 

@@ -700,10 +700,12 @@ document.getElementById('cancelFeedback')?.addEventListener('click', () => {
   }
 });
 
-  // 🔃 Toggle filter panel
+  // 🔃 Toggle filter panel (temporarily disabled but kept for later)
   document.getElementById('filterBtn')?.addEventListener('click', () => {
-    const panel = document.getElementById('filterPanel');
-    panel?.classList.toggle('hidden');
+    if (false) {
+      const panel = document.getElementById('filterPanel');
+      panel?.classList.toggle('hidden');
+    }
   });
 
 
@@ -728,6 +730,168 @@ document.getElementById('newsfeedBtn')?.addEventListener('click', () => {
   } else {
     lockedOverlay?.classList.add('hidden');
   }
+});
+
+// 🎬 Entertainment sidebar open
+document.getElementById('entertainmentBtn')?.addEventListener('click', () => {
+  const sidebar = document.getElementById('entertainmentSidebar');
+  const lockedOverlay = document.getElementById('lockedEntertainmentModal');
+
+  sidebar?.classList.remove('translate-x-full');
+  loadEntertainment?.();
+
+  if (!window.isPremium) {
+    lockedOverlay?.classList.remove('hidden');
+  } else {
+    lockedOverlay?.classList.add('hidden');
+  }
+});
+
+// ─────────── ENTERTAINMENT ───────────
+
+function handleEntertainment(rawRows) {
+  console.log('🟢 handleEntertainment() called with:', rawRows);
+  window._entertainmentReceived = true;
+
+  if (!Array.isArray(rawRows)) {
+    console.warn('⚠️ Invalid data format for entertainment');
+    return;
+  }
+
+  // Drop header row if present
+  const header = rawRows[0] || [];
+  let rows = rawRows;
+  const headerHasUrl = header.some(v => typeof v === 'string' && /^https?:/i.test(v));
+  if (!headerHasUrl && header.some(v => /image|url|caption|title/i.test(String(v)))) {
+    rows = rawRows.slice(1);
+  }
+
+  const items = rows
+    .map(r => Array.isArray(r) ? r : [r])
+    .map(r => {
+      const strings = r.filter(v => typeof v === 'string');
+      const imageUrl = strings.find(v => /^https?:\/\//i.test(v)) || '';
+      const nonUrls = strings.filter(v => !/^https?:\/\//i.test(v));
+      const username = (nonUrls[0] || '').toString() || 'Anonymous';
+      const caption = (nonUrls[1] || '').toString();
+      // keep timestamp internally if needed later, but do not render
+      const timestamp = r.find(v => /\d{4}-\d{2}-\d{2}|:\d{2}/.test(String(v))) || '';
+      return { imageUrl, username, caption, timestamp };
+    })
+    .filter(it => it.imageUrl);
+
+  const feed = document.getElementById('entertainmentContent');
+  if (!feed) return console.error('❌ #entertainmentContent not found');
+
+  feed.innerHTML = '';
+
+  if (items.length === 0) {
+    feed.innerHTML = '<div class="text-yellow-400 text-sm">No entertainment items yet.</div>';
+    return;
+  }
+
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'border border-yellow-500 rounded-2xl overflow-hidden bg-black/70 text-yellow-300 shadow-lg';
+
+    // Header with username
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between px-3 py-2';
+    const userEl = document.createElement('div');
+    userEl.className = 'text-sm font-semibold text-yellow-400';
+    userEl.textContent = item.username || 'Anonymous';
+    header.appendChild(userEl);
+    card.appendChild(header);
+
+    // decide if image is displayable
+    const lower = item.imageUrl.toLowerCase();
+    const isImage = /(\.png|\.jpg|\.jpeg|\.gif|\.webp)(\?|$)/.test(lower) || /googleusercontent|imgur|unsplash|cdn|drive.google.com/.test(lower);
+
+    if (isImage) {
+      const img = document.createElement('img');
+      img.src = item.imageUrl;
+      img.alt = item.caption || 'Entertainment image';
+      img.className = 'w-full object-cover max-h-80';
+      img.loading = 'lazy';
+      card.appendChild(img);
+    } else {
+      const link = document.createElement('a');
+      link.href = item.imageUrl;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.className = 'block p-4 text-yellow-300 underline';
+      link.textContent = 'Open content';
+      card.appendChild(link);
+    }
+
+    if (item.caption) {
+      const cap = document.createElement('div');
+      cap.className = 'p-3 text-sm text-yellow-200';
+      cap.textContent = item.caption;
+      card.appendChild(cap);
+    }
+
+    // Actions row (icons only for now)
+    const actions = document.createElement('div');
+    actions.className = 'flex items-center justify-between px-3 py-2';
+    const left = document.createElement('div');
+    left.className = 'flex items-center gap-4';
+    const likeBtn = document.createElement('button');
+    likeBtn.className = 'text-yellow-400 hover:text-red-500 flex items-center gap-1';
+    likeBtn.innerHTML = '<i data-lucide="heart" class="w-4 h-4"></i>';
+    const commentBtn = document.createElement('button');
+    commentBtn.className = 'text-yellow-400 hover:text-yellow-200 flex items-center gap-1';
+    commentBtn.innerHTML = '<i data-lucide="message-circle" class="w-4 h-4"></i>';
+    left.append(likeBtn, commentBtn);
+    actions.append(left);
+    card.appendChild(actions);
+
+    feed.appendChild(card);
+  });
+
+  if (window.lucide) lucide.createIcons();
+  console.log(`📸 Rendered ${items.length} entertainment items`);
+}
+
+function loadEntertainment() {
+  // Try Apps Script JSONP first, then fall back to GViz if no callback
+  window._entertainmentReceived = false;
+  const url = `${window.SHEET_API_URL}?type=getEntertainment&callback=handleEntertainment`;
+  console.log('🎬 Loading entertainment via JSONP:', url);
+  jsonp(url);
+
+  // Fallback to GViz after a short timeout if JSONP didn’t fire
+  setTimeout(() => {
+    if (!window._entertainmentReceived) {
+      console.warn('⏳ JSONP not received; falling back to GViz');
+      fetchEntertainmentViaGviz();
+    }
+  }, 1800);
+}
+
+async function fetchEntertainmentViaGviz() {
+  try {
+    const docId = '1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw';
+    const sheetName = 'entertainment';
+    const url = `https://docs.google.com/spreadsheets/d/${docId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&tqx=out:json`;
+    console.log('📥 Fetching Entertainment via GViz:', url);
+    const txt = await fetch(url).then(r => r.text());
+    const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+    const rows = (json.table.rows || []).map(r => (r.c || []).map(c => (c && c.v != null ? c.v : '')));
+    if (rows.length === 0) {
+      console.warn('⚠️ GViz returned no rows for Entertainment');
+    }
+    handleEntertainment(rows);
+  } catch (err) {
+    console.error('❌ GViz Entertainment fetch failed:', err);
+    const feed = document.getElementById('entertainmentContent');
+    if (feed) feed.innerHTML = '<div class="text-yellow-400 text-sm">Failed to load entertainment. Please try again later.</div>';
+  }
+}
+
+// Refresh button
+document.getElementById('refreshEntertainment')?.addEventListener('click', () => {
+  loadEntertainment();
 });
 
   // ✅ Handle locked newsfeed close button
@@ -872,10 +1036,7 @@ marker.getElement().addEventListener('click', () => {
     });
   });
 
-if (!localStorage.getItem('hasSeenOnboarding')) {
-  document.getElementById('onboardingModal')?.classList.remove('hidden');
-  localStorage.setItem('hasSeenOnboarding', 'true');
-}
+// Do not auto-show onboarding; only open via help button
 
   // 🔹 Manual cancel + close buttons on modal
   document.getElementById('cancelRequest')?.addEventListener('click', () => {
@@ -1152,17 +1313,9 @@ document.getElementById('searchButton')?.addEventListener('click', () => {
   searchInput.dispatchEvent(new Event('input'));
 });
 
-// 🔒 Only show onboarding modal if NOT logged in
-const isLoggedIn = !!localStorage.getItem('memberName');
+// Do not auto-show onboarding based on login state; keep hidden by default
 const onboardingModal = document.getElementById('onboardingModal');
-
-if (onboardingModal) {
-  if (!isLoggedIn) {
-    onboardingModal.classList.remove('hidden'); // show
-  } else {
-    onboardingModal.classList.add('hidden'); // hide
-  }
-}
+onboardingModal?.classList.add('hidden');
   // Close button logic
   document.getElementById('closeOnboarding')?.addEventListener('click', () => {
     onboardingModal.classList.add('hidden');
@@ -1184,4 +1337,3 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('onboardingModal')?.classList.remove('hidden');
   });
 });
-

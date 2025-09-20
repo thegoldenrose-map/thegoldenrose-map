@@ -6,19 +6,24 @@
   <!-- 🔒 Locked Entertainment Modal -->
   <div id="lockedEntertainmentModal" class="absolute bottom-10 left-0 right-0 z-50 bg-black border-t border-yellow-500 p-6 text-yellow-400 hidden">
     <div class="text-center">
-      <button type="button" class="block w-full bg-yellow-500 text-white py-3 rounded-full text-center font-semibold hover:bg-yellow-600">
+      <button id="entertainmentSignInBtn" type="button" class="block w-full bg-yellow-500 text-white py-3 rounded-full text-center font-semibold hover:bg-yellow-600">
         🔒 SIGN IN
       </button>
     </div>
   </div>
 
-  <!-- 🔸 Sticky Header -->
-  <div class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 px-4 py-3 flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-yellow-400">🎬 Entertainment</h2>
+  <!-- 🔸 Category Tabs (FYP / Following) -->
+  <div id="entertainmentCategoryButtons" class="sticky top-0 z-20 bg-black/80 backdrop-blur-sm grid grid-cols-2 gap-1 px-2 pt-3 pb-1 pr-10">
+    <button class="entCategoryBtn w-full flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black active:scale-95 transition-all bg-black/40" data-cat="fyp">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> FYP
+    </button>
+    <button class="entCategoryBtn w-full flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black active:scale-95 transition-all bg-black/40" data-cat="following">
+      <i data-lucide="user" class="w-3.5 h-3.5"></i> Following
+    </button>
   </div>
 
   <!-- 🔸 Scrollable Content -->
-  <div id="entertainmentContent" class="flex-1 overflow-y-auto pt-20 px-4 pb-32 text-yellow-300 space-y-4">
+  <div id="entertainmentContent" class="flex-1 overflow-y-auto pt-4 px-4 pb-32 text-yellow-300 space-y-4">
     <div id="loadingEntertainment" class="flex flex-col items-center justify-center py-6 text-yellow-400">
       <svg class="animate-spin h-6 w-6 text-yellow-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -30,13 +35,7 @@
     <!-- Placeholder list; populate via future JS -->
   </div>
 
-  <!-- 🔸 Fixed Post Form -->
-  <form id="entertainmentPostForm" class="absolute bottom-12 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20">
-    <input id="entertainmentPostInput" type="text" placeholder="Paste image URL..." required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
-    <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
-      <i data-lucide="send" class="w-5 h-5 text-black"></i>
-    </button>
-  </form>
+  <!-- (Posting removed for entertainment) -->
 
   <!-- 🔸 Fixed Refresh Button -->
   <button id="refreshEntertainment" class="absolute bottom-2 right-4 bg-yellow-500 text-black px-3 py-1 rounded shadow hover:bg-yellow-600 text-sm">🔄 Refresh</button>

@@ -33,16 +33,17 @@ window.updateHelpJoinBtn = function () {
     return;
   }
 
-  if (window.isPremium) {
+  // Hide the help/join button for any logged-in user (free or premium)
+  if (window.isPremium || window.isLoggedIn?.()) {
     btn.classList.add('hidden');
-    console.log('🙈 Premium – hiding helpJoinBtn');
+    console.log('🙈 Logged-in – hiding helpJoinBtn');
   } else {
     btn.classList.remove('hidden');
     btn.style.display = 'block';
     btn.style.visibility = 'visible';
     btn.style.opacity = '1';
     btn.style.pointerEvents = 'auto';
-    console.log('🎯 Free user – showing helpJoinBtn');
+    console.log('🎯 Logged-out – showing helpJoinBtn');
   }
 };
 
@@ -72,7 +73,7 @@ function bindSubmissionForm() {
     e.preventDefault(); // ✅ this now works!
 
     const name = document.getElementById('locationName').value.trim();
-    const location = document.getElementById('locationDescription').value.trim();
+    const location = document.getElementById('submissionLocation').value.trim();
     const category = document.getElementById('locationCoords').value.trim();
 
     const url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
@@ -118,7 +119,7 @@ document.querySelectorAll('.categoryBtn').forEach(btn => {
   btn.addEventListener('click', () => {
     const cat = btn.getAttribute('data-cat');
     window.marketplaceFilter = cat;
-    loadMarketplace();
+    loadMarketplace(cat);
 
     // 🔁 Update active button highlight
     document.querySelectorAll('.categoryBtn').forEach(b => b.classList.remove('active-category'));
@@ -259,12 +260,12 @@ function handleMarketplace(rawRows) {
       postId:    r[3],
       timestamp: r[4],
       comments:  r[5],
-      category:  r[6]?.toLowerCase() || 'marketplace'
+      category:  (r[6] || '').toString().trim().toLowerCase() || 'jobs'
     }))
-    .filter(p => ['marketplace', 'job', 'trade'].includes(p.category))
+    .filter(p => ['shop','services','courses','jobs'].includes(p.category))
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-const selectedCategory = window.marketplaceFilter || 'job';
+const selectedCategory = window.marketplaceFilter || 'jobs';
 
 const visiblePosts = allMarketplacePosts.filter(p => p.category === selectedCategory);
 
@@ -278,6 +279,11 @@ const visiblePosts = allMarketplacePosts.filter(p => p.category === selectedCate
     console.error('❌ #marketplaceContent not found');
     return;
   }
+
+  // Preserve fixed UI (form + refresh) when re-rendering
+  const formNode = document.getElementById('marketplacePostForm');
+  const refreshNode = document.getElementById('refreshMarketplace');
+  const loadingNode = document.getElementById('loadingMarketplace');
 
   feed.innerHTML = '';
 
@@ -310,7 +316,8 @@ const visiblePosts = allMarketplacePosts.filter(p => p.category === selectedCate
       const liked = likeBtn.classList.toggle('liked');
       const type = liked ? 'like' : 'unlike';
       window.lastLikedBtn = likeBtn;
-      window.post(type, { postId: post.postId, category: post.category });
+      // Always treat likes as Marketplace sheet regardless of subcategory
+      window.post(type, { postId: post.postId, category: 'marketplace' });
     };
 
     const comments = post.comments ? JSON.parse(post.comments).reverse() : [];
@@ -344,7 +351,7 @@ const visiblePosts = allMarketplacePosts.filter(p => p.category === selectedCate
           username: localStorage.getItem('memberName') || 'Anonymous',
           postId: post.postId,
           commentText: text,
-          category: post.category
+          category: 'marketplace'
         });
         replyInput.value = '';
         replyInput.disabled = false;
@@ -356,15 +363,22 @@ const visiblePosts = allMarketplacePosts.filter(p => p.category === selectedCate
     actionsRow.append(toggleCommentsBtn, likeBtn);
 
     postDiv.append(header, content, actionsRow, commentsDiv, replyInput);
-    feed.appendChild(postDiv);
-    lucide.createIcons();
+  feed.appendChild(postDiv);
+  lucide.createIcons();
   });
 
+  // Re-attach fixed nodes (if they exist)
+  if (formNode) feed.appendChild(formNode);
+  if (refreshNode) feed.appendChild(refreshNode);
+  if (loadingNode) loadingNode.remove();
+
   console.log(`📦 Rendered ${visiblePosts.length} posts in category:`, selectedCategory);
+  // Ensure form visible for logged-in users
+  window.ensurePostFormsVisibility?.();
 }
 
 
-function loadMarketplace(category = 'job') {
+function loadMarketplace(category = 'jobs') {
   window.currentMarketplaceCategory = category;
   jsonp(`${window.SHEET_API_URL}?type=getMarketplace&callback=handleMarketplace`);
 }
@@ -402,6 +416,11 @@ function handleNewsfeed(rawRows) {
     console.error('❌ #newsfeedContent element not found!');
     return;
   }
+
+  // Preserve fixed UI (form + refresh) when re-rendering
+  const postForm = document.getElementById('postForm');
+  const refreshBtn = document.getElementById('refreshFeed');
+  const loadingNode2 = document.getElementById('loadingPosts');
 
   feed.innerHTML = '';
 
@@ -483,10 +502,16 @@ function handleNewsfeed(rawRows) {
   postDiv.append(header, content, actionsRow, commentsDiv, replyInput);
   feed.appendChild(postDiv);
   lucide.createIcons();
-});
+  });
 
 
   console.log('📦 Newsfeed rendered to DOM');
+  // Re-attach fixed nodes
+  if (postForm) feed.appendChild(postForm);
+  if (refreshBtn) feed.appendChild(refreshBtn);
+  if (loadingNode2) loadingNode2.remove();
+  // Ensure form visible for logged-in users
+  window.ensurePostFormsVisibility?.();
 }
 
 // Call this to load
@@ -547,7 +572,7 @@ function bindMarketplacePostForm() {
     if (!text) return;
 
     const username = localStorage.getItem('memberName') || 'Anonymous';
-    const category = window.marketplaceFilter || 'job';
+    const category = window.marketplaceFilter || 'jobs';
 
     window.post('post', {
       username,
@@ -564,7 +589,7 @@ document.querySelectorAll('.categoryBtn').forEach(btn => {
   btn.addEventListener('click', () => {
     const cat = btn.getAttribute('data-cat');
     window.currentMarketplaceCategory = cat;
-    loadMarketplace(cat); // reload filtered posts
+    loadMarketplace(cat);
   });
 });
 
@@ -690,15 +715,16 @@ document.getElementById('cancelFeedback')?.addEventListener('click', () => {
 });
 
   document.getElementById('marketplaceBtn')?.addEventListener('click', () => {
-  document.getElementById('marketplaceSidebar')?.classList.remove('translate-x-full');
-
-  if (!window.isPremium) {
-    document.getElementById('lockedMarketplaceModal')?.classList.remove('hidden');
-  } else {
-    document.getElementById('lockedMarketplaceModal')?.classList.add('hidden');
-    loadMarketplace();
-  }
-});
+    console.log('🛒 marketplaceBtn clicked. isLoggedIn=', window.isLoggedIn?.());
+    // set overlay state before opening to avoid flash
+    window.updateLockedOverlays?.();
+    const sidebar = document.getElementById('marketplaceSidebar');
+    sidebar?.classList.remove('translate-x-full');
+    if (window.isLoggedIn?.()) {
+      loadMarketplace();
+      setTimeout(() => window.ensurePostFormsVisibility?.(), 0);
+    }
+  });
 
   // 🔃 Toggle filter panel (temporarily disabled but kept for later)
   document.getElementById('filterBtn')?.addEventListener('click', () => {
@@ -724,12 +750,9 @@ document.getElementById('newsfeedBtn')?.addEventListener('click', () => {
   sidebar?.classList.remove('translate-x-full');
   loadNewsfeed?.();
 
-  // If not premium, show locked overlay
-  if (!window.isPremium) {
-    lockedOverlay?.classList.remove('hidden');
-  } else {
-    lockedOverlay?.classList.add('hidden');
-  }
+  console.log('📰 newsfeedBtn clicked. isLoggedIn=', window.isLoggedIn?.());
+  window.updateLockedOverlays?.();
+  setTimeout(() => window.ensurePostFormsVisibility?.(), 0);
 });
 
 // 🎬 Entertainment sidebar open
@@ -740,16 +763,25 @@ document.getElementById('entertainmentBtn')?.addEventListener('click', () => {
   sidebar?.classList.remove('translate-x-full');
   loadEntertainment?.();
 
-  if (!window.isPremium) {
-    lockedOverlay?.classList.remove('hidden');
-  } else {
-    lockedOverlay?.classList.add('hidden');
-  }
+  console.log('🎬 entertainmentBtn clicked. isLoggedIn=', window.isLoggedIn?.());
+  window.updateLockedOverlays?.();
+});
+
+// Entertainment category tabs (FYP / Following)
+window.entertainmentFilter = window.entertainmentFilter || 'fyp';
+document.querySelectorAll('.entCategoryBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cat = btn.getAttribute('data-cat');
+    window.entertainmentFilter = cat;
+    document.querySelectorAll('.entCategoryBtn').forEach(b => b.classList.remove('active-category'));
+    btn.classList.add('active-category');
+    // For now, no filtering logic server-side; this is a UI toggle placeholder
+  });
 });
 
 // ─────────── ENTERTAINMENT ───────────
 
-function handleEntertainment(rawRows) {
+window.handleEntertainment = function (rawRows) {
   console.log('🟢 handleEntertainment() called with:', rawRows);
   window._entertainmentReceived = true;
 
@@ -978,6 +1010,13 @@ if (filterBox) {
 
         const coords = feature.geometry.coordinates;
         const title = feature.properties.title;
+        const normalize = (s) => s
+          .toLowerCase()
+          .normalize('NFKD')
+          .replace(/[’'`]/g, '')
+          .replace(/[^\p{L}\p{N} ]+/gu, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
 
         const popupContent = `
   <div class="custom-popup">
@@ -1010,7 +1049,7 @@ marker.getElement().addEventListener('click', () => {
 
 
  geoMarkers.push({
-  title: title.toLowerCase().trim().replace(/\s+/g, ' '), // clean title
+  title: normalize(title),
   coords,
   marker,
   feature
@@ -1105,14 +1144,21 @@ window.showAllLocations = () => {
 const suggestionsBox = document.getElementById('suggestions');
 
 searchInput.addEventListener('input', async () => {
-  const query = searchInput.value.trim().toLowerCase().replace(/\s+/g, ' ');
+  const normalize = (s) => s
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[’'`]/g, '')
+    .replace(/[^\p{L}\p{N} ]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const query = normalize(searchInput.value || '');
   suggestionsBox.innerHTML = '';
   if (!query || geoMarkers.length === 0) {
     suggestionsBox.style.display = 'none';
     return;
   }
 
-  const matches = geoMarkers.filter(m => m.title.includes(query)).slice(0, 3);
+  const matches = geoMarkers.filter(m => m.title.includes(query)).slice(0, 5);
   console.log('🔍 Search query:', query);
   console.log('📍 Local Matches:', matches);
 
@@ -1122,13 +1168,20 @@ searchInput.addEventListener('input', async () => {
     matches.forEach(m => {
       const div = document.createElement('div');
       div.className = 'suggestion-item text-sm text-yellow-400 bg-black hover:bg-yellow-500 p-2 rounded cursor-pointer';
-      div.textContent = m.title;
+      div.textContent = m.feature?.properties?.title || m.title;
       
       div.addEventListener('click', () => {
         console.log('🛫 Flying to:', m.coords);
         if (map && m.marker) {
-          map.flyTo({ center: m.coords, zoom: 16 });
-          setTimeout(() => m.marker.togglePopup(), 300);
+          try {
+            map.flyTo({ center: m.coords, zoom: 16 });
+          } catch (e) {
+            console.warn('flyTo failed, retrying with easeTo', e);
+            map.easeTo({ center: m.coords, zoom: 16 });
+          }
+          setTimeout(() => {
+            try { m.marker.togglePopup(); } catch(_) {}
+          }, 350);
         } else {
           console.warn('⚠️ Marker or map not ready');
         }
@@ -1166,8 +1219,95 @@ searchInput.addEventListener('input', async () => {
     console.error('🌍 Mapbox error:', err);
   }
 
-  suggestionsBox.classList.remove('hidden');
-  suggestionsBox.style.display = 'block';
+suggestionsBox.classList.remove('hidden');
+suggestionsBox.style.display = 'block';
+});
+
+// Robust delegated click (works if individual listeners miss due to blur/focus)
+const handleSuggestionActivate = async (text) => {
+  const normalize = (s) => (s || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[’'`]/g, '')
+    .replace(/[^\p{L}\p{N} ]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const q = normalize(text);
+  if (!q) return;
+
+  // Try local marker by best contains match
+  const local = geoMarkers.filter(m => m.title.includes(q));
+  if (local.length && map && local[0].marker) {
+    try { map.flyTo({ center: local[0].coords, zoom: 16 }); } catch { map.easeTo({ center: local[0].coords, zoom: 16 }); }
+    setTimeout(() => { try { local[0].marker.togglePopup(); } catch(_) {} }, 350);
+    searchInput.value = '';
+    suggestionsBox.innerHTML = '';
+    suggestionsBox.style.display = 'none';
+    return;
+  }
+
+  // Fallback to Mapbox lookup of the clicked text
+  try {
+    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(text)}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&limit=1`);
+    const data = await res.json();
+    const feat = data.features?.[0];
+    if (feat) {
+      map.flyTo({ center: feat.center, zoom: 14 });
+      searchInput.value = '';
+      suggestionsBox.innerHTML = '';
+      suggestionsBox.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('🌍 Mapbox delegated click error:', err);
+  }
+};
+
+suggestionsBox.addEventListener('mousedown', (e) => {
+  const item = e.target.closest('.suggestion-item');
+  if (!item) return;
+  e.preventDefault();
+  e.stopPropagation();
+  handleSuggestionActivate(item.textContent || '');
+});
+
+// Enter to go to best match
+searchInput.addEventListener('keydown', async (e) => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+
+  const normalize = (s) => s
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[’'`]/g, '')
+    .replace(/[^\p{L}\p{N} ]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const query = normalize(searchInput.value || '');
+  if (!query) return;
+
+  // Try local marker match first
+  const local = geoMarkers.filter(m => m.title.includes(query));
+  if (local.length && map && local[0].marker) {
+    try { map.flyTo({ center: local[0].coords, zoom: 16 }); } catch { map.easeTo({ center: local[0].coords, zoom: 16 }); }
+    setTimeout(() => { try { local[0].marker.togglePopup(); } catch(_) {} }, 350);
+    suggestionsBox.innerHTML = '';
+    suggestionsBox.style.display = 'none';
+    return;
+  }
+
+  // Fallback to Mapbox geocode best result
+  try {
+    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&limit=1`);
+    const data = await res.json();
+    const feat = data.features?.[0];
+    if (feat) {
+      map.flyTo({ center: feat.center, zoom: 14 });
+      suggestionsBox.innerHTML = '';
+      suggestionsBox.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('🌍 Mapbox search enter fallback error:', err);
+  }
 });
 
 window.setupLogin = function () {
@@ -1185,37 +1325,69 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
   const submitBtn = loginForm.querySelector('button[type="submit"]');
   if (submitBtn) submitBtn.disabled = true;
 
-  fetch('https://docs.google.com/spreadsheets/d/1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw/gviz/tq?sheet=Sheet3&tqx=out:json')
-    .then(res => res.text())
-    .then(text => {
+  // Helper to (re)load members with cache busting
+  window.reloadMembershipData = async function () {
+    try {
+      const url = `https://docs.google.com/spreadsheets/d/1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw/gviz/tq?sheet=Members&tqx=out:json&_=${Date.now()}`;
+      const text = await fetch(url).then(r => r.text());
       const json = JSON.parse(text.slice(47, -2));
-      membershipData = json.table.rows.map(row => ({
-        name: row.c[0]?.v?.trim().toLowerCase().replace(/\s+/g, ''),
-        number: (row.c[1]?.v || '').toString().trim(),
-        level: (row.c[3]?.v?.trim().toLowerCase()) || 'free'
-      }));
+      const cols = (json.table.cols || []).map(c => (c.label || '').toString().trim().toLowerCase());
+      const idx = {
+        name: cols.indexOf('name'),
+        number: cols.indexOf('number'),
+        level: cols.indexOf('level'),
+        email: cols.indexOf('email'),
+        username: cols.indexOf('username'),
+        password: cols.indexOf('password')
+      };
+
+      membershipData = (json.table.rows || [])
+        .map(row => {
+          const c = row.c || [];
+          const get = (i) => (i >= 0 && c[i] && c[i].v != null) ? c[i].v : '';
+          const rec = {
+            name: get(idx.name).toString().trim().toLowerCase().replace(/\s+/g, ''),
+            number: get(idx.number).toString().trim(),
+            level: (get(idx.level) || 'free').toString().trim().toLowerCase(),
+            email: get(idx.email).toString().trim().toLowerCase().replace(/\s+/g, ''),
+            username: get(idx.username).toString().trim().toLowerCase().replace(/\s+/g, ''),
+            password: get(idx.password).toString().trim()
+          };
+          // Skip completely empty rows
+          if (!rec.name && !rec.username && !rec.email) return null;
+          return rec;
+        })
+        .filter(Boolean);
       console.log('✅ Membership data loaded:', membershipData);
       if (submitBtn) submitBtn.disabled = false;
-    })
-    .catch(err => {
+    } catch (err) {
       console.error('❌ Failed to fetch membership data:', err);
-      alert("Could not load member list. Try again later.");
-    });
+      alert('Could not load member list. Try again later.');
+    }
+  };
+
+  // Initial load
+  window.reloadMembershipData();
 
 
   loginForm.addEventListener('submit', e => {
   console.log('🟡 loginForm submitted');
   e.preventDefault();
 
+    // Accept username OR email in the first field
     const typedName = nameInput.value.trim().toLowerCase().replace(/\s+/g, '');
     const typedNumber = numberInput.value.trim();
 
     console.log('🔍 Typed Name:', typedName);
     console.log('🔢 Typed Number:', typedNumber);
 
-    const match = membershipData.find(m =>
-      m.name === typedName && m.number === typedNumber
-    );
+    // Support legacy (name+number), new (username+password), and email+password
+    const match = membershipData.find(m => {
+      const byLegacy = m.name && m.number && (m.name === typedName && m.number === typedNumber);
+      const byUser   = m.username && m.password && (m.username === typedName && m.password === typedNumber);
+      const byEmail  = m.email && m.password && (m.email === typedName && m.password === typedNumber);
+      return byLegacy || byUser || byEmail;
+    });
 
      console.log('🔎 Match found:', match);
 
@@ -1228,7 +1400,8 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
     localStorage.setItem('membershipLevel', match.level);
     window.isPremium = match.level === 'premium';
 
-    alert(`🌹 Welcome back ${match.name}! (${match.level})`);
+    const displayName = nameInput.value.trim();
+    alert(`🌹 Welcome back ${displayName}! (${match.level})`);
     document.getElementById('loginModal')?.classList.add('hidden');
 
      const username = nameInput.value.trim();
@@ -1239,6 +1412,115 @@ loadUserFavourites(username);
     showMemberOptions();
     lucide.createIcons?.();
   });
+}
+
+// ───────── SIGNUP (Modal + JSONP) ─────────
+window.setupSignup = function () {
+  const btn = document.getElementById('profileSignupBtn');
+  const modal = document.getElementById('signupModal');
+  const form = document.getElementById('signupForm');
+  const email = document.getElementById('signupEmail');
+  const username = document.getElementById('signupUsername');
+  const password = document.getElementById('signupPassword');
+
+  if (btn) {
+    btn.addEventListener('click', () => {
+      modal?.classList.remove('hidden');
+    });
+  }
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const em = (email?.value || '').trim();
+    const un = (username?.value || '').trim();
+    const pw = (password?.value || '').trim();
+
+    if (!em || !un || !pw) {
+      alert('Please complete all fields.');
+      return;
+    }
+
+    const url = `${window.SHEET_API_URL}?type=signup&email=${encodeURIComponent(em)}&username=${encodeURIComponent(un)}&password=${encodeURIComponent(pw)}&callback=handleSignupResponse`;
+    console.log('📤 Signup via JSONP:', url);
+    jsonp(url);
+  });
+};
+
+window.handleSignupResponse = function (resp) {
+  if (resp && resp.success) {
+    alert('✅ Account created! You can now log in.');
+    document.getElementById('signupModal')?.classList.add('hidden');
+    // Refresh members, then open login prefilled
+    const doOpen = () => {
+      const nameInput = document.getElementById('nameInput');
+      const numberInput = document.getElementById('numberInput');
+      if (nameInput && numberInput) {
+        nameInput.value = (document.getElementById('signupUsername')?.value || '');
+        numberInput.value = (document.getElementById('signupPassword')?.value || '');
+      }
+      document.getElementById('loginModal')?.classList.remove('hidden');
+    };
+    if (window.reloadMembershipData) {
+      window.reloadMembershipData().then?.(doOpen) || doOpen();
+    } else {
+      doOpen();
+    }
+  } else {
+    alert('❌ Could not create account.');
+  }
+};
+
+// ───────── Modal Link Wiring ─────────
+window.setupModalLinks = function () {
+  const closeAllPanels = () => {
+    // Close sidebars
+    document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+    document.getElementById('newsfeedSidebar')?.classList.add('translate-x-full');
+    document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+    // Hide profile menu and onboarding
+    document.getElementById('profileMenu')?.classList.add('hidden');
+    document.getElementById('onboardingModal')?.classList.add('hidden');
+    // Hide any lock overlays
+    document.getElementById('lockedMarketplaceModal')?.classList.add('hidden');
+    document.getElementById('lockedEntertainmentModal')?.classList.add('hidden');
+    document.getElementById('lockedNewsModal')?.classList.add('hidden');
+  };
+
+  const openLogin = () => {
+    closeAllPanels();
+    document.getElementById('signupModal')?.classList.add('hidden');
+    document.getElementById('loginModal')?.classList.remove('hidden');
+  };
+  const openSignup = () => {
+    closeAllPanels();
+    document.getElementById('loginModal')?.classList.add('hidden');
+    document.getElementById('signupModal')?.classList.remove('hidden');
+  };
+
+  // Direct bindings if elements are present now
+  const bind = (id, fn) => document.getElementById(id)?.addEventListener('click', (e) => { e.preventDefault(); fn(); });
+  bind('marketplaceSignInBtn', openLogin);
+  bind('entertainmentSignInBtn', openLogin);
+  bind('newsfeedSignInBtn', openLogin);
+  bind('profileLoginBtn', openLogin);
+  bind('openSignupLink', openSignup);
+  bind('profileSignupBtn', openSignup);
+  bind('onboardingSignupBtn', openSignup);
+
+  // Delegated fallback for any dynamically added elements
+  document.addEventListener('click', (ev) => {
+    const q = (sel) => ev.target.closest(sel);
+    if (q('#marketplaceSignInBtn') || q('#entertainmentSignInBtn') || q('#newsfeedSignInBtn') || q('#profileLoginBtn')) {
+      ev.preventDefault();
+      openLogin();
+    }
+    if (q('#openSignupLink') || q('#profileSignupBtn') || q('#onboardingSignupBtn')) {
+      ev.preventDefault();
+      openSignup();
+    }
+  });
+
+  console.log('✅ Modal links wired');
 }
 function showMemberOptions() {
   const name = localStorage.getItem('memberName') || 'Golden Rose Member';
@@ -1254,6 +1536,47 @@ function showMemberOptions() {
   document.getElementById('memberMeta').textContent = `Check-ins: ${checkins}`;
   document.getElementById('memberOptions')?.classList.remove('hidden');
   document.getElementById('guestOptions')?.classList.add('hidden');
+
+  // Hide any locked overlays now that user is logged in
+  document.getElementById('lockedMarketplaceModal')?.classList.add('hidden');
+  document.getElementById('lockedEntertainmentModal')?.classList.add('hidden');
+  document.getElementById('lockedNewsModal')?.classList.add('hidden');
+  window.ensurePostFormsVisibility?.();
+
+  // Mark page as logged-in for CSS-based guards
+  document.body.classList.add('logged-in');
+}
+
+// Utility: unified overlay state (prevents flicker)
+window.isLoggedIn = function () {
+  return !!(localStorage.getItem('memberName') || localStorage.getItem('membershipLevel'));
+}
+window.updateLockedOverlays = function () {
+  const logged = window.isLoggedIn?.();
+  const toggle = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (logged) el.classList.add('hidden');
+    else el.classList.remove('hidden');
+  };
+  toggle('lockedMarketplaceModal');
+  toggle('lockedEntertainmentModal');
+  toggle('lockedNewsModal');
+}
+
+// Ensure post forms are usable when logged in
+window.ensurePostFormsVisibility = function () {
+  if (!window.isLoggedIn?.()) return;
+  document.getElementById('lockedMarketplaceModal')?.classList.add('hidden');
+  document.getElementById('lockedNewsModal')?.classList.add('hidden');
+  ['marketplacePostForm','postForm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('hidden');
+    el.style.opacity = '1';
+    el.style.pointerEvents = 'auto';
+    el.style.filter = 'none';
+  });
 }
 
 
@@ -1296,6 +1619,10 @@ document.getElementById('logoutBtn')?.addEventListener('click', () => {
   document.getElementById('profileMenu')?.classList.add('hidden');
 
 });
+// Also remove logged-in body class on logout (defensive)
+document.getElementById('logoutBtn')?.addEventListener('click', () => {
+  document.body.classList.remove('logged-in');
+});
 // Open Feedback Modal
 document.getElementById('openFeedback')?.addEventListener('click', () => {
   document.getElementById('feedbackModal')?.classList.remove('hidden');
@@ -1331,9 +1658,43 @@ document.addEventListener('DOMContentLoaded', () => {
   bindUIButtons?.();
   setupLogin?.();
   bindMarketplacePostForm?.();
+  window.updateLockedOverlays?.();
 
   document.getElementById('helpJoinBtn')?.addEventListener('click', () => {
     console.log('🎯 helpJoinBtn clicked');
     document.getElementById('onboardingModal')?.classList.remove('hidden');
   });
+
+  // Robust delegated handlers (works even if elements render later)
+  document.addEventListener('click', (ev) => {
+    const q = (sel) => ev.target.closest(sel);
+    if (q('#marketplaceSignInBtn') || q('#entertainmentSignInBtn') || q('#profileLoginBtn')) {
+      ev.preventDefault();
+      console.log('🔐 Open Login click detected');
+      document.getElementById('signupModal')?.classList.add('hidden');
+      document.getElementById('loginModal')?.classList.remove('hidden');
+    }
+    if (q('#openSignupLink') || q('#profileSignupBtn')) {
+      ev.preventDefault();
+      console.log('🆕 Open Signup click detected');
+      document.getElementById('loginModal')?.classList.add('hidden');
+      document.getElementById('signupModal')?.classList.remove('hidden');
+    }
+  });
+
+  // Defensive: also bind direct listeners if present
+  const bind = (id, fn) => document.getElementById(id)?.addEventListener('click', (e) => { e.preventDefault(); fn(); });
+  const openLogin = () => {
+    document.getElementById('signupModal')?.classList.add('hidden');
+    document.getElementById('loginModal')?.classList.remove('hidden');
+  };
+  const openSignup = () => {
+    document.getElementById('loginModal')?.classList.add('hidden');
+    document.getElementById('signupModal')?.classList.remove('hidden');
+  };
+  bind('marketplaceSignInBtn', openLogin);
+  bind('entertainmentSignInBtn', openLogin);
+  bind('profileLoginBtn', openLogin);
+  bind('openSignupLink', openSignup);
+  bind('profileSignupBtn', openSignup);
 });

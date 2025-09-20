@@ -324,6 +324,20 @@ html, body {
     transform: translateY(0);
   }
 }
+
+/* ───────── Logged-in state helpers ───────── */
+.logged-in #lockedMarketplaceModal,
+.logged-in #lockedNewsModal,
+.logged-in #lockedEntertainmentModal {
+  display: none !important;
+}
+
+.logged-in #marketplacePostForm,
+.logged-in #postForm {
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+}
 #onboardingModal {
   animation: fadeIn 0.4s ease;
 }
@@ -373,5 +387,4 @@ html, body {
                 0 0 24px 8px rgba(255, 221, 0, 0.5);
   }
 }
-
 

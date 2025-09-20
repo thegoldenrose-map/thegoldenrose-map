@@ -63,6 +63,8 @@ window.loadAllUI = async function () {
     window.setupApp?.();
     window.bindUIButtons?.();
     window.setupLogin?.();
+    window.setupSignup?.();
+    window.setupModalLinks?.();
 
     // ✅ Re-render Lucide icons after all DOM is loaded
     if (window.lucide?.createIcons) {

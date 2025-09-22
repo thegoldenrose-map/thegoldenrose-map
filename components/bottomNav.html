@@ -1,20 +1,19 @@
 <!-- 🔸 Bottom Navigation Bar -->
 <nav id="bottom-nav" class="fixed bottom-0 w-full h-16 bg-black border-t border-yellow-500 flex justify-around items-center z-50 gap-4 px-2">
   <!-- inside bottomNav.html -->
-  <!-- Newsfeed moved into first position -->
-  <button id="newsfeedBtn" title="Newsfeed"><i data-lucide="newspaper"></i></button>
+  <!-- Activity moved into first position -->
+  <button id="activityBtn" title="Activity"><i data-lucide="newspaper"></i></button>
   <!-- New Entertainment button placed where Newsfeed was -->
   <button id="entertainmentBtn" title="Entertainment"><i data-lucide="play"></i></button>
-  <div class="search-wrapper relative">
-    <input type="text" id="search" placeholder="Search..." autocomplete="off" class="rounded px-2 py-1 bg-zinc-800 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
-    <div id="suggestions" class="absolute top-full left-0 w-full bg-black z-[9999] pointer-events-auto hidden border border-yellow-600 rounded shadow-lg text-sm text-yellow-300"></div>
+  <div class="search-wrapper relative flex items-center">
+    <input type="text" id="search" placeholder="Search..." autocomplete="off" class="rounded-full px-4 py-2 pr-12 bg-zinc-800 text-yellow-300 placeholder-yellow-600 focus:outline-none border border-yellow-500/60 focus:border-yellow-400 transition w-56 sm:w-64" />
+    <button id="filterBtn" type="button" title="Filter" class="absolute right-1.5 h-8 w-8 flex items-center justify-center rounded-full border border-yellow-500 bg-black text-yellow-400 hover:bg-yellow-500 hover:text-black transition">
+      <i data-lucide="sliders-horizontal"></i>
+    </button>
+    <div id="suggestions" class="absolute top-[105%] left-0 w-full bg-black z-[9999] pointer-events-auto hidden border border-yellow-600 rounded-xl shadow-lg text-sm text-yellow-300 overflow-hidden"></div>
   </div>
   <button id="marketplaceBtn" title="Marketplace"><i data-lucide="store"></i></button>
   <button id="profileToggle" title="Profile"><i data-lucide="user"></i></button>
-  <!-- Keep Filter button markup for later use, but hidden/disabled -->
-  <button id="filterBtn" class="hidden z-[9999]" title="Filter" disabled>
-    <i data-lucide="menu"></i>
-  </button>
 </nav>
 
 
@@ -22,5 +21,3 @@
 <button id="floatingLocateBtn" class="fixed bottom-16 right-4 w-12 h-12 rounded-full shadow-xl text-xl font-bold z-[9998] bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-400 flex items-center justify-center">
   <i data-lucide="crosshair"></i>
 </button>
-
-

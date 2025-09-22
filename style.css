@@ -91,35 +91,7 @@ html, body {
   cursor: pointer;
 }
 
-#filterPanel {
-  position: fixed;
-  bottom: 70px; /* just above nav bar */
-  left: 100px;   /* closer to edge */
-  background-color: #000;
-  color: #FFD700;
-  border: 2px solid #FFD700;
-  border-radius: 12px;
-  padding: 16px;
-  z-index: 9999;
-  max-width: 240px;
-  box-shadow: 0 0 20px gold;
-  font-family: sans-serif;
-}
-
-
-.filter-panel label {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 6px;
-  cursor: pointer;
-}
-
-.filter-panel input[type="checkbox"] {
-  margin-right: 8px;
-  accent-color: gold;
-}
-
-/* === Newsfeed Sidebar === */
+/* === Legacy Newsfeed Sidebar (CSS-driven) === */
 #newsfeed-sidebar {
   position: fixed;
   top: 0;
@@ -387,4 +359,3 @@ html, body {
                 0 0 24px 8px rgba(255, 221, 0, 0.5);
   }
 }
-

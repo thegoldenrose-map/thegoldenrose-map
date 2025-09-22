@@ -10,48 +10,37 @@
     </div>
   </div>
 
-<div id="marketplaceCategoryButtons" class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 grid grid-cols-4 gap-1 px-2 py-2 pr-12 relative">
-  <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="shop">
-    <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Shop
-  </button>
-  <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="services">
-    <i data-lucide="wrench" class="w-3.5 h-3.5"></i> Services
-  </button>
-  <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="courses">
-    <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i> Courses
-  </button>
-  <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="jobs">
-    <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> Jobs
-  </button>
+  <div id="marketplaceCategoryButtons" class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 grid grid-cols-4 gap-1 px-2 py-2 pr-12 relative">
+    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="shop">
+      <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Shop
+    </button>
+    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="services">
+      <i data-lucide="wrench" class="w-3.5 h-3.5"></i> Services
+    </button>
+    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="courses">
+      <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i> Courses
+    </button>
+    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="jobs">
+      <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> Jobs
+    </button>
 
-  <!-- 🔸 Close Button aligned with tabs -->
-  <button onclick="document.getElementById('marketplaceSidebar').classList.add('translate-x-full')" class="absolute right-2 top-1/2 -translate-y-1/2 text-yellow-500 z-50 text-xl font-bold leading-none">
-    ×
-  </button>
-</div>
-
+    <!-- 🔸 Close Button aligned with tabs -->
+    <button onclick="document.getElementById('marketplaceSidebar').classList.add('translate-x-full')" class="absolute right-2 top-1/2 -translate-y-1/2 text-yellow-500 z-50 text-xl font-bold leading-none">
+      ×
+    </button>
+  </div>
 
   <!-- 🔸 Scrollable Marketplace Content -->
-  <div id="marketplaceContent" class="flex-1 overflow-y-auto pt-20 px-4 pb-32 text-yellow-300 space-y-4">
-<div id="loadingMarketplace" class="flex flex-col items-center justify-center py-6 text-yellow-400">
-  <svg class="animate-spin h-6 w-6 text-yellow-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-    <path class="opacity-75" fill="currentColor"
-      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z">
-    </path>
-  </svg>
-  <span class="text-sm font-medium">Loading posts...</span>
-</div>
+  <div id="marketplaceContent" class="relative flex-1 overflow-y-auto pt-8 px-4 pb-16 text-yellow-300 space-y-6">
+    <div id="loadingMarketplace" class="flex flex-col items-center justify-center py-6 text-yellow-400">
+      <svg class="animate-spin h-6 w-6 text-yellow-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      <span class="text-sm font-medium">Loading posts...</span>
+    </div>
 
-
-  <!-- 🔸 Fixed Post Form -->
-  <form id="marketplacePostForm" class="absolute bottom-12 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20">
-    <input id="marketplacePostInput" type="text" placeholder="Post a listing..." required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
-    <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
-      <i data-lucide="send" class="w-5 h-5 text-black"></i>
-    </button>
-  </form>
-
-  <!-- 🔸 Fixed Refresh Button -->
-  <button id="refreshMarketplace" class="absolute bottom-2 right-4 bg-yellow-500 text-black px-3 py-1 rounded shadow hover:bg-yellow-600 text-sm">🔄 Refresh</button>
+    <section id="marketplaceShopContent" class="hidden space-y-6"></section>
+    <div id="marketplaceListingsContent" class="space-y-4"></div>
+  </div>
 </div>

@@ -10,6 +10,16 @@ html, body {
   overflow: hidden;
 }
 
+body.theme-dark {
+  background: #000;
+  color: #facc15;
+}
+
+body.theme-light {
+  background: #fff9e6;
+  color: #2f1b00;
+}
+
 /* === Map === */
 #map {
   position: absolute;
@@ -46,6 +56,15 @@ html, body {
   flex: 0 0 auto;
 }
 
+body.theme-light #bottom-nav {
+  background: #fff4d6;
+  border-top-color: #d97706;
+}
+
+body.theme-light #bottom-nav button {
+  color: #92400e;
+}
+
 /* === Search === */
 .search-wrapper {
   display: flex;
@@ -66,6 +85,13 @@ html, body {
   border-radius: 10px;
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
   outline: none;
+}
+
+body.theme-light .search-wrapper input {
+  background: #fffef4;
+  color: #92400e;
+  border-color: #eab308;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.25);
 }
 
 .modal input,
@@ -109,6 +135,12 @@ html, body {
   border-left: 2px solid gold;
 }
 
+body.theme-light #newsfeed-sidebar {
+  background: #fffef4;
+  color: #2f1b00;
+  border-left-color: #d97706;
+}
+
 #newsfeed-sidebar.active {
   transform: translateX(0);
 }
@@ -128,6 +160,12 @@ html, body {
   margin-bottom: 1rem;
 }
 
+body.theme-light .post {
+  background: #fff8e1;
+  color: #2f1b00;
+  border-color: #d97706;
+}
+
 .like-btn {
   display: flex;
   align-items: center;
@@ -138,6 +176,11 @@ html, body {
   margin-top: 0.5rem;
   background: transparent;
   color: gold;
+}
+
+body.theme-light .like-btn {
+  border-color: #d97706;
+  color: #92400e;
 }
 
 .like-btn.liked {
@@ -205,6 +248,43 @@ html, body {
   border-radius: 50%;
   cursor: pointer;
 }
+
+/* === Activity header chips (smaller + glow) === */
+#activityCommunityMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+#activityCommunityMeta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  background: radial-gradient(circle at 30% 20%, rgba(250,204,21,0.22), rgba(250,204,21,0.06) 70%);
+  box-shadow: 0 0 10px rgba(250,204,21,0.28);
+}
+
+#activityCommunityMeta > span i {
+  width: 12px;
+  height: 12px;
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.65));
+}
+
+body.theme-light #activityCommunityMeta > span {
+  background: radial-gradient(circle at 30% 20%, rgba(217,119,6,0.18), rgba(217,119,6,0.06) 70%);
+  box-shadow: 0 0 8px rgba(217,119,6,0.25);
+}
+
+body.theme-light #activityCommunityMeta > span i {
+  filter: drop-shadow(0 0 6px rgba(217, 119, 6, 0.5));
+}
 .mapboxgl-popup-content {
   padding: 0 !important;
   background: transparent !important;
@@ -256,6 +336,104 @@ html, body {
   border: none;
   color: #facc15;
   cursor: pointer;
+}
+
+body.theme-light .custom-popup {
+  background: linear-gradient(to bottom right, #fffef4, #fff5ce);
+  border-color: #d97706;
+  color: #7c2d12;
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.45);
+}
+
+body.theme-light .custom-popup .desc {
+  color: #b45309;
+}
+
+body.theme-light .custom-popup .close-btn,
+body.theme-light .custom-popup .favourite-btn {
+  color: #d97706;
+}
+
+body.theme-light .custom-popup .title {
+  color: #92400e;
+}
+
+.custom-popup .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.custom-popup .actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.custom-popup .actions button:hover {
+  background: rgba(250, 204, 21, 0.15);
+}
+
+body.theme-light .custom-popup .actions button:hover {
+  background: rgba(217, 119, 6, 0.15);
+}
+
+body.theme-light .bg-black {
+  background-color: #fff8e1 !important;
+  color: #2f1b00 !important;
+}
+
+body.theme-light .text-yellow-500,
+body.theme-light .text-yellow-400,
+body.theme-light .text-yellow-300,
+body.theme-light .text-yellow-200,
+body.theme-light .text-yellow-100 {
+  color: #92400e !important;
+}
+
+body.theme-light .border-yellow-500,
+body.theme-light .border-yellow-400,
+body.theme-light .border-yellow-300 {
+  border-color: #d97706 !important;
+}
+
+body.theme-light .bg-yellow-500 {
+  background-color: #fbbf24 !important;
+  color: #1f2937 !important;
+}
+
+.badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #facc15;
+}
+
+/* Ensure icons scale down within chips */
+.badge-chip svg {
+  width: 12px;
+  height: 12px;
+}
+
+body.theme-light .badge-chip {
+  color: #92400e;
+  border-color: #d97706;
+  background-color: rgba(217, 119, 6, 0.12);
 }
 
 .custom-popup .close-btn { left: 8px; }

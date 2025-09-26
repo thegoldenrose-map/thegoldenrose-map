@@ -19,7 +19,6 @@
       <h2 class="text-lg font-semibold text-yellow-400">🌹 Activity</h2>
       <div class="flex items-center gap-2">
         <button id="activityCommunityLabel" class="inline-flex items-center gap-2 rounded-full border border-yellow-500/40 bg-black/60 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-yellow-200 hover:bg-yellow-500 hover:text-black transition">
-          <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
           <span>Community: Not selected</span>
         </button>
       </div>
@@ -40,7 +39,10 @@
          <p class="text-[10px] uppercase tracking-[0.3em] text-yellow-500/70">Community</p>
          <h3 class="text-base font-semibold text-yellow-100">Choose Your Local Hub</h3>
        </div>
-       <button id="activityCommunityInfo" type="button" class="text-xs text-yellow-400 hover:text-yellow-200">Why?</button>
+       <div class="flex items-center gap-2">
+         <button id="activityCommunityInfo" type="button" class="text-xs text-yellow-400 hover:text-yellow-200">Why?</button>
+         <button id="communityCardClose" type="button" class="inline-flex items-center justify-center w-7 h-7 rounded-full border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500 hover:text-black" aria-label="Close community picker">×</button>
+       </div>
      </div>
      <select id="communityPicker" class="w-full rounded-xl border border-yellow-500/30 bg-black/80 px-3 py-2 text-yellow-200 focus:border-yellow-400 focus:outline-none">
        <option value="">Select a village, town or city…</option>

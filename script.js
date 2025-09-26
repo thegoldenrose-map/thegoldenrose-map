@@ -7,6 +7,106 @@ let originalGeoData = null;
 
 window.SHEET_API_URL = window.SHEET_API_URL || 'https://script.google.com/macros/s/AKfycbyIqpE0QffyefE_zybPLTVMOOoDeA7snugUDJWbnUBR1SmeBRSWXHLbpcRLaTPJrdUKBA/exec';
 window.isPremium = false;
+const THEME_KEY = 'appTheme';
+const BADGE_DEFS = [
+  { id: 'trailblazer', label: 'Trailblazer', icon: 'sparkles', test: (s) => s.posts >= 1 },
+  { id: 'community-voice', label: 'Community Voice', icon: 'megaphone', test: (s) => s.posts >= 5 },
+  { id: 'conversationalist', label: 'Conversationalist', icon: 'message-circle', test: (s) => s.comments >= 1 },
+];
+
+window.applyTheme = function(theme) {
+  const normalized = theme === 'light' ? 'light' : 'dark';
+  document.body.classList.remove('theme-light', 'theme-dark');
+  document.body.classList.add(`theme-${normalized}`);
+  localStorage.setItem(THEME_KEY, normalized);
+  updateThemeButtonLabels(normalized);
+};
+
+window.toggleTheme = function () {
+  const current = localStorage.getItem(THEME_KEY) || 'dark';
+  window.applyTheme(current === 'light' ? 'dark' : 'light');
+};
+
+function updateThemeButtonLabels(theme) {
+  const buttons = document.querySelectorAll('#themeToggleBtn, #themeToggleBtnGuest');
+  const label = theme === 'light' ? 'Dark Mode' : 'Light Mode';
+  const icon = theme === 'light' ? 'moon-star' : 'sun';
+  buttons.forEach(btn => {
+    if (!btn) return;
+    btn.innerHTML = `<i data-lucide="${icon}"></i> ${label}`;
+  });
+  window.lucide?.createIcons?.();
+}
+
+window.initTheme = function () {
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  window.applyTheme(saved);
+};
+
+window.initTheme();
+
+window.openDirections = function(lat, lon, title) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&destination_place_id=`;
+  window.open(url, '_blank');
+};
+
+function normalizeUserName(name = '') {
+  return name.toString().trim().toLowerCase();
+}
+
+function isCurrentUser(name = '') {
+  const saved = localStorage.getItem('memberName') || '';
+  const email = saved.toLowerCase();
+  const normSaved = normalizeUserName(saved);
+  const normName = normalizeUserName(name);
+  return normName === normSaved || (email && normName && email.startsWith(normName)) || normName === email;
+}
+
+function buildActivityStats(posts = []) {
+  const stats = {};
+  posts.forEach(post => {
+    const user = post.username || 'Anonymous';
+    const key = normalizeUserName(user);
+    if (!stats[key]) stats[key] = { user, posts: 0, comments: 0 };
+    stats[key].posts++;
+
+    let comments = [];
+    try {
+      comments = post.comments ? JSON.parse(post.comments) : [];
+    } catch (_) {
+      comments = [];
+    }
+    comments.forEach(c => {
+      const commenter = c.user || 'Anonymous';
+      const cKey = normalizeUserName(commenter);
+      if (!stats[cKey]) stats[cKey] = { user: commenter, posts: 0, comments: 0 };
+      stats[cKey].comments++;
+    });
+  });
+  return stats;
+}
+
+function determineBadgesForUser(user, stat) {
+  const badges = [];
+  BADGE_DEFS.forEach(def => {
+    if (def.test(stat)) badges.push(def);
+  });
+  // Removed Premium and location badges for a cleaner look
+  return badges;
+}
+
+function getActivityBadgesForUser(name = '') {
+  const stats = window.activityStats || {};
+  const stat = stats[normalizeUserName(name)] || { user: name, posts: 0, comments: 0 };
+  return determineBadgesForUser(name, stat);
+}
+
+function renderBadgeChips(name, container) {
+  if (!container) return;
+  const badges = getActivityBadgesForUser(name);
+  container.innerHTML = badges.map(b => `<span class="badge-chip"><i data-lucide="${b.icon}"></i> ${b.label}</span>`).join('');
+  window.lucide?.createIcons?.();
+}
 const MOCK_MARKETPLACE_SHOPS = [
   {
     id: 'rose-crown-bakery',
@@ -201,28 +301,54 @@ const MOCK_MARKETPLACE_LISTINGS = {
 };
 
 const COMMUNITY_OPTIONS = [
+  // East Sussex focus (plus EG by request)
+  'Crowborough',
   'Forest Row',
   'East Grinstead',
-  'Hartfield',
-  'Tunbridge Wells',
-  'Brighton',
-  'London',
-  'Manchester',
-  'Birmingham',
-  'Edinburgh',
-  'Glasgow'
+  'Uckfield',
+  'Lewes',
+  'Eastbourne',
+  'Hastings',
+  'Bexhill',
+  'Hailsham',
+  'Polegate',
+  'Seaford',
+  'Newhaven',
+  'Peacehaven',
+  'Rye',
+  'Battle',
+  'Heathfield',
+  'Wadhurst',
+  'Robertsbridge',
+  'Ringmer',
+  'Plumpton',
+  'Hove',
+  'Brighton'
 ];
 const COMMUNITY_META = {
-  'East Grinstead': { members: 214, county: 'West Sussex', mp: 'Mims Davies' },
-  'Forest Row':     { members: 137, county: 'East Sussex', mp: 'Mims Davies' },
-  'Hartfield':      { members: 58,  county: 'East Sussex', mp: 'Nus Ghani' },
-  'Tunbridge Wells':{ members: 312, county: 'Kent',        mp: 'Greg Clark' },
-  'Brighton':       { members: 1024,county: 'East Sussex', mp: 'Caroline Lucas' },
-  'London':         { members: 8241,county: 'Greater London', mp: '—' },
-  'Manchester':     { members: 2310,county: 'Greater Manchester', mp: '—' },
-  'Birmingham':     { members: 1988,county: 'West Midlands', mp: '—' },
-  'Edinburgh':      { members: 1120,county: 'Lothian',     mp: '—' },
-  'Glasgow':        { members: 1212,county: 'Glasgow City', mp: '—' },
+  // Keep correct county for EG; others set to East Sussex
+  'Crowborough':    { members: 420, county: 'East Sussex', mp: '—' },
+  'Forest Row':     { members: 137, county: 'East Sussex', mp: '—' },
+  'East Grinstead': { members: 214, county: 'West Sussex', mp: '—' },
+  'Uckfield':       { members: 260, county: 'East Sussex', mp: '—' },
+  'Lewes':          { members: 390, county: 'East Sussex', mp: '—' },
+  'Eastbourne':     { members: 800, county: 'East Sussex', mp: '—' },
+  'Hastings':       { members: 720, county: 'East Sussex', mp: '—' },
+  'Bexhill':        { members: 310, county: 'East Sussex', mp: '—' },
+  'Hailsham':       { members: 240, county: 'East Sussex', mp: '—' },
+  'Polegate':       { members: 180, county: 'East Sussex', mp: '—' },
+  'Seaford':        { members: 340, county: 'East Sussex', mp: '—' },
+  'Newhaven':       { members: 200, county: 'East Sussex', mp: '—' },
+  'Peacehaven':     { members: 210, county: 'East Sussex', mp: '—' },
+  'Rye':            { members: 150, county: 'East Sussex', mp: '—' },
+  'Battle':         { members: 160, county: 'East Sussex', mp: '—' },
+  'Heathfield':     { members: 170, county: 'East Sussex', mp: '—' },
+  'Wadhurst':       { members: 120, county: 'East Sussex', mp: '—' },
+  'Robertsbridge':  { members: 90,  county: 'East Sussex', mp: '—' },
+  'Ringmer':        { members: 110, county: 'East Sussex', mp: '—' },
+  'Plumpton':       { members: 80,  county: 'East Sussex', mp: '—' },
+  'Hove':           { members: 650, county: 'East Sussex', mp: '—' },
+  'Brighton':       { members: 1024,county: 'East Sussex', mp: '—' },
 };
 
 function getCommunityMemberCount(name) {
@@ -271,6 +397,13 @@ function handleGetCommunity(resp) {
     localStorage.setItem('memberCommunity', community);
     localStorage.setItem('memberCommunityStatus', status);
     window.updateActivityCommunityStatus?.(status, community);
+    const stats = window.memberStats || {};
+    stats.community = community;
+    stats.status = status;
+    window.memberStats = stats;
+    window.updateMemberStatsUI?.();
+    requestCommunityMeta(community);
+    renderBadgeChips(localStorage.getItem('memberName') || '', document.getElementById('memberCardBadges'));
   }
 }
 
@@ -290,6 +423,12 @@ function handleSetCommunity(resp) {
     window.updateActivityCommunityStatus?.(status, community);
     // Refresh members count using backend meta for accuracy
     requestCommunityMeta(community);
+    const stats = window.memberStats || {};
+    stats.community = community;
+    stats.status = status;
+    window.memberStats = stats;
+    window.updateMemberStatsUI?.();
+    renderBadgeChips(localStorage.getItem('memberName') || '', document.getElementById('memberCardBadges'));
   } else {
     alert('Could not update community.');
   }
@@ -471,6 +610,11 @@ function handleAddFavouriteResponse(data) {
 function renderFavouritesDropdown(favs) {
   const container = document.getElementById('favouritesDropdown');
   container.innerHTML = '';
+  window.latestFavouritesCount = favs.length;
+  if (window.memberStats) {
+    window.memberStats.favourites = favs.length;
+    window.updateMemberStatsUI?.();
+  }
 
   if (favs.length === 0) {
     container.innerHTML = '<div class="text-sm px-4 py-2 text-yellow-400">No favourites yet.</div>';
@@ -959,6 +1103,9 @@ function handleActivity(rawRows) {
     return;
   }
 
+  const stats = buildActivityStats(posts);
+  window.activityStats = stats;
+
   // Preserve fixed UI (form + refresh) when re-rendering
   const postForm = document.getElementById('activityPostForm');
   const refreshBtn = document.getElementById('refreshActivity');
@@ -991,6 +1138,16 @@ function handleActivity(rawRows) {
   timeAgo.textContent = timeSince(new Date(post.timestamp)) + ' ago';
 
   header.append(userBtn, timeAgo);
+
+  const badges = getActivityBadgesForUser(post.username || 'Anonymous');
+  if (badges.length) {
+    const badgeRow = document.createElement('div');
+    badgeRow.className = 'flex flex-wrap gap-1 mb-2';
+    badgeRow.innerHTML = badges.map(b => `<span class="badge-chip"><i data-lucide="${b.icon}"></i> ${b.label}</span>`).join('');
+    postDiv.append(header, badgeRow);
+  } else {
+    postDiv.appendChild(header);
+  }
 
   const content = document.createElement('p');
   content.className = 'text-sm leading-relaxed mb-3 text-yellow-200';
@@ -1050,7 +1207,7 @@ function handleActivity(rawRows) {
   actionsRow.className = 'flex items-center justify-between mt-3';
   actionsRow.append(toggleCommentsBtn, likeBtn);
 
-  postDiv.append(header, content, actionsRow, commentsDiv, replyInput);
+  postDiv.append(content, actionsRow, commentsDiv, replyInput);
   feed.appendChild(postDiv);
   lucide.createIcons();
   });
@@ -1281,7 +1438,10 @@ function bindUIButtons() {
     document.getElementById('profileMenu')?.classList.toggle('hidden');
   });
   document.getElementById('profileLoginBtn')?.addEventListener('click', () => {
-    document.getElementById('loginModal')?.classList.remove('hidden');
+  document.getElementById('loginModal')?.classList.remove('hidden');
+});
+  document.querySelectorAll('#themeToggleBtn,#themeToggleBtnGuest').forEach(btn => {
+    btn.addEventListener('click', () => window.toggleTheme?.());
   });
 
   document.getElementById('activityBtn')?.addEventListener('click', () => {
@@ -1587,9 +1747,13 @@ if (filterBox) {
           .replace(/\s+/g, ' ')
           .trim();
 
+        const safeTitle = title.replace(/'/g, "\\'");
+        const lat = coords[1];
+        const lon = coords[0];
+
         const popupContent = `
   <div class="custom-popup">
-    <button class="favourite-btn" onclick="addToFavourites('${title.replace(/'/g, "\\'")}')">
+    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
       <i data-lucide="heart" class="w-4 h-4"></i>
     </button>
     <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
@@ -1597,6 +1761,11 @@ if (filterBox) {
     </button>
     <div class="title">${title}</div>
     ${feature.properties.description ? `<div class="desc">${feature.properties.description}</div>` : ''}
+    <div class="actions">
+      <button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')">
+        <i data-lucide="navigation"></i> Directions
+      </button>
+    </div>
   </div>
 `;
 
@@ -1828,6 +1997,7 @@ window.showMemberCard = (name = 'Member', anchorEl) => {
         <span class="font-semibold text-yellow-100" id="memberCardStatus">${profile.status}</span>
       </div>
     </div>
+    <div id="memberCardBadges" class="flex flex-wrap gap-1 pt-2"></div>
   `;
 
   card.classList.remove('hidden');
@@ -1858,8 +2028,10 @@ window.showMemberCard = (name = 'Member', anchorEl) => {
   // Fetch live community/status for this user from backend and update card
   const requestedUser = name;
   const url = `${window.SHEET_API_URL}?type=getCommunity&user=${encodeURIComponent(requestedUser)}&callback=handleMemberCardCommunity`;
-  window._memberCardTarget = normalizeMemberKey(requestedUser);
+  window._memberCardTarget = normalizeUserName(requestedUser);
+  window._memberCardDisplayName = requestedUser;
   jsonp(url);
+  renderBadgeChips(requestedUser, card.querySelector('#memberCardBadges'));
 };
 
 // Callback to update the open member card with backend community/status
@@ -1873,6 +2045,7 @@ function handleMemberCardCommunity(resp) {
   const sEl = document.getElementById('memberCardStatus');
   if (cEl) cEl.textContent = comm || 'No community selected';
   if (sEl) sEl.textContent = status || 'Guest';
+  renderBadgeChips(window._memberCardDisplayName || '', document.getElementById('memberCardBadges'));
 }
 
 window.updateActivityCommunityStatus = (status, community) => {
@@ -1887,6 +2060,15 @@ window.updateActivityCommunityStatus = (status, community) => {
     statusEl.textContent = 'Select a community to focus your feed.';
     if (joinBtn) joinBtn.textContent = 'Request to Join';
     cardEl?.classList.remove('hidden');
+    const state = ensureHeaderState();
+    state.community = '';
+    state.members = 0;
+    renderHeaderMeta(state);
+    const stats = window.memberStats || {};
+    stats.community = 'No community selected';
+    stats.status = 'guest';
+    window.memberStats = stats;
+    window.updateMemberStatsUI?.();
     return;
   }
 
@@ -1912,24 +2094,26 @@ window.updateActivityCommunityStatus = (status, community) => {
     if (joinBtn) joinBtn.textContent = 'Switch Community';
   }
 
-  // Hide the picker once connected to a community
-  cardEl?.classList.add('hidden');
+  if (!window.keepCommunityCardOpen) {
+    cardEl?.classList.add('hidden');
+  }
+
+  const stats = window.memberStats || {};
+  stats.community = community || 'No community selected';
+  stats.status = status || 'member';
+  window.memberStats = stats;
+  window.updateMemberStatsUI?.();
+  renderBadgeChips(localStorage.getItem('memberName') || '', document.getElementById('memberCardBadges'));
 };
 
 window.requestCommunityMembership = (community) => {
   const trimmed = (community || '').trim();
   if (!trimmed) return;
-  const memberName = localStorage.getItem('memberName') || 'Member';
-  updateMemberDirectory(memberName, { community: trimmed, status: 'member' });
-  const checkins = parseInt(localStorage.getItem('checkinCount') || '0', 10);
-  if (!Number.isNaN(checkins)) updateMemberDirectory(memberName, { checkins });
-  localStorage.setItem('memberCommunity', trimmed);
-  localStorage.setItem('memberCommunityStatus', 'member');
-  window.updateActivityCommunityStatus('member', trimmed);
-  console.log(`✅ Community set to ${trimmed}`);
+  setCommunityForCurrentUser(trimmed, 'member');
 };
 
 window.initCommunityPicker = () => {
+  if (typeof window.keepCommunityCardOpen === 'undefined') window.keepCommunityCardOpen = false;
   const select = document.getElementById('communityPicker');
   const joinBtn = document.getElementById('communityJoinBtn');
   if (!select || !joinBtn) return;
@@ -1972,6 +2156,7 @@ window.initCommunityPicker = () => {
   document.getElementById('activityCommunityLabel')?.addEventListener('click', (e) => {
     e.preventDefault();
     window.keepCommunityCardOpen = true;
+    localStorage.removeItem('communityCardDismissed');
     document.getElementById('activitySidebar')?.classList.remove('translate-x-full');
     const card = document.getElementById('activityCommunityCard');
     card?.classList.remove('hidden');
@@ -1990,6 +2175,20 @@ window.initCommunityPicker = () => {
   document.getElementById('activityCommunityInfo')?.addEventListener('click', () => {
     alert('Communities help focus your activity feed on nearby members. Requests are auto-approved while moderation tools are finalized.');
   });
+
+  // Close button for the community card
+  document.getElementById('communityCardClose')?.addEventListener('click', () => {
+    const card = document.getElementById('activityCommunityCard');
+    card?.classList.add('hidden');
+    window.keepCommunityCardOpen = false;
+    localStorage.setItem('communityCardDismissed', '1');
+  });
+
+  // Respect dismissal on load
+  if (localStorage.getItem('communityCardDismissed') === '1') {
+    document.getElementById('activityCommunityCard')?.classList.add('hidden');
+    window.keepCommunityCardOpen = false;
+  }
 };
 
 window.handleCategoryToggle = (event) => {
@@ -2419,7 +2618,12 @@ function showMemberOptions() {
 
   document.getElementById('memberName').textContent = `🌹 ${name}`;
   const checkins = localStorage.getItem('checkinCount') || 0;
-  document.getElementById('memberMeta').textContent = `Check-ins: ${checkins}`;
+  window.memberStats = window.memberStats || {};
+  window.memberStats.checkins = Number(checkins) || 0;
+  window.memberStats.community = localStorage.getItem('memberCommunity') || 'No community selected';
+  window.memberStats.status = localStorage.getItem('memberCommunityStatus') || 'guest';
+  window.memberStats.favourites = window.latestFavouritesCount ?? 0;
+  window.updateMemberStatsUI?.();
   document.getElementById('memberOptions')?.classList.remove('hidden');
   document.getElementById('guestOptions')?.classList.add('hidden');
 
@@ -2439,6 +2643,18 @@ function showMemberOptions() {
   // Mark page as logged-in for CSS-based guards
   document.body.classList.add('logged-in');
 }
+
+window.updateMemberStatsUI = function () {
+  const metaEl = document.getElementById('memberMeta');
+  if (!metaEl) return;
+  const stats = window.memberStats || {};
+  metaEl.innerHTML = `
+    <div>Check-ins: ${stats.checkins ?? 0}</div>
+    <div>Favourites: ${stats.favourites ?? 0}</div>
+    <div>Community: ${stats.community || 'No community selected'}</div>
+    <div>Status: ${(stats.status || 'guest').toString()}</div>
+  `;
+};
 
 // Utility: unified overlay state (prevents flicker)
 window.isLoggedIn = function () {

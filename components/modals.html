@@ -10,6 +10,8 @@
     <button type="button" class="absolute top-2 right-3 text-yellow-400 text-lg closeBtn">×</button>
     <h2 class="text-yellow-400 mb-4 text-lg font-semibold">Member Login</h2>
     <form id="loginForm" class="space-y-3">
+      <!-- Honeypot field for spam bots -->
+      <input type="text" name="company" id="hp-login" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
       <input id="nameInput" placeholder="Username or Email" required class="w-full p-2 rounded text-black" />
       <input id="numberInput" type="password" placeholder="Password" required class="w-full p-2 rounded text-black" />
       <div class="flex items-center justify-between">
@@ -29,6 +31,8 @@
     <button type="button" class="absolute top-2 right-3 text-yellow-400 text-lg closeBtn">×</button>
     <h2 class="text-yellow-400 mb-4 text-lg font-semibold">Create Account</h2>
     <form id="signupForm" class="space-y-3">
+      <!-- Honeypot field for spam bots -->
+      <input type="text" name="company" id="hp-signup" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
       <input id="signupEmail" type="email" placeholder="Email" required class="w-full p-2 rounded text-black" />
       <input id="signupUsername" placeholder="Create username" required class="w-full p-2 rounded text-black" />
       <input id="signupPassword" type="password" placeholder="Create password" required class="w-full p-2 rounded text-black" />
@@ -81,6 +85,8 @@
 <div id="feedbackModal" class="modal hidden fixed inset-0 flex items-center justify-center z-[9999] bg-black/70">
   <div class="bg-black text-yellow-400 rounded-lg p-6 w-96 border border-yellow-500">
     <h2 class="text-lg font-semibold mb-2">Send us your feedback</h2>
+    <!-- Honeypot field for spam bots -->
+    <input type="text" name="company" id="hp-feedback" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
     <textarea id="feedbackMessage" rows="4" class="w-full border border-gray-300 rounded p-2 mb-4" placeholder="Your message..."></textarea>
     <div class="flex justify-end space-x-2">
       <button id="cancelFeedback" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">Cancel</button>
@@ -99,7 +105,9 @@
     
     <h3 id="requestModalTitle" class="text-xl font-bold mb-4">Submit a Request</h3>
     
-    <textarea id="requestMessage" rows="4" class="w-full p-2 mb-4 bg-zinc-900 border border-yellow-500 rounded resize-none" placeholder="Type your request..."></textarea>
+    <!-- Honeypot field for spam bots -->
+    <input type="text" name="company" id="hp-request" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
+    <textarea id="requestMessage" rows="4" class="w-full p-2 mb-4 bg-zinc-900 border border-yellow-500 rounded resize-none" placeholder="Type your request...	extarea>
     
     <div class="flex justify-end gap-3">
       <button id="cancelRequest" class="border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500 hover:text-black">Cancel</button>
@@ -115,6 +123,8 @@
     <i data-lucide="map-pin"></i> Add New Place
   </h2>
   <form id="submissionForm">
+    <!-- Honeypot field for spam bots -->
+    <input type="text" name="company" id="hp-submission" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
     <input type="text" id="locationName" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Name" required>
     <input type="text" id="submissionLocation" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Location" required>
     <input type="text" id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Category (e.g. Pub, Farm)" required>

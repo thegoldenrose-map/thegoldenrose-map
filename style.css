@@ -31,6 +31,26 @@ body.theme-light {
   height: 100vh;
 }
 
+/* Smooth mobile scrolling for sidebars */
+#marketplaceContent,
+#activityContent,
+#entertainmentContent {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Prevent content overflow on small screens */
+img, video { max-width: 100%; height: auto; }
+.post, #marketplaceContent, #activityContent, #entertainmentContent {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  /* Slightly tighter spacing on mobile to prevent clipping */
+  #marketplaceContent, #activityContent, #entertainmentContent { padding-left: 12px; padding-right: 12px; }
+}
+
 /* === Bottom Navigation === */
 #bottom-nav {
   position: fixed;

@@ -4,6 +4,8 @@ let map;
 let geoMarkers = [];
 let membershipData = [];
 let originalGeoData = null;
+// Simple in-memory timestamps for rate limiting
+const _rate = { posts: 0, requests: 0, feedback: 0, submission: 0 };
 
 window.SHEET_API_URL = window.SHEET_API_URL || 'https://script.google.com/macros/s/AKfycbyIqpE0QffyefE_zybPLTVMOOoDeA7snugUDJWbnUBR1SmeBRSWXHLbpcRLaTPJrdUKBA/exec';
 window.isPremium = false;
@@ -351,6 +353,40 @@ const COMMUNITY_META = {
   'Brighton':       { members: 1024,county: 'East Sussex', mp: '—' },
 };
 
+// Approximate centers for auto-zoom by community (lng, lat)
+const COMMUNITY_COORDS = {
+  'Forest Row': [0.0334, 51.0979],
+  'East Grinstead': [-0.0060, 51.1280],
+  'Crowborough': [0.1631, 51.0606],
+  'Uckfield': [0.0959, 50.9707],
+  'Lewes': [-0.0094, 50.8736],
+  'Eastbourne': [0.2857, 50.7669],
+  'Hastings': [0.5680, 50.8524],
+  'Bexhill': [0.4706, 50.8411],
+  'Hailsham': [0.2578, 50.8624],
+  'Polegate': [0.2450, 50.8220],
+  'Seaford': [0.1028, 50.7720],
+  'Newhaven': [0.0556, 50.7940],
+  'Peacehaven': [-0.0005, 50.7920],
+  'Rye': [0.7330, 50.9509],
+  'Battle': [0.4848, 50.9167],
+  'Heathfield': [0.2574, 50.9670],
+  'Wadhurst': [0.3390, 51.0610],
+  'Robertsbridge': [0.4690, 50.9850],
+  'Ringmer': [0.0620, 50.8920],
+  'Plumpton': [-0.0640, 50.9280],
+  'Hove': [-0.1600, 50.8220],
+  'Brighton': [-0.1407, 50.8230]
+};
+
+function zoomToCommunity(name) {
+  if (!map || !name) return;
+  const coords = COMMUNITY_COORDS[name];
+  if (coords) {
+    try { map.flyTo({ center: coords, zoom: 13 }); } catch { map.easeTo({ center: coords, zoom: 12 }); }
+  }
+}
+
 function getCommunityMemberCount(name) {
   if (!name) return 0;
   try {
@@ -404,6 +440,8 @@ function handleGetCommunity(resp) {
     window.updateMemberStatsUI?.();
     requestCommunityMeta(community);
     renderBadgeChips(localStorage.getItem('memberName') || '', document.getElementById('memberCardBadges'));
+    // Auto-zoom to community on fetch
+    zoomToCommunity(community);
   }
 }
 
@@ -429,6 +467,8 @@ function handleSetCommunity(resp) {
     window.memberStats = stats;
     window.updateMemberStatsUI?.();
     renderBadgeChips(localStorage.getItem('memberName') || '', document.getElementById('memberCardBadges'));
+    // Auto-zoom after setting community
+    zoomToCommunity(community);
   } else {
     alert('Could not update community.');
   }
@@ -524,18 +564,33 @@ function bindSubmissionForm() {
   const form = document.getElementById('submissionForm');
   if (!form) return;
 
+  // Timestamp when form becomes available
+  const formReadyAt = Date.now();
+
   form.addEventListener('submit', e => {
     e.preventDefault(); // ✅ this now works!
 
-    const name = document.getElementById('locationName').value.trim();
-    const location = document.getElementById('submissionLocation').value.trim();
-    const category = document.getElementById('locationCoords').value.trim();
+    // Honeypot check
+    const hp = document.getElementById('hp-submission');
+    if (hp && hp.value) return alert('Submission blocked.');
+
+    // Basic timing check (2s min)
+    if (Date.now() - formReadyAt < 2000) return alert('Please wait a moment before submitting.');
+
+    // Simple rate-limit: 1 per 60s
+    const now = Date.now();
+    if (now - (_rate.submission || 0) < 60000) return alert('Please wait before submitting again.');
+
+    const sanitize = (s='') => s.replace(/[<>]/g, '').trim();
+    const name = sanitize(document.getElementById('locationName').value).slice(0,120);
+    const location = sanitize(document.getElementById('submissionLocation').value).slice(0,160);
+    const category = sanitize(document.getElementById('locationCoords').value).slice(0,80);
 
     const url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
               + `&name=${encodeURIComponent(name)}`
               + `&location=${encodeURIComponent(location)}`
               + `&category=${encodeURIComponent(category)}`;
-
+    _rate.submission = now;
     jsonp(url);
   });
 }
@@ -1273,10 +1328,18 @@ function bindMarketplacePostForm() {
 
   if (!form || !input) return;
 
+  const startedAt = Date.now();
+
   form.addEventListener('submit', e => {
     e.preventDefault();
 
-    const text = input.value.trim();
+    // timing and rate limits
+    if (Date.now() - startedAt < 1500) return alert('Please wait a moment before posting.');
+    const now = Date.now();
+    if (now - (_rate.posts || 0) < 30000) return alert('You are posting too fast. Please wait.');
+
+    const raw = input.value || '';
+    const text = raw.replace(/[<>]/g, '').trim().slice(0, 500);
     if (!text) return;
 
     const username = localStorage.getItem('memberName') || 'Anonymous';
@@ -1289,6 +1352,7 @@ function bindMarketplacePostForm() {
     });
 
     input.value = '';
+    _rate.posts = now;
   });
 }
 
@@ -1298,10 +1362,17 @@ function bindActivityPostForm() {
 
   if (!form || !input) return;
 
+  const startedAt = Date.now();
+
   form.addEventListener('submit', e => {
     e.preventDefault();
 
-    const text = input.value.trim();
+    if (Date.now() - startedAt < 1500) return alert('Please wait a moment before posting.');
+    const now = Date.now();
+    if (now - (_rate.posts || 0) < 30000) return alert('You are posting too fast. Please wait.');
+
+    const raw = input.value || '';
+    const text = raw.replace(/[<>]/g, '').trim().slice(0, 500);
     if (!text) return;
 
     const username = localStorage.getItem('memberName') || 'Anonymous';
@@ -1312,6 +1383,7 @@ function bindActivityPostForm() {
     });
 
     input.value = '';
+    _rate.posts = now;
   });
 }
 
@@ -1384,7 +1456,15 @@ function bindUIButtons() {
   });
 
   document.getElementById('submitRequest')?.addEventListener('click', () => {
-    const message = document.getElementById('requestMessage').value.trim();
+    // Honeypot
+    const hp = document.getElementById('hp-request');
+    if (hp && hp.value) return alert('Request blocked.');
+
+    // Basic throttling
+    const now = Date.now();
+    if (now - (_rate.requests || 0) < 45000) return alert('Please wait before sending another request.');
+
+    const message = (document.getElementById('requestMessage').value || '').replace(/[<>]/g, '').trim().slice(0, 600);
     const username = localStorage.getItem('memberName') || 'Anonymous';
     const type = window.selectedRequestType || 'Verification';
 
@@ -1397,13 +1477,21 @@ function bindUIButtons() {
       callback: 'handleRequestResponse'
     });
 
+    _rate.requests = now;
     jsonp(`${window.SHEET_API_URL}?${params.toString()}`);
   });
 
   document.getElementById('submitFeedback')?.addEventListener('click', () => {
-    const msg = document.getElementById('feedbackMessage').value.trim();
-    if (!msg) return alert('Please enter a message.');
+    // Honeypot
+    const hp = document.getElementById('hp-feedback');
+    if (hp && hp.value) return alert('Feedback blocked.');
 
+    const now = Date.now();
+    if (now - (_rate.feedback || 0) < 45000) return alert('Please wait before sending another feedback.');
+
+    const msg = (document.getElementById('feedbackMessage').value || '').replace(/[<>]/g, '').trim().slice(0, 600);
+    if (!msg) return alert('Please enter a message.');
+    _rate.feedback = now;
     jsonp(`${SHEET_API_URL}?type=feedback&message=${encodeURIComponent(msg)}&callback=handleFeedbackResponse`);
   });
 
@@ -1672,6 +1760,9 @@ console.log('🧠 isPremium:', isPremium);
     .then(res => res.json())
     .then(data => {
       originalGeoData = data;
+      // If a community is already selected, zoom to it
+      const savedCommunity = localStorage.getItem('memberCommunity');
+      if (savedCommunity) zoomToCommunity(savedCommunity);
 
       const categories = new Set();
 originalGeoData.features.forEach(f => {
@@ -2441,7 +2532,7 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
           return rec;
         })
         .filter(Boolean);
-      console.log('✅ Membership data loaded:', membershipData);
+      console.log('✅ Membership data loaded.');
       if (submitBtn) submitBtn.disabled = false;
     } catch (err) {
       console.error('❌ Failed to fetch membership data:', err);
@@ -2457,12 +2548,15 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
   console.log('🟡 loginForm submitted');
   e.preventDefault();
 
+    // Honeypot
+    const hp = document.getElementById('hp-login');
+    if (hp && hp.value) return alert('Login blocked.');
+
     // Accept username OR email in the first field
     const typedName = nameInput.value.trim().toLowerCase().replace(/\s+/g, '');
     const typedNumber = numberInput.value.trim();
 
-    console.log('🔍 Typed Name:', typedName);
-    console.log('🔢 Typed Number:', typedNumber);
+    // Do not log credentials
 
     // Support legacy (name+number), new (username+password), and email+password
     const match = membershipData.find(m => {
@@ -2472,7 +2566,7 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
       return byLegacy || byUser || byEmail;
     });
 
-     console.log('🔎 Match found:', match);
+    // Do not log match content to avoid leaking data
 
     if (!match) {
       alert('❌ Member not found or incorrect number.');
@@ -2514,6 +2608,12 @@ window.setupSignup = function () {
 
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
+    // Honeypot
+    const hp = document.getElementById('hp-signup');
+    if (hp && hp.value) return alert('Signup blocked.');
+    // Basic throttle
+    const now = Date.now();
+    if (now - (_rate.signup || 0) < 60000) return alert('Please wait before trying again.');
     const em = (email?.value || '').trim();
     const un = (username?.value || '').trim();
     const pw = (password?.value || '').trim();
@@ -2524,7 +2624,8 @@ window.setupSignup = function () {
     }
 
     const url = `${window.SHEET_API_URL}?type=signup&email=${encodeURIComponent(em)}&username=${encodeURIComponent(un)}&password=${encodeURIComponent(pw)}&callback=handleSignupResponse`;
-    console.log('📤 Signup via JSONP:', url);
+    console.log('📤 Signup via JSONP');
+    _rate.signup = now;
     jsonp(url);
   });
 };

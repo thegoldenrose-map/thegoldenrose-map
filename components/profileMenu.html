@@ -5,19 +5,16 @@
 
 
 
-    <!-- 🔹 Favourites Dropdown -->
-    <div id="favouritesDropdown" class="hidden absolute right-4 bottom-32 w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-lg shadow-lg p-3 z-50 text-yellow-400 space-y-2">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-sm font-semibold">Saved Favourites</h3>
-        <button onclick="document.getElementById('favouritesDropdown').classList.add('hidden')" class="text-yellow-400 hover:text-red-500 text-sm">✕</button>
-      </div>
-      <div id="favouritesList" class="space-y-2"></div>
-    </div>
+    <!-- 🔹 Favourites Dropdown (removed duplicate; main lives in modals.html) -->
 
     <!-- 🔹 Member Info -->
     <div id="memberInfo" class="text-yellow-400 px-4 py-2 bg-black space-y-1">
-      <div id="memberName" class="text-sm font-semibold"></div>
-      <div id="memberMeta" class="text-xs space-y-0.5"></div>
+      <div class="flex items-center gap-2">
+        <div id="memberName" class="text-sm font-semibold"></div>
+      </div>
+      <!-- Stacked chips (community on first line, streak on second) -->
+      <div id="memberMeta" class="text-[11px] flex flex-col gap-1"></div>
+      <div id="memberMenuBadges" class="text-[11px] flex flex-wrap gap-1"></div>
     </div>
 
     <!-- 🔹 Menu Buttons -->
@@ -51,6 +48,7 @@
         <button class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
           <i data-lucide="calendar-days"></i> Request an Event
         </button>
+        
       </div>
 
 
@@ -75,6 +73,7 @@
       <button id="themeToggleBtnGuest" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
         <i data-lucide="sun"></i> Toggle Theme
       </button>
+      
       <a id="donateBtnGuest" href="https://buy.stripe.com/eVq9ASdi6fDSenU754cwg01" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
         <i data-lucide="heart-handshake"></i> Donate
       </a>

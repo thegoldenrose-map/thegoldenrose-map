@@ -13,7 +13,12 @@
       <!-- Honeypot field for spam bots -->
       <input type="text" name="company" id="hp-login" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
       <input id="nameInput" placeholder="Username or Email" required class="w-full p-2 rounded text-black" />
-      <input id="numberInput" type="password" placeholder="Password" required class="w-full p-2 rounded text-black" />
+      <div class="relative">
+        <input id="numberInput" type="password" placeholder="Password" required class="w-full p-2 rounded text-black pr-16" />
+        <button type="button" id="toggleLoginPwd" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-yellow-400 hover:text-yellow-200">
+          <i data-lucide="eye"></i>
+        </button>
+      </div>
       <div class="flex items-center justify-between">
         <span id="openSignupLink" class="text-xs text-yellow-400 underline cursor-pointer">No account? Sign up</span>
         <button type="submit" class="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded">
@@ -30,12 +35,18 @@
   <div class="bg-black border-2 border-yellow-500 rounded-lg p-6 w-full max-w-md relative">
     <button type="button" class="absolute top-2 right-3 text-yellow-400 text-lg closeBtn">×</button>
     <h2 class="text-yellow-400 mb-4 text-lg font-semibold">Create Account</h2>
+    <p id="signupCta" class="text-yellow-300 text-sm -mt-1 mb-2 hidden">Save places to your map</p>
     <form id="signupForm" class="space-y-3">
       <!-- Honeypot field for spam bots -->
       <input type="text" name="company" id="hp-signup" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
       <input id="signupEmail" type="email" placeholder="Email" required class="w-full p-2 rounded text-black" />
       <input id="signupUsername" placeholder="Create username" required class="w-full p-2 rounded text-black" />
-      <input id="signupPassword" type="password" placeholder="Create password" required class="w-full p-2 rounded text-black" />
+      <div class="relative">
+        <input id="signupPassword" type="password" placeholder="Create password" required class="w-full p-2 rounded text-black pr-16" />
+        <button type="button" id="toggleSignupPwd" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-yellow-400 hover:text-yellow-200">
+          <i data-lucide="eye"></i>
+        </button>
+      </div>
       <button type="submit" class="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded w-full">
         Sign Up
       </button>
@@ -46,36 +57,84 @@
 
 
 
-<!-- 🔹 Onboarding Modal – Sabre-style Fullscreen -->
-<div id="onboardingModal" class="hidden fixed inset-0 z-[9999] bg-black/90 overflow-y-auto px-4 py-8">
-  <div class="relative mx-auto w-full max-w-2xl bg-black border border-yellow-500 rounded-2xl p-6 sm:p-10 text-yellow-300 shadow-2xl">
+<!-- 🔹 Onboarding Modal – Bold, persuasive, and unapologetically local -->
+<div id="onboardingModal" class="hidden fixed inset-0 z-[9999] bg-black/90 px-4 py-6">
+  <div class="relative mx-auto w-full max-w-xl rounded-3xl border border-yellow-500/50 bg-[#0b0b0b] p-0 text-yellow-200 shadow-[0_40px_100px_rgba(255,215,0,0.18)] overflow-hidden max-h-[88vh]">
+
+    <!-- soft glow header -->
+    <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 h-56 w-[125%] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(252,211,77,0.16),rgba(0,0,0,0))]"></div>
+    </div>
 
     <!-- ✖ Close -->
-    <button id="closeOnboarding" class="absolute top-4 right-4 text-yellow-400 hover:text-yellow-200 text-2xl font-bold">&times;</button>
+    <button id="closeOnboarding" class="absolute top-3 right-3 z-10 text-glow-gold hover:text-glow-gold text-2xl font-bold">&times;</button>
 
-    <!-- 🌹 Logo -->
-    <div class="text-center mb-6">
-      <img src="favicon.png" alt="Golden Rose Logo" class="w-16 mx-auto mb-3">
-      <h1 class="text-3xl sm:text-4xl font-extrabold text-yellow-400">Rebuild Britain. Start Local.</h1>
-      <p class="mt-2 text-sm sm:text-base text-yellow-300 max-w-xl mx-auto">
-        Join <strong>The Golden Rose</strong> — a map-powered resistance network of real people, communities & businesses.
+    <!-- Hero -->
+    <div class="px-6 pt-7 pb-3 text-center">
+      <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-black/60 border border-yellow-500/40 shadow-inner mb-2">
+        <img src="favicon.png" alt="Golden Rose Logo" class="w-6 h-6">
+      </div>
+      <h1 class="text-[26px] sm:text-[30px] font-extrabold tracking-tight glow-gold">Free Speech. British. People‑Powered.</h1>
+      <div class="mt-1 text-[11px] uppercase tracking-[0.25em] glow-gold">Network of Resistance</div>
       </p>
     </div>
 
-    <!-- ✅ Benefits List -->
-    <ul class="text-sm sm:text-base space-y-2 font-medium max-w-lg mx-auto">
-      <li>📍 <strong>Follow your favourite shops and businesses</strong></li>
-      <li>💬 <strong>Join your local community</strong></li>
-      <li>🛍️ <strong>Opportunities to sell, buy and exchange</strong></li>
-      <li>✅ <strong>Contribute new locations to the map</strong></li>
-      <li>🇬🇧 <strong>Support British-made, independent & local</strong></li>
-    </ul>
+    <!-- Features grid -->
+    <div class="px-6 pb-3 grid grid-cols-4 gap-2 text-center text-[12px]">
+      <div class="rounded-2xl border border-yellow-500/30 px-3 py-3 bg-gradient-to-b from-zinc-900 to-black/60"><i data-lucide="map-pin" class="mx-auto glow-gold"></i><div class="mt-1 glow-gold">Map</div></div>
+      <div class="rounded-2xl border border-yellow-500/30 px-3 py-3 bg-gradient-to-b from-zinc-900 to-black/60"><i data-lucide="store" class="mx-auto glow-gold"></i><div class="mt-1 glow-gold">Marketplace</div></div>
+      <div class="rounded-2xl border border-yellow-500/30 px-3 py-3 bg-gradient-to-b from-zinc-900 to-black/60"><i data-lucide="message-square" class="mx-auto glow-gold"></i><div class="mt-1 glow-gold">Community</div></div>
+      <div class="rounded-2xl border border-yellow-500/30 px-3 py-3 bg-gradient-to-b from-zinc-900 to-black/60"><i data-lucide="play" class="mx-auto glow-gold"></i><div class="mt-1 glow-gold">Entertainment</div></div>
+    </div>
 
-    <!-- 🌹 CTA Button -->
-    <div class="mt-8 text-center">
-      <button id="onboardingSignupBtn" class="inline-block w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-black font-semibold text-lg py-3 px-6 rounded-full transition shadow">
-        Sign Up
+
+    <!-- Contrast card -->
+    <div class="px-5 sm:px-8 pb-3">
+      <div class="rounded-2xl border border-yellow-500/30 bg-gradient-to-b from-black/60 to-black/30 p-4 text-[13px] sm:text-sm glow-gold">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <div class="font-semibold mb-1">Big Social</div>
+            <ul class="space-y-1">
+              <li>✖ American‑owned</li>
+              <li>✖ Data‑harvesting</li>
+              <li>✖ Manipulative algorithms</li>
+            </ul>
+          </div>
+          <div>
+            <div class="font-semibold mb-1">The Golden Rose</div>
+            <ul class="space-y-1">
+              <li>✔ British & community‑owned</li>
+              <li>✔ People‑powered, not ad‑driven</li>
+              <li>✔ Built for free speech</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="px-6 pt-1 pb-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <button id="onboardingSignupBtn" class="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-black font-semibold text-lg py-3 px-6 rounded-full transition shadow">
+        Switch Now
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔸 Affiliates Modal -->
+<div id="affiliatesModal" class="modal hidden fixed inset-0 flex items-center justify-center z-[9999] bg-black/80">
+  <div class="bg-black border-2 border-yellow-500 rounded-lg p-6 w-full max-w-md relative text-yellow-300">
+    <button type="button" class="absolute top-2 right-3 text-yellow-400 text-lg closeBtn">×</button>
+    <h2 class="text-yellow-400 mb-2 text-lg font-semibold">Join the Affiliates Program</h2>
+    <p class="text-sm mb-3">Earn a 30% commission for every verified business you refer. Enter your email to join and we’ll send your unique link.</p>
+    <div class="space-y-2">
+      <!-- Honeypot -->
+      <input type="text" name="extra_field" id="hp-affiliate" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
+      <input id="affiliateEmail" type="email" placeholder="you@example.com" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" />
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="cancelAffiliate" class="border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500 hover:text-black">Cancel</button>
+        <button type="button" id="joinAffiliate" class="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600">Join</button>
+      </div>
     </div>
   </div>
 </div>
@@ -103,10 +162,29 @@
     
     <button type="button" id="closeRequestModal" class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl">&times;</button>
     
-    <h3 id="requestModalTitle" class="text-xl font-bold mb-4">Submit a Request</h3>
+    <div class="flex items-center justify-between mb-3">
+      <h3 id="requestModalTitle" class="text-xl font-bold">Submit a Request</h3>
+      <button id="requestHelpBtn" type="button" aria-label="What happens next?"
+        class="w-7 h-7 rounded-full border border-yellow-500/50 text-yellow-300 hover:bg-yellow-500 hover:text-black flex items-center justify-center text-sm">?
+      </button>
+    </div>
+    <div id="requestHelpCard" class="hidden mb-3 rounded-lg border border-yellow-600/70 bg-yellow-50 p-3 text-sm text-black shadow">
+      <p class="leading-snug">
+        Once we receive your submission, our moderation team will review it and reach out if needed. When approved, it will be added to the public map.
+      </p>
+    </div>
     
     <!-- Honeypot field for spam bots -->
     <input type="text" name="company" id="hp-request" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
+    <!-- Upgraded structured fields -->
+    <div class="space-y-3">
+      <div class="grid sm:grid-cols-2 gap-3">
+        <input id="requestName" type="text" placeholder="Your name" class="w-full p-2 bg-zinc-900 border border-yellow-500 rounded" />
+        <input id="requestEmail" type="email" placeholder="Email" class="w-full p-2 bg-zinc-900 border border-yellow-500 rounded" />
+      </div>
+      <input id="requestNumber" type="text" placeholder="Number" class="w-full p-2 bg-zinc-900 border border-yellow-500 rounded" />
+      <textarea id="requestMessage" rows="4" class="w-full p-2 bg-zinc-900 border border-yellow-500 rounded resize-none" placeholder="Message"></textarea>
+    </div>
     <textarea id="requestMessage" rows="4" class="w-full p-2 mb-4 bg-zinc-900 border border-yellow-500 rounded resize-none" placeholder="Type your request...	extarea>
     
     <div class="flex justify-end gap-3">
@@ -125,9 +203,9 @@
   <form id="submissionForm">
     <!-- Honeypot field for spam bots -->
     <input type="text" name="company" id="hp-submission" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
-    <input type="text" id="locationName" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Name" required>
-    <input type="text" id="submissionLocation" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Location" required>
-    <input type="text" id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/20 placeholder-yellow-600 text-yellow-300 focus:outline-none" placeholder="Category (e.g. Pub, Farm)" required>
+    <input type="text" id="locationName" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Name" required>
+    <input type="text" id="submissionLocation" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Location" required>
+    <input type="text" id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Category (e.g. Pub, Farm)" required>
     <div class="flex justify-between gap-2">
       <button type="submit" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-lg">Add to Map</button>
       <button type="button" onclick="closeModal()" class="flex-1 bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-300 hover:text-black font-bold py-2 rounded-lg">Cancel</button>
@@ -171,9 +249,9 @@
     </button>
      <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
   <form id="locationForm" class="space-y-3">
-    <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500">
-    <input id="locationShortDesc" type="text" placeholder="Short description" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500">
-    <input id="locationCategory" type="text" placeholder="Category (e.g. Farm, Pub)" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500">
+    <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
+    <input id="locationShortDesc" type="text" placeholder="Short description" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
+    <input id="locationCategory" type="text" placeholder="Category (e.g. Farm, Pub)" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
     <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
   </form>
 </div>

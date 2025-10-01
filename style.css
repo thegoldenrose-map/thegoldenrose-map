@@ -215,10 +215,7 @@ body.theme-light .like-btn {
 
 /* === Suggestion Box === */
 #suggestions {
-  position: absolute;
-  top: -210px;
-  left: 0;
-  width: 100%;
+  /* Positioning is handled by Tailwind (top-[105%]) in bottomNav.html. */
   background: black;
   border: 1px solid gold;
   border-radius: 10px;
@@ -260,7 +257,101 @@ body.theme-light .like-btn {
 }
 #favouritesDropdown {
   z-index: 10000 !important; /* ABOVE profileMenu */
-}.marker {
+}
+
+/* Filter panel entrance animation (slide + fade) */
+#filterPanel > div {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+  will-change: transform, opacity;
+}
+#filterPanel:not(.hidden) > div {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Light mode: Filter panel readability */
+body.theme-light #filterPanel > div {
+  background-color: #fff9e6 !important;   /* cream */
+  color: #2f1b00 !important;               /* dark text */
+  border-color: #d97706 !important;        /* warm brown border */
+}
+body.theme-light #filterPanel [class*="text-yellow-"] {
+  color: #2f1b00 !important;               /* darken labels/chips */
+}
+body.theme-light #filterPanel [class*="border-yellow-"] {
+  border-color: #d97706 !important;
+}
+body.theme-light #filterPanel [class*="bg-black"] {
+  background-color: #fff7d6 !important;    /* lighten card rows */
+  color: #2f1b00 !important;
+}
+
+/* Light mode readability overrides for request modal */
+body.theme-light #requestModal input,
+body.theme-light #requestModal textarea {
+  background-color: #fffef4 !important;
+  color: #2f1b00 !important;
+  border-color: #d97706 !important;
+}
+body.theme-light #requestModal input::placeholder,
+body.theme-light #requestModal textarea::placeholder {
+  color: #92400e !important;
+  opacity: 0.9;
+}
+
+/* Activity post input in light mode */
+body.theme-light #activityPostForm input#postInput {
+  background-color: #fff8e1 !important;
+  color: #2f1b00 !important;
+  border-color: #d97706 !important;
+}
+
+/* Light mode: Activity sidebar readability */
+body.theme-light #activitySidebar {
+  background-color: #fff9e6; /* cream panel */
+  color: #2f1b00;           /* dark readable text */
+}
+/* Lighten any dark backgrounds inside the sidebar (cards, sticky header, etc.) */
+body.theme-light #activitySidebar [class*="bg-black"] {
+  background-color: #fff7d6 !important; /* soft cream */
+  color: #2f1b00 !important;
+}
+/* Make borders match the light palette */
+body.theme-light #activitySidebar [class*="border-yellow-"] {
+  border-color: #d97706 !important;
+}
+
+/* Light mode: Marketplace + Entertainment sidebars readability */
+body.theme-light #marketplaceSidebar,
+body.theme-light #entertainmentSidebar {
+  background-color: #fff9e6;
+  color: #2f1b00;
+}
+body.theme-light #marketplaceSidebar [class*="bg-black"],
+body.theme-light #entertainmentSidebar [class*="bg-black"] {
+  background-color: #fff7d6 !important;
+  color: #2f1b00 !important;
+}
+body.theme-light #marketplaceSidebar [class*="border-yellow-"],
+body.theme-light #entertainmentSidebar [class*="border-yellow-"] {
+  border-color: #d97706 !important;
+}
+
+/* Sticky headers/buttons in sidebars */
+body.theme-light #marketplaceCategoryButtons,
+body.theme-light #entertainmentCategoryButtons {
+  background-color: #fff7d6 !important;
+  border-bottom-color: #d97706 !important;
+}
+body.theme-light #marketplaceCategoryButtons .categoryBtn,
+body.theme-light #entertainmentCategoryButtons .entCategoryBtn {
+  color: #2f1b00 !important;
+  border-color: #d97706 !important;
+}
+
+.marker {
   background-image: url('flower.png'); /* or SVG */
   background-size: cover;
   width: 24px;
@@ -420,6 +511,18 @@ body.theme-light .text-yellow-100 {
   color: #92400e !important;
 }
 
+/* Stronger readable override for any yellow text utilities (including opacity variants) */
+body.theme-light [class*="text-yellow-"] {
+  color: #2f1b00 !important;
+}
+
+/* Ensure all black-based backgrounds flip in light mode, including opacity variants */
+/* Removed overly broad bg-black override to avoid turning full-screen overlays cream. */
+
+/* Subtle slide animation polish for filter toggles */
+.tg-toggle { will-change: background, box-shadow; }
+.tg-knob { will-change: transform; }
+
 body.theme-light .border-yellow-500,
 body.theme-light .border-yellow-400,
 body.theme-light .border-yellow-300 {
@@ -482,6 +585,14 @@ body.theme-light .badge-chip {
   padding: 2rem;
   color: #facc15;
   box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+/* Request modal panel sizing so it never fills the page */
+#requestModal > div {
+  width: calc(100vw - 2rem);
+  max-width: 28rem; /* ~max-w-md */
+  max-height: 85vh;
+  overflow-y: auto;
 }
 /* 💫 Smooth Entrance */
 @keyframes fadeIn {
@@ -556,4 +667,32 @@ body.theme-light .badge-chip {
     box-shadow: 0 0 16px 4px rgba(255, 221, 0, 0.9),
                 0 0 24px 8px rgba(255, 221, 0, 0.5);
   }
+}
+/* Improve readability for Add Location inputs */
+/* High-contrast inputs for Add Location */
+#addLocationModal input,
+#addLocationModal textarea,
+#submissionModal input,
+#submissionModal textarea {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff; /* Safari/Brave */
+  caret-color: #fde047; /* yellow-300 */
+}
+#addLocationModal ::placeholder,
+#submissionModal ::placeholder {
+  color: #facc15; /* yellow-400 */
+  opacity: 0.9;
+}
+/* Compact chip icons in member meta */
+#memberMeta i,
+#memberMenuBadges i,
+#memberCardStreakChip i,
+#memberStreakChip i {
+  width: 12px;
+  height: 12px;
+}
+/* Gold glow utility for onboarding/CTA text */
+.glow-gold, .glow-gold * {
+  color: #FDE047; /* yellow-300 */
+  text-shadow: 0 0 8px rgba(253, 224, 71, 0.45), 0 0 18px rgba(253, 224, 71, 0.25);
 }

@@ -4,6 +4,8 @@ let map;
 let geoMarkers = [];
 let membershipData = [];
 let originalGeoData = null;
+// Enable Favourites/Add Location triggers
+window._disableFavAdd = false;
 // Simple in-memory timestamps for rate limiting
 const _rate = { posts: 0, requests: 0, feedback: 0, submission: 0 };
 
@@ -480,6 +482,78 @@ function requestCommunityMeta(community) {
   jsonp(url);
 }
 
+// ───────── DAILY STREAK (backend wiring) ─────────
+function normalizeUserKeyForBackend() {
+  const u = (localStorage.getItem('username') || localStorage.getItem('memberName') || '').toString();
+  return u.trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function requestStreakForCurrentUser() {
+  const user = normalizeUserKeyForBackend();
+  if (!user) return;
+  const url = `${window.SHEET_API_URL}?type=getStreak&user=${encodeURIComponent(user)}&callback=handleGetStreak`;
+  jsonp(url);
+}
+
+function handleGetStreak(resp) {
+  if (!resp || resp.success === false) return;
+  const days = parseInt(resp.streak || '0', 10) || 0;
+  try { localStorage.setItem('streak', String(days)); } catch {}
+  window.memberStats = window.memberStats || {};
+  window.memberStats.streak = days;
+  window.updateMemberStatsUI?.();
+  const el = document.getElementById('memberCardStreak');
+  if (el) el.textContent = `${days} day${days===1?'':'s'}`;
+  // Update streak chips
+  try {
+    const chip = document.getElementById('memberStreakChip');
+    if (chip) {
+      if (days > 0) { chip.textContent = `🔥 ${days}-day streak`; chip.classList.remove('hidden'); }
+      else { chip.classList.add('hidden'); chip.textContent = ''; }
+    }
+    const cardChip = document.getElementById('memberCardStreakChip');
+    if (cardChip) {
+      if (days > 0) { cardChip.textContent = `🔥 ${days}-day streak`; cardChip.classList.remove('hidden'); }
+      else { cardChip.classList.add('hidden'); cardChip.textContent = ''; }
+    }
+  } catch {}
+}
+
+function pingDailyStreakForCurrentUser() {
+  const user = normalizeUserKeyForBackend();
+  if (!user) return;
+  const today = new Date().toISOString().slice(0,10);
+  const last = localStorage.getItem('streakPing');
+  if (last === today) return; // already pinged today
+  const url = `${window.SHEET_API_URL}?type=streakPing&user=${encodeURIComponent(user)}&day=${encodeURIComponent(today)}&callback=handleStreakPing`;
+  jsonp(url);
+  try { localStorage.setItem('streakPing', today); } catch {}
+}
+
+function handleStreakPing(resp) {
+  if (!resp || resp.success === false) return;
+  const days = parseInt(resp.streak || '0', 10) || 0;
+  try { localStorage.setItem('streak', String(days)); } catch {}
+  window.memberStats = window.memberStats || {};
+  window.memberStats.streak = days;
+  window.updateMemberStatsUI?.();
+  const el = document.getElementById('memberCardStreak');
+  if (el) el.textContent = `${days} day${days===1?'':'s'}`;
+  // Update streak chips
+  try {
+    const chip = document.getElementById('memberStreakChip');
+    if (chip) {
+      if (days > 0) { chip.textContent = `🔥 ${days}-day streak`; chip.classList.remove('hidden'); }
+      else { chip.classList.add('hidden'); chip.textContent = ''; }
+    }
+    const cardChip = document.getElementById('memberCardStreakChip');
+    if (cardChip) {
+      if (days > 0) { cardChip.textContent = `🔥 ${days}-day streak`; cardChip.classList.remove('hidden'); }
+      else { cardChip.classList.add('hidden'); cardChip.textContent = ''; }
+    }
+  } catch {}
+}
+
 function ensureHeaderState() {
   if (!window._communityHeaderState) {
     window._communityHeaderState = { community: '', members: null, county: '', mp: '' };
@@ -546,7 +620,7 @@ window.updateHelpJoinBtn = function () {
 // ───────── JSONP + POST ─────────
 // 🔁 Load favourites (called on login or after adding/removing)
 function loadUserFavourites(user) {
-  const safeUser = encodeURIComponent(user.trim().toLowerCase());
+  const safeUser = encodeURIComponent(user.trim().toLowerCase().replace(/\s+/g, ''));
   const url = `${window.SHEET_API_URL}?type=getFavourites&user=${safeUser}&callback=handleFavouritesResponse`;
   jsonp(url);
 }
@@ -595,13 +669,43 @@ function bindSubmissionForm() {
   });
 }
 
+// Bind fallback Add Location form if present (used when a fallback modal is created)
+function bindLocationFormFallback() {
+  const form = document.getElementById('locationForm');
+  if (!form) return;
+  if (form._bound) return; // avoid duplicate listeners
+  form._bound = true;
+
+  const startedAt = Date.now();
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const hp = document.getElementById('hp-submission');
+    if (hp && hp.value) return alert('Submission blocked.');
+    if (Date.now() - startedAt < 1500) return alert('Please wait a moment before submitting.');
+    const now = Date.now();
+    if (now - (_rate.submission || 0) < 60000) return alert('Please wait before submitting again.');
+
+    const S = (s='') => s.replace(/[<>]/g, '').trim();
+    const name = S(document.getElementById('locationTitle')?.value || '').slice(0,120);
+    const location = S(document.getElementById('locationShortDesc')?.value || '').slice(0,160);
+    const category = S(document.getElementById('locationCategory')?.value || '').slice(0,80);
+
+    const url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
+      + `&name=${encodeURIComponent(name)}`
+      + `&location=${encodeURIComponent(location)}`
+      + `&category=${encodeURIComponent(category)}`;
+    _rate.submission = now;
+    jsonp(url);
+  });
+}
+
 
 // 🗑 Remove a favourite
 window.removeFavourite = function(title) {
   const user = localStorage.getItem('username');
   if (!user) return alert('Please log in.');
 
-  const safeUser = encodeURIComponent(user.trim().toLowerCase());
+  const safeUser = encodeURIComponent(user.trim().toLowerCase().replace(/\s+/g, ''));
   const safeTitle = encodeURIComponent(title.trim());
 
   const url = `${window.SHEET_API_URL}?type=removeFavourite&user=${safeUser}&title=${safeTitle}&callback=handleRemoveFavouriteResponse`;
@@ -614,6 +718,19 @@ window.jsonp = function(url) {
   const s = document.createElement('script');
   s.src = url;
   document.head.appendChild(s);
+}
+
+// Lightweight toast utility (top-right)
+if (typeof window.showToast !== 'function') {
+  window.showToast = function (message = '', timeoutMs = 3000) {
+    if (!message) return;
+    const c = document.createElement('div');
+    c.className = 'fixed top-4 right-4 z-[10000] px-3 py-2 rounded-lg border border-yellow-500/40 bg-black/85 text-yellow-200 shadow-lg';
+    c.textContent = message;
+    document.body.appendChild(c);
+    setTimeout(() => { c.style.opacity = '0'; c.style.transform = 'translateY(-6px)'; }, Math.max(0, timeoutMs - 300));
+    setTimeout(() => c.remove(), timeoutMs);
+  }
 }
 
 // 📩 Callback after removing a favourite
@@ -641,10 +758,23 @@ document.querySelectorAll('.categoryBtn').forEach(btn => {
 
 // 🌹 Add a favourite (also JSONP now)
 window.addToFavourites = function(title) {
-  const user = localStorage.getItem('username');
-  if (!user) return alert('Please log in first.');
+  let user = localStorage.getItem('username');
+  if (!user) {
+    const fallback = (localStorage.getItem('memberName') || '').trim().toLowerCase().replace(/\s+/g, '');
+    if (fallback) {
+      localStorage.setItem('username', fallback);
+      user = fallback;
+    } else {
+      // Open signup with CTA for saving favourites
+      const cta = document.getElementById('signupCta');
+      if (cta) { cta.textContent = 'Save places to your map'; cta.classList.remove('hidden'); }
+      document.getElementById('loginModal')?.classList.add('hidden');
+      document.getElementById('signupModal')?.classList.remove('hidden');
+      return;
+    }
+  }
 
-  const safeUser = encodeURIComponent(user.trim().toLowerCase());
+  const safeUser = encodeURIComponent(user.trim().toLowerCase().replace(/\s+/g, ''));
   const safeTitle = encodeURIComponent(title.trim());
 
   const url = `${window.SHEET_API_URL}?type=favourite&user=${safeUser}&title=${safeTitle}&callback=handleAddFavouriteResponse`;
@@ -663,31 +793,32 @@ function handleAddFavouriteResponse(data) {
 
 // 🔽 Renders the dropdown list of favourites
 function renderFavouritesDropdown(favs) {
-  const container = document.getElementById('favouritesDropdown');
-  container.innerHTML = '';
+  const containers = Array.from(document.querySelectorAll('#favouritesDropdown'));
+  const lists = Array.from(document.querySelectorAll('#favouritesList'));
   window.latestFavouritesCount = favs.length;
   if (window.memberStats) {
     window.memberStats.favourites = favs.length;
     window.updateMemberStatsUI?.();
   }
 
-  if (favs.length === 0) {
-    container.innerHTML = '<div class="text-sm px-4 py-2 text-yellow-400">No favourites yet.</div>';
-    return;
+  const content = favs.length === 0
+    ? '<div class="text-sm px-4 py-2 text-yellow-400">No favourites yet.</div>'
+    : favs.map(title => {
+        const safe = title.replace(/'/g, "\\'");
+        return `
+          <div class="text-sm px-4 py-2 text-yellow-400 flex justify-between items-center">
+            ${title}
+            <button onclick="removeFavourite('${safe}')">
+              <i data-lucide="x" class="w-4 h-4 text-yellow-500 hover:text-red-500"></i>
+            </button>
+          </div>`;
+      }).join('');
+
+  if (lists.length) {
+    lists.forEach(list => { list.innerHTML = content; });
+  } else if (containers.length) {
+    containers.forEach(container => { container.innerHTML = content; });
   }
-
-  favs.forEach(title => {
-    const div = document.createElement('div');
-    div.className = 'text-sm px-4 py-2 text-yellow-400 flex justify-between items-center';
-    div.innerHTML = `
-      ${title}
-      <button onclick="removeFavourite('${title.replace(/'/g, "\\'")}')">
-        <i data-lucide="x" class="w-4 h-4 text-yellow-500 hover:text-red-500"></i>
-      </button>
-    `;
-    container.appendChild(div);
-  });
-
   lucide.createIcons?.();
 }
 
@@ -1322,6 +1453,16 @@ function handleRequestResponse(data) {
   }
 }
 
+// Affiliates join callback
+window.handleAffiliateResponse = function (data) {
+  if (data && data.success) {
+    alert('✅ Thanks for joining the Affiliates program!');
+    document.getElementById('affiliatesModal')?.classList.add('hidden');
+  } else {
+    alert('❌ Could not join right now. Please try again.');
+  }
+}
+
 function bindMarketplacePostForm() {
   const form = document.getElementById('marketplacePostForm');
   const input = document.getElementById('marketplacePostInput');
@@ -1391,6 +1532,8 @@ function bindUIButtons() {
   console.log('🔗 bindUIButtons() running');
 
   bindSubmissionForm();
+  // Also bind a fallback Add Location form if present
+  try { bindLocationFormFallback(); } catch {}
   bindMarketplacePostForm();
   bindActivityPostForm();
 
@@ -1410,26 +1553,19 @@ function bindUIButtons() {
     document.getElementById('onboardingModal')?.classList.add('hidden');
   });
 
-  document.getElementById('affiliatesBtn')?.addEventListener('click', () => {
-    const level = (localStorage.getItem('membershipLevel') || '').toLowerCase();
-    if (level === 'affiliate') {
-      if (Notification.permission === 'granted') {
-        new Notification('🌹 Affiliates', { body: 'Coming soon...', icon: 'flower.png' });
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            new Notification('🌹 Affiliates', { body: 'Coming soon...', icon: 'flower.png' });
-          }
-        });
-      }
-    } else {
-      alert('🔒 COMING SOON...');
-    }
-  });
 
   document.getElementById('requestsBtn')?.addEventListener('click', () => {
     document.getElementById('requestsSubMenu')?.classList.toggle('hidden');
   });
+
+  // Request help toggle
+  const helpBtn = document.getElementById('requestHelpBtn');
+  const helpCard = document.getElementById('requestHelpCard');
+  if (helpBtn && helpCard) {
+    helpBtn.addEventListener('click', () => helpCard.classList.toggle('hidden'));
+    document.getElementById('closeRequestModal')?.addEventListener('click', () => helpCard.classList.add('hidden'));
+    document.getElementById('cancelRequest')?.addEventListener('click', () => helpCard.classList.add('hidden'));
+  }
 
   document.querySelectorAll('#requestsSubMenu button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1442,7 +1578,13 @@ function bindUIButtons() {
       const type = typeMap[label] || 'Verification';
       window.selectedRequestType = type;
       document.getElementById('requestModalTitle').textContent = label;
-      document.getElementById('requestMessage').value = '';
+      // Upgrade/fix modal fields and clear values
+      window.upgradeRequestModal?.();
+      const msgEl = document.getElementById('requestMessage');
+      if (msgEl) msgEl.value = '';
+      const nEl = document.getElementById('requestName'); if (nEl) nEl.value = '';
+      const eEl = document.getElementById('requestEmail'); if (eEl) eEl.value = '';
+      const numEl = document.getElementById('requestNumber'); if (numEl) numEl.value = '';
       document.getElementById('requestModal')?.classList.remove('hidden');
     });
   });
@@ -1456,6 +1598,9 @@ function bindUIButtons() {
   });
 
   document.getElementById('submitRequest')?.addEventListener('click', () => {
+    // Ensure upgraded fields
+    window.upgradeRequestModal?.();
+
     // Honeypot
     const hp = document.getElementById('hp-request');
     if (hp && hp.value) return alert('Request blocked.');
@@ -1464,15 +1609,24 @@ function bindUIButtons() {
     const now = Date.now();
     if (now - (_rate.requests || 0) < 45000) return alert('Please wait before sending another request.');
 
-    const message = (document.getElementById('requestMessage').value || '').replace(/[<>]/g, '').trim().slice(0, 600);
-    const username = localStorage.getItem('memberName') || 'Anonymous';
+    const sanitize = (s='') => s.replace(/[<>]/g, '').trim();
+    const name = sanitize(document.getElementById('requestName')?.value || '').slice(0,120);
+    const email = sanitize(document.getElementById('requestEmail')?.value || '').slice(0,160);
+    const number = sanitize(document.getElementById('requestNumber')?.value || '').slice(0,40);
+    const message = sanitize(document.getElementById('requestMessage')?.value || '').slice(0,600);
+    const actor = localStorage.getItem('memberName') || name || 'Anonymous';
     const type = window.selectedRequestType || 'Verification';
 
     if (!message) return alert('Please write a message before submitting.');
 
+    // Standardize to Apps Script contract: type=request + requestType
     const params = new URLSearchParams({
-      type,
-      member: username,
+      type: 'request',
+      requestType: type,
+      member: actor,
+      name,
+      email,
+      number,
       message,
       callback: 'handleRequestResponse'
     });
@@ -1492,7 +1646,7 @@ function bindUIButtons() {
     const msg = (document.getElementById('feedbackMessage').value || '').replace(/[<>]/g, '').trim().slice(0, 600);
     if (!msg) return alert('Please enter a message.');
     _rate.feedback = now;
-    jsonp(`${SHEET_API_URL}?type=feedback&message=${encodeURIComponent(msg)}&callback=handleFeedbackResponse`);
+    jsonp(`${window.SHEET_API_URL}?type=feedback&message=${encodeURIComponent(msg)}&callback=handleFeedbackResponse`);
   });
 
   document.getElementById('cancelFeedback')?.addEventListener('click', () => {
@@ -1505,6 +1659,44 @@ function bindUIButtons() {
     });
   });
 
+  // Password reveal toggles (eye/eye-off)
+  const togglePwd = (inputId, btnId) => {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    if (!input || !btn) return;
+    btn.addEventListener('click', () => {
+      const isPw = input.type === 'password';
+      input.type = isPw ? 'text' : 'password';
+      btn.innerHTML = isPw ? '<i data-lucide="eye-off"></i>' : '<i data-lucide="eye"></i>';
+      window.lucide?.createIcons?.();
+    });
+  };
+  togglePwd('numberInput', 'toggleLoginPwd');
+  togglePwd('signupPassword', 'toggleSignupPwd');
+
+  // Affiliates modal open
+  document.getElementById('affiliatesBtn')?.addEventListener('click', () => {
+    const modal = document.getElementById('affiliatesModal');
+    modal?.classList.remove('hidden');
+    // reset honeypot + email on open to avoid autofill false positives
+    const hp = document.getElementById('hp-affiliate');
+    if (hp) hp.value = '';
+    const em = document.getElementById('affiliateEmail');
+    if (em) em.value = '';
+  });
+  // Affiliates modal close
+  document.getElementById('cancelAffiliate')?.addEventListener('click', () => {
+    document.getElementById('affiliatesModal')?.classList.add('hidden');
+  });
+  // Join affiliates via JSONP
+  document.getElementById('joinAffiliate')?.addEventListener('click', () => {
+    const email = (document.getElementById('affiliateEmail')?.value || '').trim();
+    if (!email) return alert('Enter your email.');
+    // Do not block based on honeypot to avoid autofill false positives
+    const url = `${window.SHEET_API_URL}?type=joinAffiliate&email=${encodeURIComponent(email)}&callback=handleAffiliateResponse`;
+    jsonp(url);
+  });
+
   document.getElementById('marketplaceBtn')?.addEventListener('click', () => {
     window.updateLockedOverlays?.();
     document.getElementById('marketplaceSidebar')?.classList.remove('translate-x-full');
@@ -1514,13 +1706,8 @@ function bindUIButtons() {
     }
   });
 
-  const filterPanel = document.getElementById('filterPanel');
-  document.getElementById('filterBtn')?.addEventListener('click', () => {
-    if (filterPanel) filterPanel.classList.toggle('hidden');
-  });
-  document.getElementById('closeFilterPanel')?.addEventListener('click', () => {
-    filterPanel?.classList.add('hidden');
-  });
+  // Support multiple filterPanel instances defensively
+  // Filter panel toggling is handled via delegated click listener below
 
   document.getElementById('profileToggle')?.addEventListener('click', () => {
     document.getElementById('profileMenu')?.classList.toggle('hidden');
@@ -1531,6 +1718,7 @@ function bindUIButtons() {
   document.querySelectorAll('#themeToggleBtn,#themeToggleBtnGuest').forEach(btn => {
     btn.addEventListener('click', () => window.toggleTheme?.());
   });
+  // No guest-only request/favourite/add location entries
 
   document.getElementById('activityBtn')?.addEventListener('click', () => {
     window.keepActivityOpen = true;
@@ -1584,9 +1772,15 @@ window.handleEntertainment = function (rawRows) {
       const nonUrls = strings.filter(v => !/^https?:\/\//i.test(v));
       const username = (nonUrls[0] || '').toString() || 'Anonymous';
       const caption = (nonUrls[1] || '').toString();
-      // keep timestamp internally if needed later, but do not render
+      // try to infer likes/comments by conventional column positions (5 = Likes, 6 = Comments)
+      const likes = Number.parseInt(r[5], 10) || 0;
+      let comments = [];
+      try {
+        const c = r[6];
+        if (typeof c === 'string' && c.trim()) comments = JSON.parse(c);
+      } catch (_) { comments = []; }
       const timestamp = r.find(v => /\d{4}-\d{2}-\d{2}|:\d{2}/.test(String(v))) || '';
-      return { imageUrl, username, caption, timestamp };
+      return { imageUrl, username, caption, timestamp, likes, comments };
     })
     .filter(it => it.imageUrl);
 
@@ -1648,10 +1842,115 @@ window.handleEntertainment = function (rawRows) {
     left.className = 'flex items-center gap-4';
     const likeBtn = document.createElement('button');
     likeBtn.className = 'text-yellow-400 hover:text-red-500 flex items-center gap-1';
-    likeBtn.innerHTML = '<i data-lucide="heart" class="w-4 h-4"></i>';
+    likeBtn.dataset.link = item.imageUrl;
+    likeBtn.dataset.count = String(item.likes || 0);
+    likeBtn.innerHTML = `<i data-lucide="heart" class="w-4 h-4"></i> <span class="ent-like-count">${item.likes || 0}</span>`;
+    likeBtn.addEventListener('click', () => {
+      try {
+        // keep reference for callback to update UI in place
+        window._lastEntLikeBtn = likeBtn;
+        const url = `${window.SHEET_API_URL}?type=entertainmentLike&link=${encodeURIComponent(item.imageUrl)}&callback=handleEntertainmentLike`;
+        jsonp(url);
+      } catch (e) { console.warn('Like failed', e); }
+    });
+
     const commentBtn = document.createElement('button');
+    const commentCount = Array.isArray(item.comments) ? item.comments.length : 0;
     commentBtn.className = 'text-yellow-400 hover:text-yellow-200 flex items-center gap-1';
-    commentBtn.innerHTML = '<i data-lucide="message-circle" class="w-4 h-4"></i>';
+    commentBtn.dataset.link = item.imageUrl;
+    commentBtn.dataset.count = String(commentCount);
+    commentBtn.innerHTML = `<i data-lucide="message-circle" class="w-4 h-4"></i> <span class="ent-comment-count">${commentCount}</span>`;
+
+    // Inline comment input + list with Load more
+    const commentWrap = document.createElement('div');
+    commentWrap.className = 'px-3 pb-3';
+
+    const makeLine = (u, tx) => {
+      const line = document.createElement('div');
+      line.className = 'text-xs text-yellow-200';
+      line.innerHTML = `<span class=\"font-semibold text-yellow-400\">${u}:</span> ${tx}`;
+      return line;
+    };
+
+    const list = document.createElement('div');
+    list.className = 'ent-comments-list space-y-1 mt-1';
+    commentWrap.appendChild(list);
+
+    const maxInitial = 3;
+    const allComments = Array.isArray(item.comments) ? item.comments.slice() : [];
+    const visible = allComments.slice(0, maxInitial);
+    const hidden = allComments.slice(maxInitial);
+    visible.forEach(c => list.appendChild(makeLine(c && c.user ? c.user : 'User', c && c.text ? c.text : '')));
+
+    commentWrap.dataset.hiddenCount = String(hidden.length);
+    commentWrap.dataset.expanded = 'false';
+
+    let loadMoreBtn = null;
+    if (hidden.length > 0) {
+      loadMoreBtn = document.createElement('button');
+      loadMoreBtn.className = 'ent-load-more text-[11px] text-yellow-400 hover:text-yellow-200 mt-1';
+      loadMoreBtn.textContent = `Load more (${hidden.length})`;
+      loadMoreBtn.addEventListener('click', () => {
+        hidden.forEach(c => list.appendChild(makeLine(c && c.user ? c.user : 'User', c && c.text ? c.text : '')));
+        commentWrap.dataset.hiddenCount = '0';
+        commentWrap.dataset.expanded = 'true';
+        loadMoreBtn.remove();
+      });
+      commentWrap.appendChild(loadMoreBtn);
+    }
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Write a comment…';
+    input.className = 'mt-2 w-full text-sm p-2 bg-zinc-900 border border-yellow-500/40 rounded focus:outline-none focus:ring focus:border-yellow-400 hidden';
+    commentWrap.appendChild(input);
+    card.appendChild(commentWrap);
+
+    commentBtn.addEventListener('click', () => {
+      input.classList.toggle('hidden');
+      if (!input.classList.contains('hidden')) input.focus();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const text = input.value.trim();
+      if (!text) return;
+      const user = localStorage.getItem('memberName') || 'Anonymous';
+      try {
+        // append to UI immediately
+        const expanded = commentWrap.dataset.expanded === 'true';
+        const hc = parseInt(commentWrap.dataset.hiddenCount || '0', 10) || 0;
+        if (expanded) {
+          list.appendChild(makeLine(user, text));
+        } else {
+          if (list.childElementCount >= maxInitial) {
+            const newHidden = hc + 1;
+            commentWrap.dataset.hiddenCount = String(newHidden);
+            if (!loadMoreBtn) {
+              loadMoreBtn = document.createElement('button');
+              loadMoreBtn.className = 'ent-load-more text-[11px] text-yellow-400 hover:text-yellow-200 mt-1';
+              commentWrap.appendChild(loadMoreBtn);
+              loadMoreBtn.addEventListener('click', () => {
+                commentWrap.dataset.expanded = 'true';
+                commentWrap.dataset.hiddenCount = '0';
+                loadMoreBtn.remove();
+              });
+            }
+            loadMoreBtn.textContent = `Load more (${newHidden})`;
+          } else {
+            list.appendChild(makeLine(user, text));
+          }
+        }
+        // bump count
+        const cnt = commentBtn.querySelector('.ent-comment-count');
+        if (cnt) cnt.textContent = String((parseInt(cnt.textContent || '0', 10) || 0) + 1);
+        // keep reference for callback if needed
+        window._lastEntComment = { link: item.imageUrl, user, text };
+        const url = `${window.SHEET_API_URL}?type=entertainmentComment&link=${encodeURIComponent(item.imageUrl)}&username=${encodeURIComponent(user)}&commentText=${encodeURIComponent(text)}&callback=handleEntertainmentComment`;
+        jsonp(url);
+      } catch (err) { console.warn('Comment failed', err); }
+      input.value = '';
+      input.classList.add('hidden');
+    });
     left.append(likeBtn, commentBtn);
     actions.append(left);
     card.appendChild(actions);
@@ -1662,6 +1961,25 @@ window.handleEntertainment = function (rawRows) {
   if (window.lucide) lucide.createIcons();
   console.log(`📸 Rendered ${items.length} entertainment items`);
 }
+
+// Callbacks for entertainment like/comment
+window.handleEntertainmentLike = function (resp) {
+  if (resp && resp.success) {
+    try {
+      const btn = window._lastEntLikeBtn;
+      if (btn) {
+        const span = btn.querySelector('.ent-like-count');
+        if (span) span.textContent = String((parseInt(span.textContent || '0', 10) || 0) + 1);
+      }
+    } catch (_) {}
+    console.log('❤️ Entertainment like saved');
+  }
+};
+window.handleEntertainmentComment = function (resp) {
+  if (resp && resp.success) {
+    console.log('💬 Entertainment comment saved');
+  }
+};
 
 function loadEntertainment() {
   // Try Apps Script JSONP first, then fall back to GViz if no callback
@@ -1770,8 +2088,8 @@ originalGeoData.features.forEach(f => {
 });
 
 const filterBox = document.getElementById('categoryFilters');
-if (filterBox) {
-  const categoryIconMap = {
+// Expose icon map + categories + a repopulate helper for late-loaded panels
+window.categoryIconMap = {
     cafes: '☕️',
     pubs: '🍺',
     pub: '🍺',
@@ -1786,13 +2104,19 @@ if (filterBox) {
     education: '📚',
     markets: '🧺'
   };
-
-  [...categories].sort().forEach(cat => {
+window.mapCategories = [...categories].sort();
+// Try to populate immediately (in case panel is already present)
+setTimeout(() => window.populateCategoryFilters?.(), 0);
+window.populateCategoryFilters = function () {
+  const box = document.getElementById('categoryFilters');
+  if (!box || !window.mapCategories) return;
+  box.innerHTML = '';
+  window.mapCategories.forEach(cat => {
     const safeId = `filter-${cat.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     const row = document.createElement('div');
     row.className = 'flex items-center gap-2';
 
-    const icon = categoryIconMap[cat.toLowerCase()] || '📍';
+    const icon = (window.categoryIconMap || {})[cat.toLowerCase()] || '📍';
 
     const label = document.createElement('label');
     label.className = 'group flex flex-1 items-center gap-3 rounded-xl border border-yellow-500/20 bg-black/60 px-3 py-2 text-xs text-yellow-200 transition hover:border-yellow-400';
@@ -1800,10 +2124,9 @@ if (filterBox) {
       <input id="${safeId}" type="checkbox" value="${cat}" onchange="window.handleCategoryToggle(event)" checked class="peer sr-only">
       <span class="flex h-7 w-7 items-center justify-center rounded-full bg-yellow-500/10 text-base">${icon}</span>
       <span class="flex-1 font-medium capitalize tracking-[0.05em]">${cat}</span>
-      <span class="relative inline-flex h-6 w-11 items-center rounded-full bg-yellow-500/20 transition-all duration-200 ease-out peer-checked:bg-yellow-500 peer-checked:shadow-[0_0_12px_rgba(250,204,21,0.45)]">
-        <span class="inline-block h-5 w-5 translate-x-1 rounded-full bg-yellow-200 shadow-sm transition-all duration-200 ease-out peer-checked:translate-x-5 peer-checked:bg-black"></span>
-      </span>
-    `;
+      <span class="tg-toggle relative inline-flex h-6 w-11 items-center rounded-full bg-yellow-500/20 transition-[background,box-shadow] duration-300 ease-out peer-checked:bg-yellow-500 peer-checked:shadow-[0_0_12px_rgba(250,204,21,0.45)]">
+        <span class="tg-knob inline-block h-5 w-5 translate-x-1 rounded-full bg-yellow-200 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] peer-checked:translate-x-5 peer-checked:bg-black"></span>
+      </span>`;
 
     const onlyBtn = document.createElement('button');
     onlyBtn.type = 'button';
@@ -1815,8 +2138,11 @@ if (filterBox) {
     });
 
     row.append(label, onlyBtn);
-    filterBox.appendChild(row);
+    box.appendChild(row);
   });
+}
+if (filterBox) {
+  window.populateCategoryFilters();
 }
 
       data.features.forEach(feature => {
@@ -2023,15 +2349,15 @@ window.getMemberProfile = (name = '') => {
 
   const localNameRaw = localStorage.getItem('memberName') || '';
   const currentKey = normalizeMemberKey(localNameRaw);
-  let checkins = stored.checkins;
+  let streak = stored.streak;
   let community = stored.community;
   let status = stored.status;
 
   // Treat as current user if keys match closely (email vs display name etc.)
   const localKeyBase = currentKey.split('@')[0] || currentKey;
   if (key === currentKey || key === localKeyBase || (!key && currentKey) || localKeyBase === key) {
-    const localCheckins = parseInt(localStorage.getItem('checkinCount') || '0', 10);
-    if (!Number.isNaN(localCheckins)) checkins = localCheckins;
+    const localStreak = parseInt(localStorage.getItem('streak') || '0', 10);
+    if (!Number.isNaN(localStreak)) streak = localStreak;
     community = localStorage.getItem('memberCommunity') || community;
     status = localStorage.getItem('memberCommunityStatus') || status;
   }
@@ -2039,7 +2365,7 @@ window.getMemberProfile = (name = '') => {
   return {
     displayName: stored.displayName || name || record.username || record.name || (localNameRaw || 'Member'),
     level: (record.level || 'free').toString(),
-    checkins: typeof checkins === 'number' ? checkins : (checkins ? Number(checkins) : 0),
+    streak: typeof streak === 'number' ? streak : (streak ? Number(streak) : 0),
     community: community || 'No community selected',
     status: status || 'Guest'
   };
@@ -2070,14 +2396,17 @@ window.showMemberCard = (name = 'Member', anchorEl) => {
     <div class="flex items-center justify-between gap-3">
       <div>
         <p class="text-[10px] uppercase tracking-[0.3em] text-yellow-500/70">Member</p>
-        <h3 class="text-base font-semibold text-yellow-100" id="memberCardName">${profile.displayName}</h3>
+        <div class="flex items-center gap-2">
+          <h3 class="text-base font-semibold text-yellow-100" id="memberCardName">${profile.displayName}</h3>
+          <span id="memberCardStreakChip" class="hidden text-[11px] inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5 text-yellow-300"></span>
+        </div>
       </div>
       <span class="rounded-full border border-yellow-500/30 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-yellow-400" id="memberCardLevel">${profile.level}</span>
     </div>
     <div class="grid gap-2 text-xs text-yellow-200">
       <div class="flex items-center justify-between">
-        <span class="text-yellow-500/80">Check-ins</span>
-        <span class="font-semibold text-yellow-100" id="memberCardCheckins">${profile.checkins ?? 0}</span>
+        <span class="text-yellow-500/80">Streak</span>
+        <span class="font-semibold text-yellow-100" id="memberCardStreak">${profile.streak ?? 0} day${(profile.streak||0)===1?'':'s'}</span>
       </div>
       <div class="flex items-center justify-between">
         <span class="text-yellow-500/80">Community</span>
@@ -2327,12 +2656,13 @@ searchInput.addEventListener('input', async () => {
     .trim();
   const query = normalize(searchInput.value || '');
   suggestionsBox.innerHTML = '';
-  if (!query || geoMarkers.length === 0) {
+  if (!query) {
     suggestionsBox.style.display = 'none';
     return;
   }
 
-  const matches = geoMarkers.filter(m => m.title.includes(query)).slice(0, 5);
+  const localPool = Array.isArray(geoMarkers) ? geoMarkers : [];
+  const matches = localPool.filter(m => m.title.includes(query)).slice(0, 5);
   console.log('🔍 Search query:', query);
   console.log('📍 Local Matches:', matches);
 
@@ -2553,7 +2883,8 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
     if (hp && hp.value) return alert('Login blocked.');
 
     // Accept username OR email in the first field
-    const typedName = nameInput.value.trim().toLowerCase().replace(/\s+/g, '');
+    const rawId = nameInput.value.trim();
+    const typedName = rawId.toLowerCase().replace(/\s+/g, '');
     const typedNumber = numberInput.value.trim();
 
     // Do not log credentials
@@ -2575,19 +2906,23 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
 
     localStorage.setItem('memberName', nameInput.value.trim());
     localStorage.setItem('membershipLevel', match.level);
+    // Canonical username for favourites + backend consistency (strip spaces)
+    const canonicalUser = (match.username || match.email || nameInput.value || '')
+      .toString().trim().toLowerCase().replace(/\s+/g, '');
+    localStorage.setItem('username', canonicalUser);
     window.isPremium = match.level === 'premium';
 
     const displayName = nameInput.value.trim();
     alert(`🌹 Welcome back ${displayName}! (${match.level})`);
     document.getElementById('loginModal')?.classList.add('hidden');
 
-     const username = nameInput.value.trim();
-localStorage.setItem('username', username);
-loadUserFavourites(username);
+    loadUserFavourites(canonicalUser);
 
 
     showMemberOptions();
     lucide.createIcons?.();
+    // Remember last login id for convenience
+    try { localStorage.setItem('lastLoginId', rawId); } catch {}
   });
 }
 
@@ -2666,19 +3001,33 @@ window.setupModalLinks = function () {
     // Hide profile menu and onboarding
     document.getElementById('profileMenu')?.classList.add('hidden');
     document.getElementById('onboardingModal')?.classList.add('hidden');
-    // Hide any lock overlays
-    document.getElementById('lockedMarketplaceModal')?.classList.add('hidden');
-    document.getElementById('lockedEntertainmentModal')?.classList.add('hidden');
-    document.getElementById('lockedActivityModal')?.classList.add('hidden');
+    // Do NOT touch lock overlays here; they are managed by updateLockedOverlays/login flow
   };
 
   const openLogin = () => {
-    closeAllPanels();
+    // Do NOT hide locked overlays here; keep them until auth
+    // Pre-fill with last attempt if available
+    try {
+      const last = localStorage.getItem('lastLoginId') || '';
+      const name = document.getElementById('nameInput');
+      if (name && last) name.value = last;
+    } catch {}
+    // Close sidebars and other panels but leave lock overlays alone
+    document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+    if (!window.keepActivityOpen) document.getElementById('activitySidebar')?.classList.add('translate-x-full');
+    document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+    document.getElementById('profileMenu')?.classList.add('hidden');
+    document.getElementById('onboardingModal')?.classList.add('hidden');
     document.getElementById('signupModal')?.classList.add('hidden');
     document.getElementById('loginModal')?.classList.remove('hidden');
   };
   const openSignup = () => {
-    closeAllPanels();
+    // Do NOT hide locked overlays here; keep them until auth
+    document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+    if (!window.keepActivityOpen) document.getElementById('activitySidebar')?.classList.add('translate-x-full');
+    document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+    document.getElementById('profileMenu')?.classList.add('hidden');
+    document.getElementById('onboardingModal')?.classList.add('hidden');
     document.getElementById('loginModal')?.classList.add('hidden');
     document.getElementById('signupModal')?.classList.remove('hidden');
   };
@@ -2718,9 +3067,9 @@ function showMemberOptions() {
   console.log('🧠 Show member UI for:', name, '| Premium:', window.isPremium);
 
   document.getElementById('memberName').textContent = `🌹 ${name}`;
-  const checkins = localStorage.getItem('checkinCount') || 0;
+  const streak = localStorage.getItem('streak') || 0;
   window.memberStats = window.memberStats || {};
-  window.memberStats.checkins = Number(checkins) || 0;
+  window.memberStats.streak = Number(streak) || 0;
   window.memberStats.community = localStorage.getItem('memberCommunity') || 'No community selected';
   window.memberStats.status = localStorage.getItem('memberCommunityStatus') || 'guest';
   window.memberStats.favourites = window.latestFavouritesCount ?? 0;
@@ -2728,14 +3077,50 @@ function showMemberOptions() {
   document.getElementById('memberOptions')?.classList.remove('hidden');
   document.getElementById('guestOptions')?.classList.add('hidden');
 
+  // Render streak chip in profile menu
+  try {
+    const chip = document.getElementById('memberStreakChip');
+    const days = Number(streak) || 0;
+    if (chip) {
+      if (days > 0) { chip.textContent = `🔥 ${days}-day streak`; chip.classList.remove('hidden'); }
+      else { chip.classList.add('hidden'); chip.textContent = ''; }
+    }
+  } catch {}
+
+  // Gate certain actions to premium members only
+  const gate = (id, show) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (show) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  };
+  // Show core actions for all logged-in members
+  gate('favouritesBtn', true);
+  gate('addLocationBtn', true);
+  gate('requestsBtn', true);
+
   updateMemberDirectory(name, {
-    checkins: Number(checkins) || 0,
+    streak: Number(streak) || 0,
     community: localStorage.getItem('memberCommunity') || undefined,
     status: localStorage.getItem('memberCommunityStatus') || 'member'
   });
 
   // Sync community from backend and hide any locked overlays now that user is logged in
   fetchCommunityForCurrentUser();
+  // Fetch latest streak and ping today's activity
+  requestStreakForCurrentUser();
+  setTimeout(() => pingDailyStreakForCurrentUser(), 500);
+
+  // Gentle streak toast on return (once per day)
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const lastToast = localStorage.getItem('streakToast') || '';
+    const days = Number(localStorage.getItem('streak') || '0') || 0;
+    if (days >= 2 && lastToast !== today) {
+      window.showToast?.(`Keep your streak going — you’re on day ${days}!`);
+      localStorage.setItem('streakToast', today);
+    }
+  } catch {}
   document.getElementById('lockedMarketplaceModal')?.classList.add('hidden');
   document.getElementById('lockedEntertainmentModal')?.classList.add('hidden');
   document.getElementById('lockedActivityModal')?.classList.add('hidden');
@@ -2749,12 +3134,32 @@ window.updateMemberStatsUI = function () {
   const metaEl = document.getElementById('memberMeta');
   if (!metaEl) return;
   const stats = window.memberStats || {};
-  metaEl.innerHTML = `
-    <div>Check-ins: ${stats.checkins ?? 0}</div>
-    <div>Favourites: ${stats.favourites ?? 0}</div>
-    <div>Community: ${stats.community || 'No community selected'}</div>
-    <div>Status: ${(stats.status || 'guest').toString()}</div>
-  `;
+
+  // Build stacked chips: community (line 1), streak (line 2)
+  const parts = [];
+  const community = (stats.community || '').toString();
+  const streakDays = Number(stats.streak || 0);
+  const communityChip = community ? `
+    <div>
+      <span class="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5">
+        <i data-lucide="map"></i> ${community}
+      </span>
+    </div>` : '';
+  const streakChip = streakDays > 0 ? `
+    <div>
+      <span class="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5">🔥 ${streakDays}-day streak</span>
+    </div>` : '';
+  // Order: streak first, then community
+  parts.push(streakChip, communityChip);
+  metaEl.innerHTML = parts.filter(Boolean).join('');
+
+  // Render activity badges inline under chips
+  const badgesEl = document.getElementById('memberMenuBadges');
+  if (badgesEl) {
+    badgesEl.innerHTML = '';
+    renderBadgeChips(localStorage.getItem('memberName') || '', badgesEl);
+  }
+  window.lucide?.createIcons?.();
 };
 
 // Utility: unified overlay state (prevents flicker)
@@ -2774,6 +3179,96 @@ window.updateLockedOverlays = function () {
   toggle('lockedActivityModal');
 }
 
+// Provide a closeModal helper for submission modal
+window.closeModal = function () {
+  document.getElementById('submissionModal')?.classList.add('hidden');
+};
+
+// Upgrade/fix the request modal content to include structured fields
+window.upgradeRequestModal = function () {
+  const modal = document.getElementById('requestModal');
+  if (!modal) return;
+  // Always run cleanup; fields may exist while stray broken markup still remains
+  // Remove malformed textarea if present
+  const allTextareas = Array.from(modal.querySelectorAll('textarea#requestMessage'));
+  // If multiple textareas with same id exist, keep the first inside our fields container and remove the rest
+  if (allTextareas.length > 1) {
+    const container = modal.querySelector('.space-y-3') || modal;
+    const preferred = container.querySelector('textarea#requestMessage') || allTextareas[0];
+    allTextareas.forEach((el) => { if (el !== preferred) el.remove(); });
+  } else {
+    // Single textarea but check for parsed-broken placeholder swallowing markup
+    const only = allTextareas[0];
+    if (only && /\\textarea>/i.test(String(only.getAttribute('placeholder') || ''))) {
+      only.remove();
+      const container = modal.querySelector('.space-y-3');
+      if (container) {
+        const fixed = document.createElement('textarea');
+        fixed.id = 'requestMessage';
+        fixed.rows = 4;
+        fixed.className = 'w-full p-2 bg-zinc-900 border border-yellow-500 rounded resize-none';
+        fixed.placeholder = 'Message';
+        container.appendChild(fixed);
+      }
+    }
+  }
+  // Remove any rogue text nodes that printed raw <button> markup
+  modal.querySelectorAll('*').forEach(el => {
+    Array.from(el.childNodes).forEach(n => {
+      if (n.nodeType === 3 && ( /<\/?button|id=\"submitRequest\"|id=\"cancelRequest\"/.test(n.textContent || '') || /Type your request/i.test(n.textContent || '') )) {
+        n.parentNode.removeChild(n);
+      }
+    });
+  });
+  // Insert fields after honeypot only if a valid set is not already present
+  const hasFields = modal.querySelector('#requestName') && modal.querySelector('#requestEmail') && modal.querySelector('#requestNumber') && modal.querySelector('textarea#requestMessage');
+  if (!hasFields) {
+    const hp = document.getElementById('hp-request');
+    const container = document.createElement('div');
+    container.className = 'space-y-3';
+    container.innerHTML = `
+      <div class=\"grid sm:grid-cols-2 gap-3\">
+        <input id=\"requestName\" type=\"text\" placeholder=\"Your name\" class=\"w-full p-2 bg-zinc-900 border border-yellow-500 rounded\" />
+        <input id=\"requestEmail\" type=\"email\" placeholder=\"Email\" class=\"w-full p-2 bg-zinc-900 border border-yellow-500 rounded\" />
+      </div>
+      <input id=\"requestNumber\" type=\"text\" placeholder=\"Number\" class=\"w-full p-2 bg-zinc-900 border border-yellow-500 rounded\" />
+      <textarea id=\"requestMessage\" rows=\"4\" class=\"w-full p-2 bg-zinc-900 border border-yellow-500 rounded resize-none\" placeholder=\"Message\"></textarea>
+    `;
+    if (hp && hp.parentNode) {
+      hp.parentNode.insertBefore(container, hp.nextSibling);
+    }
+  }
+  // Dedupe any repeated groups
+  const allNames = Array.from(modal.querySelectorAll('#requestName'));
+  allNames.slice(1).forEach(n => { const grp = n.closest('.space-y-3'); if (grp && grp.querySelector('#requestEmail')) grp.remove(); else n.remove(); });
+  const allEmails = Array.from(modal.querySelectorAll('#requestEmail'));
+  allEmails.slice(1).forEach(e => { const grp = e.closest('.space-y-3'); if (grp) grp.remove(); else e.remove(); });
+  const allNumbers = Array.from(modal.querySelectorAll('#requestNumber'));
+  allNumbers.slice(1).forEach(e => e.remove());
+  const allMsgs = Array.from(modal.querySelectorAll('textarea#requestMessage'));
+  allMsgs.slice(1).forEach(e => e.remove());
+  // Ensure footer action buttons exist
+  const footerExists = !!document.getElementById('submitRequest');
+  if (!footerExists) {
+    const footer = document.createElement('div');
+    footer.className = 'flex justify-end gap-3 mt-4';
+    const cancel = document.createElement('button');
+    cancel.id = 'cancelRequest';
+    cancel.className = 'border border-yellow-500 text-yellow-400 px-4 py-2 rounded hover:bg-yellow-500 hover:text-black';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => {
+      document.getElementById('requestModal')?.classList.add('hidden');
+    });
+    const submit = document.createElement('button');
+    submit.id = 'submitRequest';
+    submit.className = 'bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600';
+    submit.textContent = 'Send';
+    footer.append(cancel, submit);
+    const modalInner = modal.querySelector('.text-yellow-300') || modal.firstElementChild;
+    modalInner?.appendChild(footer);
+  }
+};
+
 // Ensure post forms are usable when logged in
 window.ensurePostFormsVisibility = function () {
   if (!window.isLoggedIn?.()) return;
@@ -2791,15 +3286,7 @@ window.ensurePostFormsVisibility = function () {
 
 
 
-document.getElementById('addLocationBtn')?.addEventListener('click', () => {
-  const modal = document.getElementById('addLocationModal');
-  modal?.classList.toggle('hidden');
-});
-
-document.getElementById('favouritesBtn')?.addEventListener('click', () => {
-  const dropdown = document.getElementById('favouritesDropdown');
-  dropdown?.classList.toggle('hidden');
-});
+// Note: handled by delegated listeners below to avoid double-trigger + fallbacks
 
 
 
@@ -2811,23 +3298,28 @@ document.getElementById('cancelRequest')?.addEventListener('click', () => {
   document.getElementById('requestModal')?.classList.add('hidden');
 });
 document.getElementById('logoutBtn')?.addEventListener('click', () => {
+  // Clear all known user state
   localStorage.removeItem('memberName');
   localStorage.removeItem('membershipLevel');
-  localStorage.removeItem('username'); // ← make sure this is here too
+  localStorage.removeItem('username');
+  localStorage.removeItem('memberCommunity');
+  localStorage.removeItem('memberCommunityStatus');
 
-  // Optional: Reload the page to wipe all JS state
-  location.reload();
-
-  // Reset UI to guest state
+  // Reset UI to guest state immediately
   document.getElementById('memberOptions')?.classList.add('hidden');
   document.getElementById('guestOptions')?.classList.remove('hidden');
-
-  // Optional: show a toast or confirmation
-  alert('Logged out successfully');
-
-  // Optional: close profile menu
+  const nameEl = document.getElementById('memberName');
+  if (nameEl) nameEl.textContent = '🌹 Guest';
+  const metaEl = document.getElementById('memberMeta');
+  if (metaEl) metaEl.innerHTML = '';
+  document.body.classList.remove('logged-in');
+  window.updateLockedOverlays?.();
   document.getElementById('profileMenu')?.classList.add('hidden');
 
+  alert('Logged out successfully');
+
+  // Reload after UI resets to ensure a clean slate
+  setTimeout(() => location.reload(), 100);
 });
 // Also remove logged-in body class on logout (defensive)
 document.getElementById('logoutBtn')?.addEventListener('click', () => {
@@ -2907,4 +3399,255 @@ document.addEventListener('DOMContentLoaded', () => {
   bind('profileLoginBtn', openLogin);
   bind('openSignupLink', openSignup);
   bind('profileSignupBtn', openSignup);
+  // Upgrade/fix the Request modal structure if needed
+  window.upgradeRequestModal?.();
+
+  // Debug helpers: force-show modals if needed
+  window.forceShowAddLocation = function () {
+    // Prefer the bound submission modal if present
+    const modal = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.style.display = 'block';
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
+  };
+  window.forceShowFavourites = function () {
+    const dropdowns = document.querySelectorAll('#favouritesDropdown');
+    if (!dropdowns.length) return;
+    dropdowns.forEach(dd => {
+      dd.classList.remove('hidden');
+      dd.style.display = 'block';
+      dd.style.opacity = '1';
+      dd.style.pointerEvents = 'auto';
+    });
+  };
+
+  // Keyboard shortcuts: Shift+A (Add Location), Shift+F (Favourites)
+document.addEventListener('keydown', (e) => {
+  const key = (e.key || '').toLowerCase();
+  if (!e.shiftKey) return;
+  if (window._disableFavAdd) return;
+  if (key === 'a') { e.preventDefault(); window.forceShowAddLocation(); }
+  if (key === 'f') { e.preventDefault(); window.forceShowFavourites(); }
+});
+
+  // URL param support: ?show=addlocation,favourites
+  try {
+    const params = new URL(window.location.href).searchParams;
+    const show = (params.get('show') || '').toLowerCase();
+    if (show.includes('addlocation')) setTimeout(() => window.forceShowAddLocation(), 0);
+    if (show.includes('favourites')) setTimeout(() => window.forceShowFavourites(), 0);
+  } catch {}
+});
+
+// Delegated fallbacks for buttons that may render late
+document.addEventListener('click', (ev) => {
+  const t = ev.target;
+  if (!(t instanceof Element)) return;
+  const q = (sel) => t.closest(sel);
+
+  // Filter open/close
+  if (q('#filterBtn')) {
+    ev.preventDefault();
+    try {
+      const s = document.getElementById('suggestions');
+      if (s) { s.classList.add('hidden'); s.style.display = 'none'; }
+    } catch {}
+    const panels = document.querySelectorAll('#filterPanel');
+    if (panels.length === 0) {
+      console.warn('Filter panel not in DOM');
+      // Create a minimal filter panel shell so UI still works
+      const shell = document.createElement('div');
+      shell.id = 'filterPanel';
+      shell.className = 'fixed bottom-28 left-6 z-[99999] w-[18rem]';
+      shell.innerHTML = `
+        <div class="rounded-2xl border border-yellow-500/50 bg-black/85 px-4 py-5 text-yellow-200 shadow-[0_18px_32px_rgba(255,215,0,0.12)]">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <p class="text-[10px] uppercase tracking-[0.35em] text-yellow-500/70">Filters</p>
+              <h2 class="text-lg font-semibold text-yellow-100">Refine Map</h2>
+            </div>
+            <button id="closeFilterPanel" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black transition">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div class="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-yellow-500/80 mb-3">
+            <span>Categories</span>
+            <button type="button" class="text-yellow-400 hover:text-yellow-200" onclick="showAllLocations()">Reset</button>
+          </div>
+          <div id="categoryFilters" class="max-h-44 overflow-y-auto pr-1 mb-4 space-y-2"></div>
+          <button onclick="filterByCategory()" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
+            <i data-lucide="check"></i>
+            <span>Apply</span>
+          </button>
+        </div>`;
+      document.body.appendChild(shell);
+      window.lucide?.createIcons?.();
+      // Populate category checkboxes now that panel exists
+      setTimeout(() => window.populateCategoryFilters?.(), 0);
+      // Let the existing category population code run on next map load
+    } else {
+      panels.forEach(p => p.classList.toggle('hidden'));
+    }
+    return;
+  }
+  if (q('#closeFilterPanel')) {
+    ev.preventDefault();
+    const panels = document.querySelectorAll('#filterPanel');
+    panels.forEach(p => p.classList.add('hidden'));
+    return;
+  }
+
+  // Add Location
+  if (q('#addLocationBtn')) {
+    ev.preventDefault();
+    if (!window.isLoggedIn?.()) {
+      document.getElementById('loginModal')?.classList.remove('hidden');
+    } else {
+      // Prefer the bound submission modal if available
+      const modal = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
+      if (modal) {
+        modal.classList.toggle('hidden');
+        // Ensure visible when toggled on
+        if (!modal.classList.contains('hidden')) {
+          modal.style.display = 'block';
+          modal.style.opacity = '1';
+          modal.style.pointerEvents = 'auto';
+        }
+      } else {
+        console.warn('Add Location modal not found — creating fallback');
+        window.forceShowAddLocation?.();
+      }
+    }
+    return;
+  }
+
+  // Favourites dropdown toggle
+  if (q('#favouritesBtn')) {
+    ev.preventDefault();
+    const dropdowns = document.querySelectorAll('#favouritesDropdown');
+    if (dropdowns.length) {
+      dropdowns.forEach(dd => {
+        dd.classList.toggle('hidden');
+        if (!dd.classList.contains('hidden')) {
+          dd.style.display = 'block';
+          dd.style.opacity = '1';
+          dd.style.pointerEvents = 'auto';
+        }
+      });
+      // Refresh favourites when opening, if we know the user
+      try {
+        const u = localStorage.getItem('username');
+        if (u) setTimeout(() => loadUserFavourites(u), 0);
+      } catch {}
+    } else {
+      console.warn('Favourites dropdown not found — creating fallback');
+      window.forceShowFavourites?.();
+    }
+    return;
+  }
+});
+
+// Global debug helpers (ensure they exist even if early wiring failed)
+if (typeof window.forceShowAddLocation !== 'function') {
+  window.forceShowAddLocation = function () {
+    if (window._disableFavAdd) return;
+    // Prefer the bound submission modal first
+    let modal = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
+    if (!modal) {
+      console.warn('Add Location modal not found — creating fallback');
+      modal = document.createElement('div');
+      modal.id = 'addLocationModal';
+      modal.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] w-[22rem] bg-black border border-yellow-500 rounded-xl shadow-lg p-6 text-yellow-400 space-y-4';
+      modal.innerHTML = `
+        <button class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl" onclick="this.closest('#addLocationModal')?.classList.add('hidden')">&times;</button>
+        <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
+        <form id="locationForm" class="space-y-3">
+          <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-white placeholder-yellow-400">
+          <input id="locationShortDesc" type="text" placeholder="Short description" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-white placeholder-yellow-400">
+          <input id="locationCategory" type="text" placeholder="Category (e.g. Farm, Pub)" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-white placeholder-yellow-400">
+          <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
+        </form>`;
+      document.body.appendChild(modal);
+      // Bind fallback submission handler
+      try { bindLocationFormFallback(); } catch {}
+    }
+    modal.classList.remove('hidden');
+    modal.style.display = 'block';
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
+  };
+}
+if (typeof window.forceShowFavourites !== 'function') {
+  window.forceShowFavourites = function () {
+    if (window._disableFavAdd) return;
+    let dropdowns = document.querySelectorAll('#favouritesDropdown');
+    if (!dropdowns.length) {
+      console.warn('Favourites dropdown not found — creating fallback');
+      const dd = document.createElement('div');
+      dd.id = 'favouritesDropdown';
+      dd.className = 'fixed bottom-24 right-4 z-[9999] w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-xl shadow-lg p-4 text-yellow-400 space-y-2';
+      dd.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-sm font-semibold">🌹 Saved Favourites</h3>
+          <button onclick="document.getElementById('favouritesDropdown')?.classList.add('hidden')" class="text-yellow-400 hover:text-red-500 text-sm">✕</button>
+        </div>
+        <div id="favouritesList" class="space-y-2 text-sm">
+          <p class="text-yellow-600 italic">No favourites yet.</p>
+        </div>`;
+      document.body.appendChild(dd);
+      dropdowns = document.querySelectorAll('#favouritesDropdown');
+    }
+    dropdowns.forEach(dd => {
+      dd.classList.remove('hidden');
+      dd.style.display = 'block';
+      dd.style.opacity = '1';
+      dd.style.pointerEvents = 'auto';
+    });
+    // Refresh favourites after showing fallback
+    try {
+      const u = localStorage.getItem('username');
+      if (u) setTimeout(() => loadUserFavourites(u), 0);
+    } catch {}
+  };
+}
+
+// Delegated fallback: Request send button always works
+document.addEventListener('click', (ev) => {
+  const t = ev.target;
+  if (!(t instanceof Element)) return;
+  if (t.id !== 'submitRequest') return;
+  ev.preventDefault();
+  try {
+    window.upgradeRequestModal?.();
+    const hp = document.getElementById('hp-request');
+    if (hp && hp.value) { alert('Request blocked.'); return; }
+    const now = Date.now();
+    if (now - (_rate.requests || 0) < 45000) { alert('Please wait before sending another request.'); return; }
+    const S = (s='') => s.replace(/[<>]/g, '').trim();
+    const name = S(document.getElementById('requestName')?.value || '').slice(0,120);
+    const email = S(document.getElementById('requestEmail')?.value || '').slice(0,160);
+    const number = S(document.getElementById('requestNumber')?.value || '').slice(0,40);
+    const message = S(document.getElementById('requestMessage')?.value || '').slice(0,600);
+    if (!message) { alert('Please write a message before submitting.'); return; }
+    const actor = localStorage.getItem('memberName') || name || 'Anonymous';
+    const type = window.selectedRequestType || 'Verification';
+    // Standardize to Apps Script contract: type=request + requestType
+    const params = new URLSearchParams({
+      type: 'request',
+      requestType: type,
+      member: actor,
+      name,
+      email,
+      number,
+      message,
+      callback: 'handleRequestResponse'
+    });
+    _rate.requests = now;
+    jsonp(`${window.SHEET_API_URL}?${params.toString()}`);
+  } catch (e) {
+    console.error('Failed to submit request', e);
+    alert('Failed to submit request.');
+  }
 });

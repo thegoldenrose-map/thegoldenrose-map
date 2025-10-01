@@ -2056,6 +2056,54 @@ document.getElementById('tryPremiumBtn')?.addEventListener('click', () => {
     console.warn('❌ helpJoinBtn not found');
   }
 
+  // Auto-open onboarding for visitors with no memberName (treat as logged out)
+  try {
+    const notLoggedIn = !(localStorage.getItem('memberName') || '').trim();
+    if (notLoggedIn) {
+      const m = document.getElementById('onboardingModal');
+      if (m) {
+        m.classList.remove('hidden');
+        m.style.display = 'block';
+        m.style.opacity = '1';
+        m.style.pointerEvents = 'auto';
+      }
+    }
+  } catch {}
+
+  // Fallback: also trigger after full window load to avoid timing issues
+  window.addEventListener('load', () => {
+    try {
+      const notLoggedIn = !(localStorage.getItem('memberName') || '').trim();
+      // Also allow URL param force: ?onboarding=1
+      const force = (() => { try { return new URL(window.location.href).searchParams.get('onboarding') === '1'; } catch { return false; } })();
+      if (notLoggedIn || force) {
+        const m = document.getElementById('onboardingModal');
+        if (m) {
+          m.classList.remove('hidden');
+          m.style.display = 'block';
+          m.style.opacity = '1';
+          m.style.pointerEvents = 'auto';
+        } else {
+          // Observe for it to appear (in case components load late)
+          let tries = 0;
+          const max = 60; // ~1s @ 60fps
+          const tick = () => {
+            const mm = document.getElementById('onboardingModal');
+            if (mm) {
+              mm.classList.remove('hidden');
+              mm.style.display = 'block';
+              mm.style.opacity = '1';
+              mm.style.pointerEvents = 'auto';
+              return;
+            }
+            if (tries++ < max) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      }
+    } catch {}
+  });
+
 
 function setupApp() {
   

@@ -696,3 +696,13 @@ body.theme-light .badge-chip {
   color: #FDE047; /* yellow-300 */
   text-shadow: 0 0 8px rgba(253, 224, 71, 0.45), 0 0 18px rgba(253, 224, 71, 0.25);
 }
+
+/* Gold button glow */
+.btn-gold-glow {
+  box-shadow: 0 0 20px rgba(253, 224, 71, 0.35), 0 0 8px rgba(253, 224, 71, 0.25);
+  transition: box-shadow 150ms ease, transform 120ms ease;
+}
+.btn-gold-glow:hover {
+  box-shadow: 0 0 30px rgba(253, 224, 71, 0.5), 0 0 12px rgba(253, 224, 71, 0.35);
+  transform: translateY(-1px);
+}

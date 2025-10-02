@@ -44,9 +44,10 @@
          <button id="communityCardClose" type="button" class="inline-flex items-center justify-center w-7 h-7 rounded-full border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500 hover:text-black" aria-label="Close community picker">×</button>
        </div>
      </div>
-     <select id="communityPicker" class="w-full rounded-xl border border-yellow-500/30 bg-black/80 px-3 py-2 text-yellow-200 focus:border-yellow-400 focus:outline-none">
-       <option value="">Select a village, town or city…</option>
-     </select>
+     <div class="relative">
+       <input id="communitySearch" type="text" placeholder="Search a village, town or city…" class="w-full rounded-xl border border-yellow-500/30 bg-black/80 px-3 py-2 text-yellow-200 focus:border-yellow-400 focus:outline-none" autocomplete="off" />
+       <div id="communitySuggestions" class="absolute z-50 mt-1 w-full rounded-lg border border-yellow-500/30 bg-black/95 text-yellow-200 shadow-lg max-h-56 overflow-auto hidden"></div>
+     </div>
      <button id="communityJoinBtn" type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
        <i data-lucide="users"></i>
        <span>Request to Join</span>

@@ -1,216 +1,25 @@
 {
   "type": "FeatureCollection",
   "features": [
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "🚜 Tablehurst Farm",
-        "description": "",
-        "category": "🚜 FARMS",
-        "verified": true
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.045554809389905714, 51.09873855938196]
-      },
-      "id": 0
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "🍺 The HopYard",
-        "description": "",
-        "category": "🍺 PUBS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.03410110754440962, 51.09760093833534]
-      },
-      "id": 1
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "🍺 The Swan",
-        "description": "",
-        "category": "🍺 PUBS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.0328782247301093, 51.0986806846148]
-      },
-      "id": 2
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "🍺 Bramblyetye",
-        "description": "",
-        "category": "🍺 PUBS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.033232384426263875, 51.09967990285643]
-      },
-      "id": 3
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "☕ Ralph’s Cafe",
-        "description": "",
-        "category": "☕ CAFES",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.034514768344435114, 51.097152374753904]
-      },
-      "id": 4
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "☕ Maria’s Cafe",
-        "description": "",
-        "category": "☕ CAFES",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.03377891123542157, 51.10046816788147]
-      },
-      "id": 5
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "☕ Cafe Coco",
-        "description": "",
-        "category": "☕ CAFES",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.03366892753502851, 51.09864854522999]
-      },
-      "id": 6
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "☕ River View Cafe",
-        "description": "",
-        "category": "☕ CAFES",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.03765098200845745, 51.098999026913155]
-      },
-      "id": 7
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "☕ Java & Jazz",
-        "description": "",
-        "category": "☕ CAFES",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.03375535257614275, 51.09943624973958]
-      },
-      "id": 8
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "🛍️ Shearer’s Fine Foods",
-        "description": "",
-        "category": "🛍️ SHOPS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.033216795631935005, 51.09945125092517]
-      },
-      "id": 9
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "🛍️ The Bazaar",
-        "description": "",
-        "category": "🛍️ SHOPS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [ 0.03370539901669645,
-          51.09860392370294]
-      },
-      "id": 10
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": " Forest Row Festival",
-        "description": "",
-        "category": "📍 EVENTS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [0.035668269464622426, 51.09693948979029]
-      },
-      "id": 11
-    },
-    { "type": "Feature", "properties": { "title": "🏛️ Royal Pavilion, Brighton", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.1407, 50.8230] }, "id": 12 },
-    { "type": "Feature", "properties": { "title": "🎡 Brighton Palace Pier", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.1372, 50.8166] }, "id": 13 },
-    { "type": "Feature", "properties": { "title": "🌿 Hove Lawns", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.1600, 50.8220] }, "id": 14 },
-    { "type": "Feature", "properties": { "title": "🏛️ Hove Museum & Art Gallery", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.1792, 50.8351] }, "id": 15 },
-    { "type": "Feature", "properties": { "title": "🏰 Lewes Castle", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.0094, 50.8736] }, "id": 16 },
-    { "type": "Feature", "properties": { "title": "🎬 Depot Cinema, Lewes", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0086, 50.8707] }, "id": 17 },
-    { "type": "Feature", "properties": { "title": "🎨 Towner Eastbourne", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.2857, 50.7669] }, "id": 18 },
-    { "type": "Feature", "properties": { "title": "🌊 Eastbourne Pier", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.2905, 50.7687] }, "id": 19 },
-    { "type": "Feature", "properties": { "title": "🏛️ Hastings Castle", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.5736, 50.8545] }, "id": 20 },
-    { "type": "Feature", "properties": { "title": "🌊 Hastings Pier", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.5680, 50.8524] }, "id": 21 },
-    { "type": "Feature", "properties": { "title": "🏛️ De La Warr Pavilion, Bexhill", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.4706, 50.8411] }, "id": 22 },
-    { "type": "Feature", "properties": { "title": "🏛️ Bexhill Museum", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.4630, 50.8397] }, "id": 23 },
-    { "type": "Feature", "properties": { "title": "🌿 Seaford Head Viewpoint", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.1194, 50.7638] }, "id": 24 },
-    { "type": "Feature", "properties": { "title": "🏛️ Seaford Museum (Martello Tower)", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.1028, 50.7720] }, "id": 25 },
-    { "type": "Feature", "properties": { "title": "🛡️ Newhaven Fort", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0562, 50.7865] }, "id": 26 },
-    { "type": "Feature", "properties": { "title": "⚓ Newhaven Harbour (Railway)", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0556, 50.7940] }, "id": 27 },
-    { "type": "Feature", "properties": { "title": "🧱 Rye Castle (Ypres Tower)", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.7359, 50.9527] }, "id": 28 },
-    { "type": "Feature", "properties": { "title": "🧭 Mermaid Street, Rye", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.7330, 50.9509] }, "id": 29 },
-    { "type": "Feature", "properties": { "title": "🏰 Battle Abbey", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.4873, 50.9161] }, "id": 30 },
-    { "type": "Feature", "properties": { "title": "🏛️ Battle High Street", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.4848, 50.9167] }, "id": 31 },
-    { "type": "Feature", "properties": { "title": "🌳 Crowborough Country Park", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.1921, 51.0552] }, "id": 32 },
-    { "type": "Feature", "properties": { "title": "🧭 Crowborough Cross", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.1631, 51.0606] }, "id": 33 },
-    { "type": "Feature", "properties": { "title": "🎞️ Uckfield Picture House", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0959, 50.9707] }, "id": 34 },
-    { "type": "Feature", "properties": { "title": "🌿 Hempstead Meadows, Uckfield", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.1010, 50.9701] }, "id": 35 },
-    { "type": "Feature", "properties": { "title": "🎢 Knockhatch Adventure Park, Hailsham", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.2498, 50.8837] }, "id": 36 },
-    { "type": "Feature", "properties": { "title": "🏛️ Hailsham High Street", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.2578, 50.8624] }, "id": 37 },
-    { "type": "Feature", "properties": { "title": "🏞️ Heathfield Park", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.25, 50.9643] }, "id": 38 },
-    { "type": "Feature", "properties": { "title": "🏛️ Heathfield High Street", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.2574, 50.9670] }, "id": 39 },
-    { "type": "Feature", "properties": { "title": "🛶 Bewl Water (Wadhurst)", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.3960, 51.0600] }, "id": 40 },
-    { "type": "Feature", "properties": { "title": "🏛️ Wadhurst High Street", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.3392, 51.0619] }, "id": 41 },
-    { "type": "Feature", "properties": { "title": "🏰 Bodiam Castle (near Robertsbridge)", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.5408, 51.0027] }, "id": 42 },
-    { "type": "Feature", "properties": { "title": "🏛️ Robertsbridge High Street", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.4684, 50.9855] }, "id": 43 },
-    { "type": "Feature", "properties": { "title": "🌿 Raystede Centre for Animal Welfare (Ringmer)", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0952, 50.8958] }, "id": 44 },
-    { "type": "Feature", "properties": { "title": "🏛️ Ringmer Village Green", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0702, 50.8918] }, "id": 45 },
-    { "type": "Feature", "properties": { "title": "🏇 Plumpton Racecourse", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.0565, 50.9223] }, "id": 46 },
-    { "type": "Feature", "properties": { "title": "🎓 Plumpton College", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.0733, 50.8996] }, "id": 47 },
-    { "type": "Feature", "properties": { "title": "🏛️ Polegate Station", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.2467, 50.8213] }, "id": 48 },
-    { "type": "Feature", "properties": { "title": "🗿 Long Man of Wilmington (near Polegate)", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.1879, 50.8110] }, "id": 49 },
-    { "type": "Feature", "properties": { "title": "🏫 Emerson College, Forest Row", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0386, 51.0879] }, "id": 50 },
-    { "type": "Feature", "properties": { "title": "🏛️ Forest Row Community Centre", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [0.0330, 51.0977] }, "id": 51 },
-    { "type": "Feature", "properties": { "title": "🏛️ Sackville College, East Grinstead", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.0060, 51.1249] }, "id": 52 },
-    { "type": "Feature", "properties": { "title": "🏘️ East Grinstead High Street", "description": "", "category": "🏛️ LANDMARKS", "verified": false }, "geometry": { "type": "Point", "coordinates": [-0.0068, 51.1243] }, "id": 53 }
+    {"type":"Feature","properties":{"title":"🚜 Tablehurst Farm","description":"","category":"🚜 FARMS","verified":true},"geometry":{"type":"Point","coordinates":[0.045554809389905714,51.09873855938196]},"id":1},
+    {"type":"Feature","properties":{"title":"🎡 Brighton Palace Pier","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-0.1372,50.8166]},"id":2},
+    {"type":"Feature","properties":{"title":"🚗 Trade Price Autos","description":"","category":"🛍️ SHOPS","verified":true},"geometry":{"type":"Point","coordinates":[-0.00745200546967994,51.12392135153512]},"id":3},
+
+    {"type":"Feature","properties":{"title":"🕰️ Big Ben, London","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-0.1246,51.5007]},"id":100},
+    {"type":"Feature","properties":{"title":"🏛️ Library of Birmingham","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.9046,52.4810]},"id":101},
+    {"type":"Feature","properties":{"title":"🏛️ Manchester Town Hall","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-2.2447,53.4794]},"id":102},
+    {"type":"Feature","properties":{"title":"🏛️ Leeds Town Hall","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.5479,53.8008]},"id":103},
+    {"type":"Feature","properties":{"title":"🦅 Royal Liver Building, Liverpool","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-2.9935,53.4057]},"id":104},
+    {"type":"Feature","properties":{"title":"🌉 Clifton Suspension Bridge, Bristol","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-2.6267,51.4545]},"id":105},
+    {"type":"Feature","properties":{"title":"🌉 Tyne Bridge, Newcastle","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.6070,54.9710]},"id":106},
+    {"type":"Feature","properties":{"title":"🏰 Edinburgh Castle","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-3.2000,55.9486]},"id":107},
+    {"type":"Feature","properties":{"title":"🏛️ George Square, Glasgow","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-4.2518,55.8612]},"id":108},
+    {"type":"Feature","properties":{"title":"🏟️ Principality Stadium, Cardiff","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-3.1820,51.4780]},"id":109},
+    {"type":"Feature","properties":{"title":"🚢 Titanic Belfast","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-5.9099,54.6091]},"id":110},
+    {"type":"Feature","properties":{"title":"🏰 Nottingham Castle","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.1500,52.9490]},"id":111},
+    {"type":"Feature","properties":{"title":"🏛️ Sheffield City Hall","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.4700,53.3810]},"id":112},
+    {"type":"Feature","properties":{"title":"👑 Leicester Cathedral","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.1330,52.6369]},"id":113},
+    {"type":"Feature","properties":{"title":"🎓 King’s College Chapel, Cambridge","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[0.1160,52.2040]},"id":114},
+    {"type":"Feature","properties":{"title":"📚 Radcliffe Camera, Oxford","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.2540,51.7530]},"id":115}
   ]
 }

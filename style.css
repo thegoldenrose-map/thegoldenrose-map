@@ -98,7 +98,7 @@ body.theme-light #bottom-nav button {
 .search-wrapper input {
   width: 100%;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: 16px;
   background: black;
   color: gold;
   border: 1px solid gold;
@@ -123,7 +123,13 @@ body.theme-light .search-wrapper input {
   border: 1px solid #555;
   color: gold;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 16px;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px;
 }
 
 .modal button,
@@ -423,6 +429,110 @@ body.theme-light #activityCommunityMeta > span i {
   transition: all 0.2s ease-in-out;
 }
 
+.custom-popup.verified {
+  /* Landscape, polished layout */
+  width: 380px;
+  box-shadow: 0 10px 28px rgba(253, 224, 71, 0.22), 0 0 0 1px rgba(253, 224, 71, 0.18);
+  border-radius: 16px;
+  gap: 0.6rem;
+  display: grid;
+  grid-template-columns: 136px 1fr;
+  grid-template-rows: auto auto auto auto;
+  grid-template-areas:
+    'badge  badge'
+    'image  title'
+    'image  desc'
+    'image  hours'
+    'actions actions';
+  align-items: center;
+}
+
+.custom-popup.verified .verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  justify-content: center;
+  padding: 0.22rem 0.5rem; /* tighter chip */
+  border: 1px solid rgba(253, 224, 71, 0.55);
+  border-radius: 9999px;
+  align-self: center;
+  grid-area: badge;
+  place-self: center;
+  background: linear-gradient(180deg, rgba(253,224,71,0.18), rgba(253,224,71,0.06));
+  box-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 0 12px rgba(253,224,71,0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle shiny sweep across the verified chip */
+.custom-popup.verified .verified-badge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+  opacity: 0.6;
+  transform: skewX(-20deg);
+  animation: badgeSheen 3s ease-in-out infinite;
+}
+
+@keyframes badgeSheen {
+  0%, 60% { left: -120%; }
+  100%   { left: 140%; }
+}
+
+.custom-popup.verified .hero-image {
+  width: 100%;
+  height: 130px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 0 1px rgba(253, 224, 71, 0.25);
+  grid-area: image;
+}
+
+.custom-popup .rose {
+  font-size: 0.9rem;
+}
+
+.custom-popup.verified .title { grid-area: title; text-align: left; padding-left: 0.25rem; font-size: 1.05rem; font-weight: 700; }
+
+.custom-popup.verified .desc { grid-area: desc; text-align: left; color: #f4d03f; line-height: 1.25; }
+
+.custom-popup.verified .hours {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: #fde047;
+  justify-content: flex-start;
+  grid-area: hours;
+}
+
+.custom-popup.verified .hours i {
+  color: inherit;
+}
+
+.custom-popup.verified .actions { gap: 0.6rem; grid-area: actions; padding-top: 0.35rem; border-top: 1px solid rgba(253,224,71,0.15); }
+
+.custom-popup.verified .actions .visit {
+  background: linear-gradient(135deg, #fde68a, #f97316);
+  color: #1a1300;
+  border: none;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.4);
+}
+
+.custom-popup.verified .actions .visit:hover {
+  background: linear-gradient(135deg, #facc15, #f97316);
+}
+
 .custom-popup .title {
   font-size: 1rem;
   font-weight: 600;
@@ -509,6 +619,47 @@ body.theme-light .text-yellow-300,
 body.theme-light .text-yellow-200,
 body.theme-light .text-yellow-100 {
   color: #92400e !important;
+}
+
+.marker.verified-marker {
+  filter: drop-shadow(0 0 10px rgba(253, 224, 71, 0.9));
+  animation: goldPulse 1.6s ease-in-out infinite alternate;
+  position: relative;
+}
+
+/* Soft halo beneath the pin */
+.marker.verified-marker::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  transform: translateX(-50%);
+  width: 42px;
+  height: 16px;
+  background: radial-gradient(circle, rgba(253, 224, 71, 0.6) 0%, rgba(253, 224, 71, 0) 70%);
+  pointer-events: none;
+}
+
+/* Radiating gold ring */
+.marker.verified-marker::before {
+  content: '';
+  position: absolute;
+  inset: -6px; /* start just outside the pin */
+  border-radius: 9999px;
+  box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.55);
+  animation: goldRipple 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes goldPulse {
+  from { filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.55)); }
+  to   { filter: drop-shadow(0 0 18px rgba(253, 224, 71, 0.95)); }
+}
+
+@keyframes goldRipple {
+  0%   { opacity: 0.55; transform: scale(0.9); box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.55); }
+  70%  { opacity: 0.12; transform: scale(1.6); box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.15); }
+  100% { opacity: 0; transform: scale(1.8); box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.0); }
 }
 
 /* Stronger readable override for any yellow text utilities (including opacity variants) */
@@ -705,4 +856,26 @@ body.theme-light .badge-chip {
 .btn-gold-glow:hover {
   box-shadow: 0 0 30px rgba(253, 224, 71, 0.5), 0 0 12px rgba(253, 224, 71, 0.35);
   transform: translateY(-1px);
+}
+
+/* Nudge tray animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#saveNudge {
+  animation: fadeUp 180ms ease-out;
+}
+
+/* Subtle animated gold glow utility for CTAs */
+.glow-gold-animated, .glow-gold-animated * {
+  color: #FDE047;
+  text-shadow: 0 0 8px rgba(253,224,71,0.45), 0 0 18px rgba(253,224,71,0.25);
+  animation: goldTextPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes goldTextPulse {
+  0%, 100% { text-shadow: 0 0 8px rgba(253,224,71,0.45), 0 0 18px rgba(253,224,71,0.25); }
+  50% { text-shadow: 0 0 14px rgba(253,224,71,0.75), 0 0 30px rgba(253,224,71,0.45); }
 }

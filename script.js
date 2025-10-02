@@ -18,6 +18,22 @@ const BADGE_DEFS = [
   { id: 'conversationalist', label: 'Conversationalist', icon: 'message-circle', test: (s) => s.comments >= 1 },
 ];
 
+// Details for the special verified Tablehurst Farm pin
+const TABLEHURST_DETAILS = {
+  website: 'https://tablehurstfarm.org.uk/',
+  image: 'https://forestrow.co/wp-content/uploads/2024/02/Tablehurst-Farm-Forest-Row.jpeg',
+  description: 'Community-owned biodynamic farm, butchery & café in the heart of Forest Row.',
+  hours: 'Farm shop: Mon–Sat 9am–6pm • Sun 10am–4pm'
+};
+
+// Details for verified Trade Price Autos (East Grinstead)
+const TRADEPRICE_DETAILS = {
+  website: 'https://tradepriceautos.co.uk/',
+  image: 'verified-shop.png',
+  description: 'Independent car dealer on East Grinstead High Street.',
+  hours: 'Hours vary — check online or call'
+};
+
 window.applyTheme = function(theme) {
   const normalized = theme === 'light' ? 'light' : 'dark';
   document.body.classList.remove('theme-light', 'theme-dark');
@@ -305,29 +321,10 @@ const MOCK_MARKETPLACE_LISTINGS = {
 };
 
 const COMMUNITY_OPTIONS = [
-  // East Sussex focus (plus EG by request)
-  'Crowborough',
-  'Forest Row',
-  'East Grinstead',
-  'Uckfield',
-  'Lewes',
-  'Eastbourne',
-  'Hastings',
-  'Bexhill',
-  'Hailsham',
-  'Polegate',
-  'Seaford',
-  'Newhaven',
-  'Peacehaven',
-  'Rye',
-  'Battle',
-  'Heathfield',
-  'Wadhurst',
-  'Robertsbridge',
-  'Ringmer',
-  'Plumpton',
-  'Hove',
-  'Brighton'
+  // East Sussex focus
+  'Crowborough','Forest Row','East Grinstead','Uckfield','Lewes','Eastbourne','Hastings','Bexhill','Hailsham','Polegate','Seaford','Newhaven','Peacehaven','Rye','Battle','Heathfield','Wadhurst','Robertsbridge','Ringmer','Plumpton','Hove','Brighton',
+  // Major UK cities
+  'London','Birmingham','Manchester','Leeds','Liverpool','Bristol','Newcastle','Edinburgh','Glasgow','Cardiff','Belfast','Nottingham','Sheffield','Leicester','Cambridge','Oxford'
 ];
 const COMMUNITY_META = {
   // Keep correct county for EG; others set to East Sussex
@@ -353,6 +350,23 @@ const COMMUNITY_META = {
   'Plumpton':       { members: 80,  county: 'East Sussex', mp: '—' },
   'Hove':           { members: 650, county: 'East Sussex', mp: '—' },
   'Brighton':       { members: 1024,county: 'East Sussex', mp: '—' },
+  // UK cities (placeholder meta)
+  'London':         { members: 5000, county: 'Greater London', mp: '—' },
+  'Birmingham':     { members: 2200, county: 'West Midlands', mp: '—' },
+  'Manchester':     { members: 1900, county: 'Greater Manchester', mp: '—' },
+  'Leeds':          { members: 1500, county: 'West Yorkshire', mp: '—' },
+  'Liverpool':      { members: 1400, county: 'Merseyside', mp: '—' },
+  'Bristol':        { members: 1300, county: 'Bristol', mp: '—' },
+  'Newcastle':      { members: 1100, county: 'Tyne and Wear', mp: '—' },
+  'Edinburgh':      { members: 1600, county: 'City of Edinburgh', mp: '—' },
+  'Glasgow':        { members: 1700, county: 'Glasgow City', mp: '—' },
+  'Cardiff':        { members: 1200, county: 'Cardiff', mp: '—' },
+  'Belfast':        { members: 1000, county: 'Belfast', mp: '—' },
+  'Nottingham':     { members: 900,  county: 'Nottinghamshire', mp: '—' },
+  'Sheffield':      { members: 950,  county: 'South Yorkshire', mp: '—' },
+  'Leicester':      { members: 850,  county: 'Leicestershire', mp: '—' },
+  'Cambridge':      { members: 800,  county: 'Cambridgeshire', mp: '—' },
+  'Oxford':         { members: 820,  county: 'Oxfordshire', mp: '—' },
 };
 
 // Approximate centers for auto-zoom by community (lng, lat)
@@ -379,6 +393,24 @@ const COMMUNITY_COORDS = {
   'Plumpton': [-0.0640, 50.9280],
   'Hove': [-0.1600, 50.8220],
   'Brighton': [-0.1407, 50.8230]
+  ,
+  // UK cities centerpoints
+  'London': [-0.1276, 51.5074],
+  'Birmingham': [-1.8986, 52.4862],
+  'Manchester': [-2.2426, 53.4808],
+  'Leeds': [-1.5491, 53.8008],
+  'Liverpool': [-2.9916, 53.4074],
+  'Bristol': [-2.5879, 51.4545],
+  'Newcastle': [-1.6178, 54.9783],
+  'Edinburgh': [-3.1883, 55.9533],
+  'Glasgow': [-4.2518, 55.8642],
+  'Cardiff': [-3.1791, 51.4816],
+  'Belfast': [-5.9301, 54.5973],
+  'Nottingham': [-1.1491, 52.9548],
+  'Sheffield': [-1.4701, 53.3811],
+  'Leicester': [-1.1337, 52.6369],
+  'Cambridge': [0.1218, 52.2053],
+  'Oxford': [-1.2577, 51.7520]
 };
 
 function zoomToCommunity(name) {
@@ -2194,16 +2226,20 @@ if (filterBox) {
 }
 
       data.features.forEach(feature => {
+        const title = feature.properties.title || '';
+        const isTablehurst = /tablehurst\s*farm/i.test(title);
+        const isTradeAutos = /trade\s*price\s*autos/i.test(title);
+
         const el = document.createElement('div');
-        el.className = 'marker';
-        el.style.width = '24px';
-        el.style.height = '24px';
+        const isVerified = isTablehurst || isTradeAutos;
+        el.className = `marker${isVerified ? ' verified-marker' : ''}`;
+        el.style.width = isVerified ? '30px' : '24px';
+        el.style.height = isVerified ? '30px' : '24px';
         el.style.backgroundImage = 'url(flower.png)';
         el.style.backgroundSize = 'cover';
         el.style.cursor = 'pointer';
 
         const coords = feature.geometry.coordinates;
-        const title = feature.properties.title;
         const normalize = (s) => s
           .toLowerCase()
           .normalize('NFKD')
@@ -2216,7 +2252,7 @@ if (filterBox) {
         const lat = coords[1];
         const lon = coords[0];
 
-        const popupContent = `
+        let popupContent = `
   <div class="custom-popup">
     <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
       <i data-lucide="heart" class="w-4 h-4"></i>
@@ -2234,6 +2270,60 @@ if (filterBox) {
   </div>
 `;
 
+        if (isTablehurst) {
+          popupContent = `
+  <div class="custom-popup verified">
+    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
+      <i data-lucide=\"heart\" class=\"w-4 h-4\"></i>
+    </button>
+    <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
+      <i data-lucide=\"x\" class=\"w-4 h-4\"></i>
+    </button>
+    <div class="verified-badge"><span class="rose">🌹</span> Verified Farm</div>
+    <div class="title">${title}</div>
+    <div class="hero-image" style="background-image:url('${TABLEHURST_DETAILS.image}')"></div>
+    <div class="desc">${TABLEHURST_DETAILS.description}</div>
+    <div class="hours">
+      <i data-lucide=\"clock-3\" class=\"w-4 h-4\"></i>
+      <span>${TABLEHURST_DETAILS.hours}</span>
+    </div>
+    <div class="actions">
+      <button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')">
+        <i data-lucide=\"navigation\"></i> Directions
+      </button>
+      <button class="visit" onclick="window.open('${TABLEHURST_DETAILS.website}', '_blank')">
+        <span class="rose">🌹</span> Visit Site
+      </button>
+    </div>
+  </div>`;
+        } else if (isTradeAutos) {
+          popupContent = `
+  <div class="custom-popup verified">
+    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
+      <i data-lucide=\"heart\" class=\"w-4 h-4\"></i>
+    </button>
+    <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
+      <i data-lucide=\"x\" class=\"w-4 h-4\"></i>
+    </button>
+    <div class="verified-badge"><span class="rose">🌹</span> Verified Shop</div>
+    <div class="title">${title}</div>
+    <div class="hero-image" style="background-image:url('${TRADEPRICE_DETAILS.image}')"></div>
+    <div class="desc">${TRADEPRICE_DETAILS.description}</div>
+    <div class="hours">
+      <i data-lucide=\"clock-3\" class=\"w-4 h-4\"></i>
+      <span>${TRADEPRICE_DETAILS.hours}</span>
+    </div>
+    <div class="actions">
+      <button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')">
+        <i data-lucide=\"navigation\"></i> Directions
+      </button>
+      <button class="visit" onclick="window.open('${TRADEPRICE_DETAILS.website}', '_blank')">
+        <span class="rose">🌹</span> Visit Site
+      </button>
+    </div>
+  </div>`;
+        }
+
         
 
    const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
@@ -2247,7 +2337,7 @@ const marker = new mapboxgl.Marker(el)
 
 // 🔄 Re-render icons after popup opens
 marker.getElement().addEventListener('click', () => {
-  setTimeout(() => lucide.createIcons(), 100); // delay ensures DOM is ready
+  setTimeout(() => window.lucide?.createIcons?.(), 100);
 });
 
 
@@ -2582,40 +2672,59 @@ window.requestCommunityMembership = (community) => {
 
 window.initCommunityPicker = () => {
   if (typeof window.keepCommunityCardOpen === 'undefined') window.keepCommunityCardOpen = false;
-  const select = document.getElementById('communityPicker');
+  const input = document.getElementById('communitySearch');
+  const list = document.getElementById('communitySuggestions');
   const joinBtn = document.getElementById('communityJoinBtn');
-  if (!select || !joinBtn) return;
+  if (!input || !list || !joinBtn) return;
 
-  const existingValues = new Set(Array.from(select.options).map(opt => opt.value));
-  Array.from(new Set(COMMUNITY_OPTIONS.slice().sort((a, b) => a.localeCompare(b)))).forEach(option => {
-    if (existingValues.has(option)) return;
-    const opt = document.createElement('option');
-    opt.value = option;
-    opt.textContent = option;
-    select.appendChild(opt);
+  const all = Array.from(new Set(COMMUNITY_OPTIONS.slice().sort((a,b)=>a.localeCompare(b))));
+
+  function render(q='') {
+    const query = q.trim().toLowerCase();
+    const items = !query ? all.slice(0, 10) : all.filter(n => n.toLowerCase().includes(query)).slice(0, 20);
+    if (!items.length) {
+      list.innerHTML = `<div class="px-3 py-2 text-sm text-yellow-400">No matches. Press Enter to use “${input.value.trim()}”.</div>`;
+      list.classList.remove('hidden');
+      return;
+    }
+    list.innerHTML = items.map(n => `<button type=\"button\" class=\"w-full text-left px-3 py-2 text-sm hover:bg-yellow-500/10 border-b border-yellow-500/10\" data-name=\"${n}\">${n}</button>`).join('');
+    list.classList.remove('hidden');
+  }
+
+  list.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-name]');
+    if (!btn) return;
+    input.value = btn.getAttribute('data-name');
+    list.classList.add('hidden');
+  });
+
+  input.addEventListener('input', () => render(input.value));
+  input.addEventListener('focus', () => render(input.value));
+  input.addEventListener('blur', () => setTimeout(()=> list.classList.add('hidden'), 120));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const first = list.querySelector('button[data-name]');
+      if (first) input.value = first.getAttribute('data-name');
+      list.classList.add('hidden');
+      joinBtn.click();
+    }
   });
 
   const storedCommunity = localStorage.getItem('memberCommunity');
-  if (storedCommunity) {
-    if (!existingValues.has(storedCommunity)) {
-      const opt = document.createElement('option');
-      opt.value = storedCommunity;
-      opt.textContent = storedCommunity;
-      select.appendChild(opt);
-    }
-    select.value = storedCommunity;
-  }
-
+  if (storedCommunity) input.value = storedCommunity;
   const storedStatus = localStorage.getItem('memberCommunityStatus') || (storedCommunity ? 'member' : 'guest');
   window.updateActivityCommunityStatus(storedStatus, storedCommunity);
 
   joinBtn.addEventListener('click', () => {
-    const choice = select.value.trim();
+    const choice = (input.value || '').trim();
     if (!choice) {
       alert('Please choose a community first.');
       return;
     }
-    // Persist to backend; UI will refresh via callback
+    if (!COMMUNITY_OPTIONS.includes(choice)) {
+      COMMUNITY_OPTIONS.push(choice);
+    }
     setCommunityForCurrentUser(choice, 'member');
     window.keepCommunityCardOpen = false;
   });
@@ -2629,9 +2738,9 @@ window.initCommunityPicker = () => {
     const card = document.getElementById('activityCommunityCard');
     card?.classList.remove('hidden');
     card?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    select.classList.add('ring', 'ring-yellow-500');
-    setTimeout(() => select.classList.remove('ring', 'ring-yellow-500'), 1200);
-    select.focus({ preventScroll: true });
+    input.classList.add('ring', 'ring-yellow-500');
+    setTimeout(() => input.classList.remove('ring', 'ring-yellow-500'), 1200);
+    input.focus({ preventScroll: true });
   });
 
   // Also update header immediately on init so it reflects stored choice

@@ -1585,6 +1585,27 @@ function bindUIButtons() {
     document.getElementById('onboardingModal')?.classList.add('hidden');
   });
 
+  // Verification modal open/close
+  document.querySelectorAll('.openVerificationBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('verificationModal')?.classList.remove('hidden');
+      document.getElementById('profileMenu')?.classList.add('hidden');
+    });
+  });
+  document.getElementById('closeVerification')?.addEventListener('click', () => {
+    document.getElementById('verificationModal')?.classList.add('hidden');
+  });
+  document.getElementById('verificationApplyBtn')?.addEventListener('click', () => {
+    // Reuse request modal plumbing with Verification type
+    window.selectedRequestType = 'Verification';
+    const titleEl = document.getElementById('requestModalTitle');
+    if (titleEl) titleEl.textContent = 'Request Verification';
+    // Ensure request fields exist
+    window.upgradeRequestModal?.();
+    document.getElementById('verificationModal')?.classList.add('hidden');
+    document.getElementById('requestModal')?.classList.remove('hidden');
+  });
+
 
   document.getElementById('requestsBtn')?.addEventListener('click', () => {
     document.getElementById('requestsSubMenu')?.classList.toggle('hidden');

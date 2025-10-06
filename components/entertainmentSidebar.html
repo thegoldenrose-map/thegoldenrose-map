@@ -13,17 +13,21 @@
   </div>
 
   <!-- 🔸 Category Tabs (FYP / Following) -->
-  <div id="entertainmentCategoryButtons" class="sticky top-0 z-20 bg-black/80 backdrop-blur-sm grid grid-cols-2 gap-1 px-2 pt-3 pb-1 pr-10">
+  <div id="entertainmentCategoryButtons" class="sticky top-0 z-20 bg-black/80 backdrop-blur-sm grid grid-cols-2 gap-1 px-2 pt-3 pb-1 pr-12 relative">
     <button class="entCategoryBtn w-full flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black active:scale-95 transition-all bg-black/40" data-cat="fyp">
       <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> FYP
     </button>
     <button class="entCategoryBtn w-full flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black active:scale-95 transition-all bg-black/40" data-cat="following">
       <i data-lucide="user" class="w-3.5 h-3.5"></i> Following
     </button>
+    <button id="entertainmentInfoBtn" type="button" class="help-badge absolute right-10 top-2 w-6 h-6 rounded-full border border-yellow-500/50 text-yellow-300 hover:bg-yellow-500 hover:text-black flex items-center justify-center text-[11px]">?</button>
   </div>
 
   <!-- 🔸 Scrollable Content -->
   <div id="entertainmentContent" class="flex-1 overflow-y-auto pt-4 px-4 pb-32 text-yellow-300 space-y-4">
+    <div id="entertainmentInfoCard" class="hidden rounded-2xl border border-yellow-500/40 bg-black/70 p-3 text-sm text-yellow-200 shadow">
+      <span class="font-semibold text-yellow-300">Entertainment</span> — Follow and engage with your favourite creators and local businesses. Apply for Verification to post here.
+    </div>
     <div id="loadingEntertainment" class="flex flex-col items-center justify-center py-6 text-yellow-400">
       <svg class="animate-spin h-6 w-6 text-yellow-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

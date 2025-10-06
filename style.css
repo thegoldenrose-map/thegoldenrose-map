@@ -261,6 +261,18 @@ body.theme-light .like-btn {
   z-index: 9999 !important;
   pointer-events: auto !important;
 }
+
+/* Compact help badges so they don't crowd headers */
+.help-badge,
+#activityInfoBtn,
+#entertainmentInfoBtn,
+#marketplaceInfoBtn,
+#requestHelpBtn {
+  line-height: 1;
+  box-shadow: 0 0 10px rgba(253, 224, 71, 0.15);
+  z-index: 60;
+  pointer-events: auto;
+}
 #favouritesDropdown {
   z-index: 10000 !important; /* ABOVE profileMenu */
 }

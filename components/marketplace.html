@@ -10,7 +10,7 @@
     </div>
   </div>
 
-  <div id="marketplaceCategoryButtons" class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 grid grid-cols-4 gap-1 px-2 py-2 pr-12 relative">
+  <div id="marketplaceCategoryButtons" class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 grid grid-cols-4 gap-1 px-2 py-2 pr-16 relative">
     <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="shop">
       <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Shop
     </button>
@@ -25,6 +25,7 @@
     </button>
 
     <!-- 🔸 Close Button aligned with tabs -->
+    <button id="marketplaceInfoBtn" type="button" class="help-badge absolute right-10 top-2 w-6 h-6 rounded-full border border-yellow-500/50 text-yellow-300 hover:bg-yellow-500 hover:text-black flex items-center justify-center text-[11px]">?</button>
     <button onclick="document.getElementById('marketplaceSidebar').classList.add('translate-x-full')" class="absolute right-2 top-1/2 -translate-y-1/2 text-yellow-500 z-50 text-xl font-bold leading-none">
       ×
     </button>
@@ -32,6 +33,9 @@
 
   <!-- 🔸 Scrollable Marketplace Content -->
   <div id="marketplaceContent" class="relative flex-1 overflow-y-auto pt-8 px-4 pb-16 text-yellow-300 space-y-6">
+    <div id="marketplaceInfoCard" class="hidden rounded-2xl border border-yellow-500/40 bg-black/70 p-3 text-sm text-yellow-200 shadow">
+      <span class="font-semibold text-yellow-300">Marketplace</span> — Find local services and products. Get verified on the map to set up your shop here.
+    </div>
     <div id="loadingMarketplace" class="flex flex-col items-center justify-center py-6 text-yellow-400">
       <svg class="animate-spin h-6 w-6 text-yellow-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

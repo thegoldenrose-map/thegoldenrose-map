@@ -14,7 +14,7 @@
 
 <!-- 🔸 Sticky Header -->
 <div class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 px-4 py-3">
-  <div class="flex items-start justify-between gap-3">
+  <div class="flex items-start justify-between gap-3 relative">
     <div class="space-y-1.5">
       <h2 class="text-lg font-semibold text-yellow-400">🌹 Activity</h2>
       <div class="flex items-center gap-2">
@@ -25,14 +25,59 @@
       <div id="activityCommunityMeta" class="flex flex-wrap items-center gap-2 text-[11px] text-yellow-300/90">
         <!-- Chips injected by JS: members • county • MP -->
       </div>
+      <!-- Activity category chips moved below community meta -->
+      <div class="flex items-center justify-between gap-2 pt-1">
+        <div id="activityCategoryButtons" class="flex items-center gap-2">
+          <button class="activityCategoryBtn text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black active:scale-95 transition-all bg-black/40 active-category" data-cat="general">General</button>
+          <button class="activityCategoryBtn text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black active:scale-95 transition-all bg-black/40" data-cat="announcements">Announcements</button>
+          <button class="activityCategoryBtn text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black active:scale-95 transition-all bg-black/40" data-cat="news">News</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="activityCategoryLoading" class="hidden" aria-live="polite">
+            <svg class="animate-spin h-4 w-4 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          </span>
+          <button id="activityLeaderboardBtn" title="Leaderboard" class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black transition">
+            <i data-lucide="trophy" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">Leaderboard</span>
+          </button>
+        </div>
+      </div>
     </div>
-    <button onclick="document.getElementById('activitySidebar').classList.add('translate-x-full')" class="text-yellow-500 z-50 text-2xl font-bold leading-none">×</button>
+    <div class="flex items-center gap-3 pr-1">
+      <button id="activityInfoBtn" type="button" class="help-badge w-6 h-6 rounded-full border border-yellow-500/50 text-yellow-300 hover:bg-yellow-500 hover:text-black flex items-center justify-center text-[11px] shrink-0 z-50">?</button>
+      <button onclick="document.getElementById('activitySidebar').classList.add('translate-x-full')" class="text-yellow-500 z-50 text-2xl font-bold leading-none">×</button>
+    </div>
   </div>
 </div>
 
 
   <!-- 🔸 Scrollable Post Content -->
-  <div id="activityContent" class="flex-1 overflow-y-auto pt-20 px-4 pb-32 text-yellow-300 space-y-4">
+  <div id="activityContent" class="relative flex-1 overflow-y-auto pt-20 px-4 pb-32 text-yellow-300 space-y-4">
+   <!-- 🔸 Leaderboard Panel (hidden by default) -->
+   <section id="activityLeaderboardPanel" class="hidden border border-yellow-500/40 bg-black/70 rounded-2xl p-4 text-sm text-yellow-200 space-y-2">
+     <div class="flex items-center justify-between">
+       <h3 class="text-base font-semibold text-yellow-100">Leaderboard</h3>
+       <button id="closeLeaderboard" type="button" class="inline-flex items-center justify-center w-7 h-7 rounded-full border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500 hover:text-black">×</button>
+     </div>
+     <div id="leaderboardList" class="space-y-1 text-yellow-200 text-sm"></div>
+   </section>
+   <!-- Centered overlay spinner shown when switching categories -->
+   <!-- Leave room for the bottom post form (do not cover it) -->
+   <div id="activitySwitchSpinner" class="hidden absolute inset-x-0 top-0 bottom-24 z-40 bg-black/30 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+     <div class="flex flex-col items-center gap-2 text-yellow-300">
+       <svg class="animate-spin h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+       </svg>
+       <span class="text-sm">Loading…</span>
+     </div>
+   </div>
+   <div id="activityInfoCard" class="hidden rounded-2xl border border-yellow-500/40 bg-black/70 p-3 text-sm text-yellow-200 shadow">
+     <span class="font-semibold text-yellow-300">Community Hub</span> — Post and share announcements + news in your local area. More features coming.
+   </div>
    <section id="activityCommunityCard" class="hidden border border-yellow-500/40 bg-black/70 rounded-2xl p-4 text-sm text-yellow-200 space-y-3">
      <div class="flex items-center justify-between gap-2">
        <div>

@@ -29,7 +29,7 @@ const TABLEHURST_DETAILS = {
 // Details for verified Trade Price Autos (East Grinstead)
 const TRADEPRICE_DETAILS = {
   website: 'https://tradepriceautos.co.uk/',
-  image: 'verified-shop.png',
+  image: 'media/trade price autos shop.webp',
   description: 'Independent car dealer on East Grinstead High Street.',
   hours: 'Hours vary — check online or call'
 };
@@ -329,9 +329,9 @@ const COMMUNITY_OPTIONS = [
 const COMMUNITY_META = {
   // Keep correct county for EG; others set to East Sussex
   'Crowborough':    { members: 420, county: 'East Sussex', mp: '—' },
-  'Forest Row':     { members: 137, county: 'East Sussex', mp: '—' },
-  'East Grinstead': { members: 214, county: 'West Sussex', mp: '—' },
-  'Uckfield':       { members: 260, county: 'East Sussex', mp: '—' },
+  'Forest Row':     { members: 137, county: 'East Sussex', mp: 'Mims Davies' },
+  'East Grinstead': { members: 214, county: 'West Sussex', mp: 'Mims Davies' },
+  'Uckfield':       { members: 260, county: 'East Sussex', mp: 'Mims Davies' },
   'Lewes':          { members: 390, county: 'East Sussex', mp: '—' },
   'Eastbourne':     { members: 800, county: 'East Sussex', mp: '—' },
   'Hastings':       { members: 720, county: 'East Sussex', mp: '—' },
@@ -453,7 +453,7 @@ function checkPremiumStatus() {
 
 // ───────── COMMUNITY (backend wiring) ─────────
 function fetchCommunityForCurrentUser() {
-  const user = (localStorage.getItem('memberName') || '').trim();
+  const user = (localStorage.getItem('memberName') || localStorage.getItem('username') || '').trim();
   if (!user) return;
   const url = `${window.SHEET_API_URL}?type=getCommunity&user=${encodeURIComponent(user)}&callback=handleGetCommunity`;
   jsonp(url);
@@ -480,7 +480,7 @@ function handleGetCommunity(resp) {
 }
 
 function setCommunityForCurrentUser(community, status = 'member') {
-  const user = (localStorage.getItem('memberName') || '').trim();
+  const user = (localStorage.getItem('memberName') || localStorage.getItem('username') || '').trim();
   if (!user || !community) return;
   const url = `${window.SHEET_API_URL}?type=setCommunity&user=${encodeURIComponent(user)}&community=${encodeURIComponent(community)}&status=${encodeURIComponent(status)}&callback=handleSetCommunity`;
   jsonp(url);
@@ -605,12 +605,13 @@ function renderHeaderMeta(state) {
       </span>`);
   }
   const county = state.county || (COMMUNITY_META[state.community || '']?.county || '');
-  const mp     = state.mp     || (COMMUNITY_META[state.community || '']?.mp     || '');
+  const mp     = state.mp     || (COMMUNITY_META[state.community || '']?.mp     || '—');
   if (county) chips.push(`
     <span class="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5">
       <i data-lucide="map" class="w-3.5 h-3.5"></i> ${county}
     </span>`);
-  if (mp) chips.push(`
+  // Always show an MP chip; fallback to '—' if unknown
+  chips.push(`
     <span class="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5">
       <i data-lucide="landmark" class="w-3.5 h-3.5"></i> ${mp}
     </span>`);
@@ -1309,7 +1310,8 @@ function handleActivity(rawRows) {
       likes:     r[2],
       postId:    r[3],
       timestamp: r[4],
-      comments:  r[5]
+      comments:  r[5],
+      category:  (r[6] || 'general').toString().trim().toLowerCase()
     }))
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -1325,17 +1327,31 @@ function handleActivity(rawRows) {
   window.activityStats = stats;
 
   // Preserve fixed UI (form + refresh) when re-rendering
+  // Ensure the post form node exists so we can re-attach it after render
+  ensureActivityPostFormNode();
   const postForm = document.getElementById('activityPostForm');
   const refreshBtn = document.getElementById('refreshActivity');
   const loadingNode2 = document.getElementById('loadingPosts');
   const communityCard = document.getElementById('activityCommunityCard');
+  const infoCardOrig = document.getElementById('activityInfoCard');
+  const leaderboardPanel = document.getElementById('activityLeaderboardPanel');
 
   // Preserve community picker while re-rendering
   const keepCommunity = communityCard ? communityCard.cloneNode(true) : null;
+  const keepInfo = infoCardOrig ? infoCardOrig.cloneNode(true) : null;
+  const keepLeaderboard = leaderboardPanel ? leaderboardPanel.cloneNode(true) : null;
   feed.innerHTML = '';
+  if (keepInfo) feed.appendChild(keepInfo);
   if (keepCommunity) feed.appendChild(keepCommunity);
+  if (keepLeaderboard) feed.appendChild(keepLeaderboard);
 
-  posts.forEach(post => {
+  const activeCat = (window.activityFilter || 'general').toLowerCase();
+  const visible = posts.filter(p => {
+    if (activeCat === 'general') return !p.category || p.category === 'general';
+    return p.category === activeCat;
+  });
+
+  visible.forEach(post => {
   const postDiv = document.createElement('div');
   postDiv.className = 'relative border border-yellow-500 rounded-2xl p-5 bg-black/70 text-yellow-300 shadow-lg transition hover:border-yellow-400';
 
@@ -1411,7 +1427,7 @@ function handleActivity(rawRows) {
       const text = replyInput.value.trim();
       replyInput.disabled = true;
       window.post('comment', {
-        username: localStorage.getItem('memberName') || 'Anonymous',
+        username: localStorage.getItem('memberName') || localStorage.getItem('username') || 'Anonymous',
         postId: post.postId,
         commentText: text,
         category: 'activity'
@@ -1440,6 +1456,23 @@ function handleActivity(rawRows) {
   if (postForm) feed.appendChild(postForm);
   if (refreshBtn) feed.appendChild(refreshBtn);
   if (loadingNode2) loadingNode2.remove();
+  // Hide category switching overlay spinner if visible
+  const catOverlay = document.getElementById('activitySwitchSpinner');
+  if (catOverlay) catOverlay.classList.add('hidden');
+  // Rebind Activity info toggle to ensure it works after re-render
+  const infoBtn = document.getElementById('activityInfoBtn');
+  const infoCard = document.getElementById('activityInfoCard');
+  if (infoBtn && infoCard) {
+    infoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      infoCard.classList.toggle('hidden');
+    });
+  }
+  // Rebind leaderboard close button if panel was cloned
+  document.getElementById('closeLeaderboard')?.addEventListener('click', () => {
+    document.getElementById('activityLeaderboardPanel')?.classList.add('hidden');
+  });
   // Re-initialize community picker interactions after re-attach
   setTimeout(() => window.initCommunityPicker?.(), 0);
   // Ensure form visible for logged-in users
@@ -1448,9 +1481,29 @@ function handleActivity(rawRows) {
 
 // Call this to load
 function loadActivity() {
-  jsonp(
-    `${window.SHEET_API_URL}?type=getPosts&callback=handleActivity`
-  );
+  const cat = (window.activityFilter || 'general');
+  const url = `${window.SHEET_API_URL}?type=getPosts&category=${encodeURIComponent(cat)}&callback=handleActivity`;
+  jsonp(url);
+}
+
+// Create the Activity post form if it is missing (defensive)
+function ensureActivityPostFormNode() {
+  let form = document.getElementById('activityPostForm');
+  if (form) return;
+  const feed = document.getElementById('activityContent');
+  if (!feed) return;
+  form = document.createElement('form');
+  form.id = 'activityPostForm';
+  form.className = 'absolute bottom-12 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20';
+  form.innerHTML = `
+    <input id="postInput" type="text" placeholder="Write your post..." required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
+    <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
+      <i data-lucide="send" class="w-5 h-5 text-black"></i>
+    </button>
+  `;
+  feed.appendChild(form);
+  bindActivityPostForm?.();
+  window.lucide?.createIcons?.();
 }
 
 // ─────────── POSTS (write) ───────────
@@ -1515,7 +1568,7 @@ function bindMarketplacePostForm() {
     const text = raw.replace(/[<>]/g, '').trim().slice(0, 500);
     if (!text) return;
 
-    const username = localStorage.getItem('memberName') || 'Anonymous';
+    const username = localStorage.getItem('memberName') || localStorage.getItem('username') || 'Anonymous';
     const category = window.marketplaceFilter || 'jobs';
 
     window.post('post', {
@@ -1549,10 +1602,11 @@ function bindActivityPostForm() {
     if (!text) return;
 
     const username = localStorage.getItem('memberName') || 'Anonymous';
+    const category = (window.activityFilter || 'general');
     window.post('post', {
       username,
       post: text,
-      category: 'activity'
+      category
     });
 
     input.value = '';
@@ -1619,6 +1673,40 @@ function bindUIButtons() {
     document.getElementById('closeRequestModal')?.addEventListener('click', () => helpCard.classList.add('hidden'));
     document.getElementById('cancelRequest')?.addEventListener('click', () => helpCard.classList.add('hidden'));
   }
+
+  // Info toggles for Activity, Entertainment, Marketplace
+  const infoPairs = [
+    ['activityInfoBtn', 'activityInfoCard'],
+    ['entertainmentInfoBtn', 'entertainmentInfoCard'],
+    ['marketplaceInfoBtn', 'marketplaceInfoCard']
+  ];
+  infoPairs.forEach(([btnId, cardId]) => {
+    const btn = document.getElementById(btnId);
+    const card = document.getElementById(cardId);
+    if (!btn || !card) return;
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      card.classList.toggle('hidden');
+    });
+  });
+
+  // Delegated fallback so help buttons always work after dynamic updates or focus changes
+  document.addEventListener('click', (e) => {
+    const map = {
+      activityInfoBtn: 'activityInfoCard',
+      entertainmentInfoBtn: 'entertainmentInfoCard',
+      marketplaceInfoBtn: 'marketplaceInfoCard'
+    };
+    const target = e.target.closest('#activityInfoBtn, #entertainmentInfoBtn, #marketplaceInfoBtn');
+    if (!target) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id = target.id;
+    const cardId = map[id];
+    const card = document.getElementById(cardId);
+    if (card) card.classList.toggle('hidden');
+  });
 
   document.querySelectorAll('#requestsSubMenu button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1751,6 +1839,9 @@ function bindUIButtons() {
   });
 
   document.getElementById('marketplaceBtn')?.addEventListener('click', () => {
+    // Close other sidebars first, then open marketplace
+    document.getElementById('activitySidebar')?.classList.add('translate-x-full');
+    document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
     window.updateLockedOverlays?.();
     document.getElementById('marketplaceSidebar')?.classList.remove('translate-x-full');
     if (window.isLoggedIn?.()) {
@@ -1763,7 +1854,14 @@ function bindUIButtons() {
   // Filter panel toggling is handled via delegated click listener below
 
   document.getElementById('profileToggle')?.addEventListener('click', () => {
-    document.getElementById('profileMenu')?.classList.toggle('hidden');
+    // Close any open sidebars and show the profile menu
+    document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+    document.getElementById('activitySidebar')?.classList.add('translate-x-full');
+    document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+    const pm = document.getElementById('profileMenu');
+    if (pm) pm.classList.remove('hidden');
+    // Keep lock overlays in sync
+    window.updateLockedOverlays?.();
   });
   document.getElementById('profileLoginBtn')?.addEventListener('click', () => {
   document.getElementById('loginModal')?.classList.remove('hidden');
@@ -1775,6 +1873,8 @@ function bindUIButtons() {
 
   document.getElementById('activityBtn')?.addEventListener('click', () => {
     window.keepActivityOpen = true;
+    document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+    document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
     document.getElementById('activitySidebar')?.classList.remove('translate-x-full');
     loadActivity?.();
     window.updateLockedOverlays?.();
@@ -1782,6 +1882,8 @@ function bindUIButtons() {
   });
 
   document.getElementById('entertainmentBtn')?.addEventListener('click', () => {
+    document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+    if (!window.keepActivityOpen) document.getElementById('activitySidebar')?.classList.add('translate-x-full');
     document.getElementById('entertainmentSidebar')?.classList.remove('translate-x-full');
     loadEntertainment?.();
     window.updateLockedOverlays?.();
@@ -1796,6 +1898,42 @@ function bindUIButtons() {
       btn.classList.add('active-category');
     });
   });
+
+  // Leaderboard button placeholder
+  document.getElementById('activityLeaderboardBtn')?.addEventListener('click', () => {
+    const panel = document.getElementById('activityLeaderboardPanel');
+    if (!panel) return;
+    const card = document.getElementById('activityCommunityCard');
+    // Toggle visibility and load on open
+    const opening = panel.classList.contains('hidden');
+    if (opening) {
+      panel.classList.remove('hidden');
+      card?.classList.add('hidden');
+      window.loadLeaderboard?.();
+    } else {
+      panel.classList.add('hidden');
+    }
+  });
+  document.getElementById('closeLeaderboard')?.addEventListener('click', () => {
+    document.getElementById('activityLeaderboardPanel')?.classList.add('hidden');
+  });
+
+  // Activity header category chips (UI only for now)
+  window.activityFilter = window.activityFilter || 'general';
+  document.querySelectorAll('.activityCategoryBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.getAttribute('data-cat');
+      window.activityFilter = cat;
+      document.querySelectorAll('.activityCategoryBtn').forEach(b => b.classList.remove('active-category'));
+      btn.classList.add('active-category');
+      // Reload feed with selected category
+      const overlay = document.getElementById('activitySwitchSpinner');
+      if (overlay) overlay.classList.remove('hidden');
+      loadActivity?.();
+    });
+  });
+  // Defensive: ensure post form exists after buttons bound
+  ensureActivityPostFormNode?.();
 }
 
 // ─────────── ENTERTAINMENT ───────────
@@ -2013,7 +2151,37 @@ window.handleEntertainment = function (rawRows) {
 
   if (window.lucide) lucide.createIcons();
   console.log(`📸 Rendered ${items.length} entertainment items`);
-}
+};
+
+// ─────────── LOCATE BUTTON VISIBILITY ───────────
+// Hide the floating locate button when any sidebar is open
+(function initLocateBtnVisibility() {
+  const locateBtn = document.getElementById('floatingLocateBtn');
+  if (!locateBtn) return;
+
+  const sidebars = [
+    document.getElementById('activitySidebar'),
+    document.getElementById('entertainmentSidebar'),
+    document.getElementById('marketplaceSidebar')
+  ].filter(Boolean);
+
+  const updateLocateBtnVisibility = () => {
+    const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'));
+    locateBtn.style.display = anyOpen ? 'none' : 'flex';
+  };
+
+  // Observe class changes on sidebars to react to open/close
+  const observer = new MutationObserver(updateLocateBtnVisibility);
+  sidebars.forEach(el => observer.observe(el, { attributes: true, attributeFilter: ['class'] }));
+
+  // Also re-check when navigation buttons are clicked
+  ['activityBtn','entertainmentBtn','marketplaceBtn','profileToggle'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', () => setTimeout(updateLocateBtnVisibility, 0));
+  });
+
+  // Initial state
+  updateLocateBtnVisibility();
+})();
 
 // Callbacks for entertainment like/comment
 window.handleEntertainmentLike = function (resp) {
@@ -2633,12 +2801,11 @@ window.updateActivityCommunityStatus = (status, community) => {
   const labelEl = document.getElementById('activityCommunityLabel');
   const metaEl = document.getElementById('activityCommunityMeta');
   const cardEl = document.getElementById('activityCommunityCard');
-  if (!statusEl) return;
 
   if (!community) {
-    statusEl.textContent = 'Select a community to focus your feed.';
+    if (statusEl) statusEl.textContent = 'Select a community to focus your feed.';
     if (joinBtn) joinBtn.textContent = 'Request to Join';
-    cardEl?.classList.remove('hidden');
+    if (cardEl) cardEl.classList.remove('hidden');
     const state = ensureHeaderState();
     state.community = '';
     state.members = 0;
@@ -2666,15 +2833,15 @@ window.updateActivityCommunityStatus = (status, community) => {
   }
 
   if (status === 'pending') {
-    statusEl.textContent = `Request pending for ${community}…`;
+    if (statusEl) statusEl.textContent = `Request pending for ${community}…`;
     if (joinBtn) joinBtn.textContent = 'Request Pending';
   } else {
-    statusEl.textContent = `You are connected to ${community}.`;
+    if (statusEl) statusEl.textContent = `You are connected to ${community}.`;
     if (joinBtn) joinBtn.textContent = 'Switch Community';
   }
 
   if (!window.keepCommunityCardOpen) {
-    cardEl?.classList.add('hidden');
+    if (cardEl) cardEl.classList.add('hidden');
   }
 
   const stats = window.memberStats || {};
@@ -3104,6 +3271,65 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
   });
 }
 
+// ─────────── Leaderboard (Members streak via GViz) ───────────
+window.loadLeaderboard = async function () {
+  try {
+    const docId = '1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw';
+    const sheetName = 'Members';
+    const url = `https://docs.google.com/spreadsheets/d/${docId}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&tqx=out:json&_=${Date.now()}`;
+    const txt = await fetch(url).then(r => r.text());
+    const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+    const cols = (json.table.cols || []).map(c => (c.label || '').toString().trim().toLowerCase());
+    const idx = {
+      name: cols.indexOf('name'),
+      username: cols.indexOf('username'),
+      email: cols.indexOf('email'),
+      streak: cols.indexOf('streak'),
+      level: cols.indexOf('level'),
+      community: cols.indexOf('community')
+    };
+    const rows = (json.table.rows || []);
+    const currentCommunity = (localStorage.getItem('memberCommunity') || '').toString();
+    const itemsRaw = rows.map(r => {
+      const c = r.c || [];
+      const get = (i) => (i >= 0 && c[i] && c[i].v != null) ? c[i].v : '';
+      const nm = (get(idx.name) || '').toString();
+      const un = (get(idx.username) || '').toString();
+      const em = (get(idx.email) || '').toString();
+      const display = nm || un || (em ? em.split('@')[0] : '');
+      const streak = parseInt(get(idx.streak) || '0', 10) || 0;
+      const level = (get(idx.level) || '').toString();
+      const community = (get(idx.community) || '').toString();
+      return { display, streak, level, community };
+    }).filter(x => x.display);
+
+    // Optional scope to current community if set
+    const scoped = currentCommunity ? itemsRaw.filter(x => (x.community || '') === currentCommunity) : itemsRaw;
+    const sorted = scoped.sort((a,b) => b.streak - a.streak);
+    const items = sorted.slice(0, 20);
+
+    const list = document.getElementById('leaderboardList');
+    if (!list) return;
+    if (items.length === 0) {
+      list.innerHTML = '<div class="text-yellow-400">No streak data yet.</div>';
+      return;
+    }
+    list.innerHTML = items.map((it, i) => `
+      <div class="flex items-center justify-between rounded-xl border border-yellow-500/30 bg-black/50 px-3 py-2">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full border border-yellow-500/40 text-[11px] text-yellow-300">${i+1}</span>
+          <span class="font-semibold text-yellow-100">${it.display}</span>
+        </div>
+        <span class="text-[12px] rounded-full border border-yellow-500/40 px-2 py-0.5 text-yellow-300">🔥 ${it.streak}</span>
+      </div>`).join('');
+    window.lucide?.createIcons?.();
+  } catch (err) {
+    console.error('❌ Leaderboard fetch failed:', err);
+    const list = document.getElementById('leaderboardList');
+    if (list) list.innerHTML = '<div class="text-yellow-400">Failed to load leaderboard.</div>';
+  }
+}
+
 // ───────── SIGNUP (Modal + JSONP) ─────────
 window.setupSignup = function () {
   const btn = document.getElementById('profileSignupBtn');
@@ -3342,7 +3568,12 @@ window.updateMemberStatsUI = function () {
 
 // Utility: unified overlay state (prevents flicker)
 window.isLoggedIn = function () {
-  return !!(localStorage.getItem('memberName') || localStorage.getItem('membershipLevel'));
+  // Treat either legacy `username` or current `memberName` as logged in
+  return !!(
+    localStorage.getItem('memberName') ||
+    localStorage.getItem('username') ||
+    localStorage.getItem('membershipLevel')
+  );
 }
 window.updateLockedOverlays = function () {
   const logged = window.isLoggedIn?.();
@@ -3449,17 +3680,39 @@ window.upgradeRequestModal = function () {
 
 // Ensure post forms are usable when logged in
 window.ensurePostFormsVisibility = function () {
-  if (!window.isLoggedIn?.()) return;
-  document.getElementById('lockedMarketplaceModal')?.classList.add('hidden');
-  document.getElementById('lockedActivityModal')?.classList.add('hidden');
-  ['marketplacePostForm','activityPostForm'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('hidden');
-    el.style.opacity = '1';
-    el.style.pointerEvents = 'auto';
-    el.style.filter = 'none';
-  });
+  const loggedIn = !!(window.isLoggedIn?.());
+
+  // Activity gating: guests see locked modal; members see post form
+  const actForm = document.getElementById('activityPostForm');
+  const actLock = document.getElementById('lockedActivityModal');
+  if (loggedIn) {
+    if (actLock) actLock.classList.add('hidden');
+    if (actForm) {
+      actForm.classList.remove('hidden');
+      actForm.style.opacity = '1';
+      actForm.style.pointerEvents = 'auto';
+      actForm.style.filter = 'none';
+    }
+  } else {
+    if (actLock) actLock.classList.remove('hidden');
+    if (actForm) actForm.classList.add('hidden');
+  }
+
+  // Marketplace remains gated to logged-in users
+  const mktForm = document.getElementById('marketplacePostForm');
+  const mktLock = document.getElementById('lockedMarketplaceModal');
+  if (mktForm && mktLock) {
+    if (loggedIn) {
+      mktLock.classList.add('hidden');
+      mktForm.classList.remove('hidden');
+      mktForm.style.opacity = '1';
+      mktForm.style.pointerEvents = 'auto';
+      mktForm.style.filter = 'none';
+    } else {
+      mktLock.classList.remove('hidden');
+      mktForm.classList.add('hidden');
+    }
+  }
 }
 
 
@@ -3539,6 +3792,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupLogin?.();
   bindMarketplacePostForm?.();
   window.updateLockedOverlays?.();
+  // If already logged in (legacy username or memberName), sync UI and community
+  if (window.isLoggedIn?.()) {
+    document.body.classList.add('logged-in');
+    fetchCommunityForCurrentUser?.();
+    window.ensurePostFormsVisibility?.();
+  }
 
   document.getElementById('helpJoinBtn')?.addEventListener('click', () => {
     console.log('🎯 helpJoinBtn clicked');

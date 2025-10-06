@@ -59,7 +59,7 @@ function updateThemeButtonLabels(theme) {
 }
 
 window.initTheme = function () {
-  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  const saved = localStorage.getItem(THEME_KEY) || 'light';
   window.applyTheme(saved);
 };
 
@@ -1452,9 +1452,10 @@ function handleActivity(rawRows) {
   sidebarEl?.classList.remove('translate-x-full');
 
   console.log('📦 Activity feed rendered to DOM');
-  // Re-attach fixed nodes
-  if (postForm) feed.appendChild(postForm);
-  if (refreshBtn) feed.appendChild(refreshBtn);
+  // Re-attach fixed nodes (as siblings of the scroll area so they stay fixed)
+  const sidebarRoot = document.getElementById('activitySidebar');
+  if (postForm && sidebarRoot) sidebarRoot.appendChild(postForm);
+  if (refreshBtn && sidebarRoot) sidebarRoot.appendChild(refreshBtn);
   if (loadingNode2) loadingNode2.remove();
   // Hide category switching overlay spinner if visible
   const catOverlay = document.getElementById('activitySwitchSpinner');
@@ -1521,6 +1522,8 @@ function handlePostResponse(resp) {
       if (window.currentView === 'marketplace') loadMarketplace();
       else loadActivity();
     }
+    // Count this as daily activity for streaks (first time per day only)
+    try { pingDailyStreakForCurrentUser?.(); } catch {}
   } else {
     alert('❌ Error saving: ' + (resp.error || JSON.stringify(resp)));
   }
@@ -1854,14 +1857,19 @@ function bindUIButtons() {
   // Filter panel toggling is handled via delegated click listener below
 
   document.getElementById('profileToggle')?.addEventListener('click', () => {
-    // Close any open sidebars and show the profile menu
-    document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
-    document.getElementById('activitySidebar')?.classList.add('translate-x-full');
-    document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
     const pm = document.getElementById('profileMenu');
-    if (pm) pm.classList.remove('hidden');
-    // Keep lock overlays in sync
-    window.updateLockedOverlays?.();
+    if (!pm) return;
+    const opening = pm.classList.contains('hidden');
+    if (opening) {
+      // Close sidebars when opening profile
+      document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+      document.getElementById('activitySidebar')?.classList.add('translate-x-full');
+      document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+      pm.classList.remove('hidden');
+      window.updateLockedOverlays?.();
+    } else {
+      pm.classList.add('hidden');
+    }
   });
   document.getElementById('profileLoginBtn')?.addEventListener('click', () => {
   document.getElementById('loginModal')?.classList.remove('hidden');
@@ -2337,8 +2345,8 @@ console.log('🧠 isPremium:', isPremium);
   map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/howelltrust/cmbkwcx8f00oq01qw9wxy8uw4',
-    center: [0.0334, 51.0979],
-    zoom: 15
+    center: [0.3, 50.95],
+    zoom: 9
   });
   
 
@@ -2461,54 +2469,44 @@ if (filterBox) {
 
         if (isTablehurst) {
           popupContent = `
-  <div class="custom-popup verified">
-    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
-      <i data-lucide=\"heart\" class=\"w-4 h-4\"></i>
-    </button>
-    <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
-      <i data-lucide=\"x\" class=\"w-4 h-4\"></i>
-    </button>
-    <div class="verified-badge"><span class="rose">🌹</span> Verified Farm</div>
-    <div class="title">${title}</div>
-    <div class="hero-image" style="background-image:url('${TABLEHURST_DETAILS.image}')"></div>
-    <div class="desc">${TABLEHURST_DETAILS.description}</div>
-    <div class="hours">
-      <i data-lucide=\"clock-3\" class=\"w-4 h-4\"></i>
-      <span>${TABLEHURST_DETAILS.hours}</span>
+  <div class="vcard">
+    <div class="vcard-top">
+      <span class="vbadge"><i>🌹</i> Verified Farm</span>
+      <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
+      <button class="vicon close" title="Close" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide=\"x\"></i></button>
     </div>
-    <div class="actions">
-      <button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')">
-        <i data-lucide=\"navigation\"></i> Directions
-      </button>
-      <button class="visit" onclick="window.open('${TABLEHURST_DETAILS.website}', '_blank')">
-        <span class="rose">🌹</span> Visit Site
-      </button>
+    <div class="vgrid">
+      <div class="vhero" style="background-image:url('${TABLEHURST_DETAILS.image}')"></div>
+      <div class="vbody">
+        <div class="vtitle">${title}</div>
+        <div class="vdesc">${TABLEHURST_DETAILS.description}</div>
+        <div class="vmeta"><i data-lucide=\"clock-3\"></i><span>${TABLEHURST_DETAILS.hours}</span></div>
+      </div>
+    </div>
+    <div class="vactions">
+      <button class="vbtn" onclick="openDirections(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"navigation\"></i><span>Directions</span></button>
+      <button class="vbtn vprimary" onclick="window.open('${TABLEHURST_DETAILS.website}', '_blank')"><span>Visit Site</span></button>
     </div>
   </div>`;
         } else if (isTradeAutos) {
           popupContent = `
-  <div class="custom-popup verified">
-    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
-      <i data-lucide=\"heart\" class=\"w-4 h-4\"></i>
-    </button>
-    <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
-      <i data-lucide=\"x\" class=\"w-4 h-4\"></i>
-    </button>
-    <div class="verified-badge"><span class="rose">🌹</span> Verified Shop</div>
-    <div class="title">${title}</div>
-    <div class="hero-image" style="background-image:url('${TRADEPRICE_DETAILS.image}')"></div>
-    <div class="desc">${TRADEPRICE_DETAILS.description}</div>
-    <div class="hours">
-      <i data-lucide=\"clock-3\" class=\"w-4 h-4\"></i>
-      <span>${TRADEPRICE_DETAILS.hours}</span>
+  <div class="vcard">
+    <div class="vcard-top">
+      <span class="vbadge"><i>🌹</i> Verified Shop</span>
+      <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
+      <button class="vicon close" title="Close" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide=\"x\"></i></button>
     </div>
-    <div class="actions">
-      <button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')">
-        <i data-lucide=\"navigation\"></i> Directions
-      </button>
-      <button class="visit" onclick="window.open('${TRADEPRICE_DETAILS.website}', '_blank')">
-        <span class="rose">🌹</span> Visit Site
-      </button>
+    <div class="vgrid">
+      <div class="vhero" style="background-image:url('${TRADEPRICE_DETAILS.image}')"></div>
+      <div class="vbody">
+        <div class="vtitle">${title}</div>
+        <div class="vdesc">${TRADEPRICE_DETAILS.description}</div>
+        <div class="vmeta"><i data-lucide=\"clock-3\"></i><span>${TRADEPRICE_DETAILS.hours}</span></div>
+      </div>
+    </div>
+    <div class="vactions">
+      <button class="vbtn" onclick="openDirections(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"navigation\"></i><span>Directions</span></button>
+      <button class="vbtn vprimary" onclick="window.open('${TRADEPRICE_DETAILS.website}', '_blank')"><span>Visit Site</span></button>
     </div>
   </div>`;
         }
@@ -3511,9 +3509,9 @@ function showMemberOptions() {
 
   // Sync community from backend and hide any locked overlays now that user is logged in
   fetchCommunityForCurrentUser();
-  // Fetch latest streak and ping today's activity
+  // Fetch latest streak and ping today's login once (increments by day)
   requestStreakForCurrentUser();
-  setTimeout(() => pingDailyStreakForCurrentUser(), 500);
+  pingDailyStreakForCurrentUser?.();
 
   // Gentle streak toast on return (once per day)
   try {
@@ -3797,6 +3795,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('logged-in');
     fetchCommunityForCurrentUser?.();
     window.ensurePostFormsVisibility?.();
+  } else {
+    // Guest: clear member display in profile menu
+    const nameEl = document.getElementById('memberName');
+    if (nameEl) nameEl.textContent = '🌹 Guest';
+    const metaEl = document.getElementById('memberMeta');
+    if (metaEl) metaEl.innerHTML = '';
   }
 
   document.getElementById('helpJoinBtn')?.addEventListener('click', () => {

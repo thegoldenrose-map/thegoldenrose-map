@@ -23,7 +23,7 @@ const TABLEHURST_DETAILS = {
   website: 'https://tablehurstfarm.org.uk/',
   image: 'https://forestrow.co/wp-content/uploads/2024/02/Tablehurst-Farm-Forest-Row.jpeg',
   description: 'Community-owned biodynamic farm, butchery & café in the heart of Forest Row.',
-  hours: 'Farm shop: Mon–Sat 9am–6pm • Sun 10am–4pm'
+  hours: 'Farm shop: Mon–Sat 9am–5pm'
 };
 
 // Details for verified Trade Price Autos (East Grinstead)

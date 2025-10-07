@@ -253,7 +253,9 @@
     <input type="text" name="company" id="hp-submission" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
     <input type="text" id="locationName" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Name" required>
     <input type="text" id="submissionLocation" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Location" required>
-    <input type="text" id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Category (e.g. Pub, Farm)" required>
+    <select id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 text-yellow-200 focus:outline-none" required>
+      <option value="" disabled selected>Select category…</option>
+    </select>
     <div class="flex justify-between gap-2">
       <button type="submit" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-lg">Add to Map</button>
       <button type="button" onclick="closeModal()" class="flex-1 bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-300 hover:text-black font-bold py-2 rounded-lg">Cancel</button>
@@ -298,8 +300,9 @@
      <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
   <form id="locationForm" class="space-y-3">
     <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
-    <input id="locationShortDesc" type="text" placeholder="Short description" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
-    <input id="locationCategory" type="text" placeholder="Category (e.g. Farm, Pub)" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
+    <select id="locationCategory" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" required>
+      <option value="" disabled selected>Select category…</option>
+    </select>
     <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
   </form>
 </div>

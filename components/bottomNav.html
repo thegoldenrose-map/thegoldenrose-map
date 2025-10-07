@@ -17,7 +17,33 @@
 </nav>
 
 
-<!-- 🔸 Floating Locate Button -->
-<button id="floatingLocateBtn" class="fixed bottom-16 right-4 w-12 h-12 rounded-full shadow-xl text-xl font-bold z-[9998] bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-400 flex items-center justify-center">
-  <i data-lucide="crosshair"></i>
-</button>
+<!-- 🔸 Floating Action (Multi‑Picker) -->
+<div id="floatingLocateBtn" class="fixed bottom-16 right-4 z-[9998] flex flex-col items-end select-none relative">
+  <!-- Speed‑dial menu (hidden by default) -->
+  <div id="fabMenu" class="absolute -top-2 -right-1 translate-y-[-100%] flex flex-col items-end gap-2 hidden">
+    <!-- Top: Add Location (+) -->
+    <button data-action="add" class="w-10 h-10 rounded-full bg-white text-black border-2 border-yellow-500 shadow-md flex items-center justify-center hover:scale-105 transition" title="Add Location">
+      <span class="fab-icon"><i data-lucide="plus"></i></span>
+    </button>
+    <!-- Locate (only shows when not selected as main) -->
+    <button data-action="locate" class="w-10 h-10 rounded-full bg-white text-black border-2 border-yellow-500 shadow-md flex items-center justify-center hover:scale-105 transition" title="Locate">
+      <span class="fab-icon"><i data-lucide="crosshair"></i></span>
+    </button>
+    <!-- Light/Dark mode toggle -->
+    <button data-action="theme" class="w-10 h-10 rounded-full bg-white text-black border-2 border-yellow-500 shadow-md flex items-center justify-center hover:scale-105 transition" title="Theme">
+      <span class="fab-icon"><i data-lucide="sun"></i></span>
+    </button>
+    <!-- Reserved for future -->
+    <button data-action="slot3" class="w-10 h-10 rounded-full bg-white/90 text-black/30 border-2 border-yellow-500/50 shadow-md flex items-center justify-center cursor-default" title="Reserved"></button>
+    <button data-action="slot4" class="w-10 h-10 rounded-full bg-white/90 text-black/30 border-2 border-yellow-500/50 shadow-md flex items-center justify-center cursor-default" title="Reserved"></button>
+  </div>
+
+  <!-- Main FAB -->
+  <div id="fabMain" role="button" tabindex="0" class="relative w-12 h-12 rounded-full shadow-xl text-xl font-bold bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-400 flex items-center justify-center cursor-pointer">
+    <span id="fabMainIcon" class="fab-icon"><i data-lucide="crosshair"></i></span>
+    <!-- Small corner toggle nub -->
+    <div id="fabCorner" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-yellow-500 text-black border border-yellow-700 shadow flex items-center justify-center text-[8px] leading-none cursor-pointer" title="More">
+      <i data-lucide="chevrons-up"></i>
+    </div>
+  </div>
+</div>

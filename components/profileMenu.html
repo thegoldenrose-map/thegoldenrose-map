@@ -12,6 +12,11 @@
       <div class="flex items-center gap-2">
         <div id="memberName" class="text-sm font-semibold"></div>
       </div>
+      <div id="memberFollowCounts" class="text-[11px] flex items-center gap-3 text-yellow-300/90">
+        <span id="followersCountBtn" class="cursor-pointer hover:text-yellow-200"><b id="followersCount">0</b> Followers</span>
+        <span class="opacity-60">•</span>
+        <span id="followingCountBtn" class="cursor-pointer hover:text-yellow-200"><b id="followingCount">0</b> Following</span>
+      </div>
       <!-- Stacked chips (community on first line, streak on second) -->
       <div id="memberMeta" class="text-[11px] flex flex-col gap-1"></div>
       <div id="memberMenuBadges" class="text-[11px] flex flex-wrap gap-1"></div>
@@ -21,17 +26,17 @@
 <div id="memberOptions" class="hidden">
 
     <div class="space-y-1 bg-black px-4 py-2">
-      <button id="themeToggleBtn" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
-        <i data-lucide="sun"></i> Toggle Theme
+      <!-- Inbox (above Favourites) -->
+      <button id="inboxBtn" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="send"></i>
+        <span>Inbox</span>
+        <span id="inboxCountBadge" class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-500 text-black text-[11px] font-bold">0</span>
       </button>
 
       <button id="favouritesBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
         <i data-lucide="heart"></i> Favourites
       </button>
 
-      <button id="addLocationBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
-        <i data-lucide="plus-circle"></i> Add Location
-      </button>
 
       <button id="requestsBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
         <i data-lucide="inbox"></i> Requests
@@ -71,9 +76,6 @@
   <div id="guestOptions">
   <div class="divide-y divide-yellow-500 rounded-2xl overflow-hidden">
     <div class="space-y-1 bg-black px-4 py-2">
-      <button id="themeToggleBtnGuest" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
-        <i data-lucide="sun"></i> Toggle Theme
-      </button>
       
       <a id="donateBtnGuest" href="https://buy.stripe.com/eVq9ASdi6fDSenU754cwg01" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
         <i data-lucide="heart-handshake"></i> Donate

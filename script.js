@@ -18,6 +18,9 @@ const BADGE_DEFS = [
   { id: 'conversationalist', label: 'Conversationalist', icon: 'message-circle', test: (s) => s.comments >= 1 },
 ];
 
+// Fallback categories for forms before map data loads
+const DEFAULT_CATEGORIES = ['cafes','pubs','events','farms','shops','services','courses','jobs','education','markets'];
+
 // Details for the special verified Tablehurst Farm pin
 const TABLEHURST_DETAILS = {
   website: 'https://tablehurstfarm.org.uk/',
@@ -40,6 +43,8 @@ window.applyTheme = function(theme) {
   document.body.classList.add(`theme-${normalized}`);
   localStorage.setItem(THEME_KEY, normalized);
   updateThemeButtonLabels(normalized);
+  // Keep FAB theme icon in sync
+  try { updateFabThemeIcon?.(normalized); } catch (_) {}
 };
 
 window.toggleTheme = function () {
@@ -64,6 +69,224 @@ window.initTheme = function () {
 };
 
 window.initTheme();
+
+// ─────────── FAB MULTI‑PICKER (Locate/Add/Theme) ───────────
+const FabState = { action: 'locate' };
+
+function updateFabMainIcon(icon) {
+  const holder = document.getElementById('fabMainIcon');
+  if (!holder) return;
+  holder.innerHTML = `<i data-lucide="${icon}"></i>`;
+  if (window.lucide?.createIcons) window.lucide.createIcons();
+}
+
+function updateFabThemeIcon(theme) {
+  const themeBtn = document.querySelector('#fabMenu [data-action="theme"]');
+  if (themeBtn) {
+    const icon = theme === 'light' ? 'moon-star' : 'sun';
+    themeBtn.innerHTML = `<span class=\"fab-icon\"><i data-lucide=\"${icon}\"></i></span>`;
+    if (window.lucide?.createIcons) window.lucide.createIcons();
+  }
+  if (FabState.action === 'theme') {
+    updateFabMainIcon((theme === 'light') ? 'moon-star' : 'sun');
+  }
+}
+
+function setFabAction(action) {
+  FabState.action = action;
+  let icon = 'crosshair';
+  if (action === 'add') icon = 'plus';
+  if (action === 'theme') {
+    const theme = localStorage.getItem(THEME_KEY) || 'dark';
+    icon = (theme === 'light') ? 'moon-star' : 'sun';
+  }
+  updateFabMainIcon(icon);
+  refreshFabMenuVisibility();
+}
+
+function doFabAction() {
+  switch (FabState.action) {
+    case 'add':
+      // Enter crosshair placement mode; confirm opens title modal
+      try { Crosshair.enter(); }
+      catch (_) { window.forceShowAddLocation?.(); }
+      break;
+    case 'theme':
+      window.toggleTheme?.();
+      break;
+    case 'locate':
+    default: {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const { latitude, longitude } = position.coords;
+          map.flyTo({ center: [longitude, latitude], zoom: 14 });
+          const popupHTML = `
+            <div style="
+              background: black;
+              color: gold;
+              padding: 8px 12px;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: bold;
+              border: 1px solid gold;
+              box-shadow: 0 0 10px gold;
+            ">
+              📍 Current Location
+            </div>
+          `;
+          new mapboxgl.Marker({ color: 'gold' })
+            .setLngLat([longitude, latitude])
+            .setPopup(new mapboxgl.Popup({ closeButton: false }).setHTML(popupHTML))
+            .addTo(map)
+            .togglePopup();
+        });
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
+    }
+  }
+}
+
+function initFabMultiPicker() {
+  const container = document.getElementById('floatingLocateBtn');
+  const main = document.getElementById('fabMain');
+  const corner = document.getElementById('fabCorner');
+  const menu = document.getElementById('fabMenu');
+  if (!container || !main || !corner || !menu) {
+    console.warn('FAB not initialized: missing element', { container: !!container, main: !!main, corner: !!corner, menu: !!menu });
+    return;
+  }
+
+  // Ensure visible by default
+  container.style.display = 'flex';
+
+  // Default
+  setFabAction('locate');
+  updateFabThemeIcon(localStorage.getItem(THEME_KEY) || 'dark');
+  refreshFabMenuVisibility();
+
+  const closeMenu = () => menu.classList.add('hidden');
+  const toggleMenu = () => menu.classList.toggle('hidden');
+
+  main.addEventListener('click', (e) => {
+    // ignore clicks on the corner nub inside
+    if (e.target && (e.target.id === 'fabCorner' || e.target.closest('#fabCorner'))) return;
+    doFabAction();
+  });
+
+  corner.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMenu();
+  });
+
+  // Menu item selection sets the default action and closes menu
+  menu.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const action = btn.getAttribute('data-action');
+      if (action === 'slot3' || action === 'slot4') return; // reserved
+      setFabAction(action);
+      closeMenu();
+    });
+  });
+
+  // Click outside closes menu
+  document.addEventListener('click', (e) => {
+    if (!container.contains(e.target)) closeMenu();
+  });
+
+  // As a safety, make sure icons render
+  if (window.lucide?.createIcons) window.lucide.createIcons();
+
+  console.log('✅ FAB initialized');
+}
+
+// Populate category selects in Add Location forms using map-derived categories
+window.populateCategorySelects = function () {
+  const cats = (window.mapCategories && window.mapCategories.length ? window.mapCategories : DEFAULT_CATEGORIES).slice();
+  if (!cats.length) return;
+  const fill = (sel) => {
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="" disabled selected>Select category…</option>'
+      + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (current && cats.includes(current)) sel.value = current;
+  };
+  fill(document.getElementById('locationCoords'));
+  fill(document.getElementById('locationCategory'));
+};
+
+function refreshFabMenuVisibility() {
+  const menu = document.getElementById('fabMenu');
+  if (!menu) return;
+  const current = FabState.action;
+  menu.querySelectorAll('button[data-action]').forEach(btn => {
+    const a = btn.getAttribute('data-action');
+    // Hide the item that matches current main action; show others
+    btn.style.display = (a === current) ? 'none' : 'flex';
+  });
+}
+
+// ─────────── Crosshair Pin Placement ───────────
+const Crosshair = {
+  active: false,
+  el: null,
+  info: null,
+  _onMove: null,
+  init() {
+    if (this.el) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'pinCrosshair';
+    wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;display:none;';
+    wrap.innerHTML = `
+      <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;">
+        <div style="width:18px;height:18px;border-radius:50%;border:2px solid #facc15;box-shadow:0 0 10px rgba(250,204,21,.6);"></div>
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:2px;height:26px;background:#facc15;opacity:.65"></div>
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);width:2px;height:26px;background:#facc15;opacity:.65"></div>
+      </div>
+      <div id="pinControls" style="position:absolute;right:16px;bottom:92px;pointer-events:auto;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+        <div id="pinReadout" style="font:12px/1.2 Inter,system-ui;margin-bottom:6px;color:#facc15;text-align:right;background:rgba(0,0,0,.55);border:1px solid rgba(234,179,8,.5);padding:4px 8px;border-radius:8px;backdrop-filter:blur(2px);"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button id="pinConfirm" style="width:42px;height:42px;border-radius:9999px;border:2px solid #eab308;background:#fff;color:#000;box-shadow:0 2px 8px rgba(0,0,0,.35);font-weight:700;">✓</button>
+          <button id="pinCancel"  style="width:38px;height:38px;border-radius:9999px;border:1px solid #eab308;background:#111;color:#facc15;box-shadow:0 2px 6px rgba(0,0,0,.25);">×</button>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+    this.el = wrap;
+    this.info = wrap.querySelector('#pinReadout');
+    wrap.querySelector('#pinConfirm').addEventListener('click', () => this.confirm());
+    wrap.querySelector('#pinCancel').addEventListener('click', () => this.exit());
+  },
+  enter() {
+    this.init();
+    if (!window.map) return alert('Map not ready yet.');
+    this.active = true;
+    this.el.style.display = 'block';
+    this.tick();
+    this._onMove = () => this.tick();
+    try { map.on('move', this._onMove); } catch {}
+  },
+  exit() {
+    this.active = false;
+    if (this.el) this.el.style.display = 'none';
+    if (this._onMove) { try { map.off('move', this._onMove); } catch {} }
+    this._onMove = null;
+  },
+  tick() {
+    try {
+      const c = map.getCenter();
+      if (this.info) this.info.textContent = `${c.lat.toFixed(5)}, ${c.lng.toFixed(5)} — Move the map, then ✓`;
+    } catch {}
+  },
+  confirm() {
+    try {
+      const c = map.getCenter();
+      window._pendingPin = { lat: c.lat, lng: c.lng };
+    } catch { window._pendingPin = null; }
+    this.exit();
+    // Open the Add Location modal for title/details
+    window.forceShowAddLocation?.();
+  }
+};
 
 window.openDirections = function(lat, lon, title) {
   const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&destination_place_id=`;
@@ -693,12 +916,19 @@ function bindSubmissionForm() {
     const location = sanitize(document.getElementById('submissionLocation').value).slice(0,160);
     const category = sanitize(document.getElementById('locationCoords').value).slice(0,80);
 
-    const url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
+    let url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
               + `&name=${encodeURIComponent(name)}`
               + `&location=${encodeURIComponent(location)}`
               + `&category=${encodeURIComponent(category)}`;
+    try {
+      const pin = window._pendingPin;
+      if (pin && typeof pin.lat === 'number' && typeof pin.lng === 'number') {
+        url += `&lat=${encodeURIComponent(pin.lat)}&lng=${encodeURIComponent(pin.lng)}`;
+      }
+    } catch {}
     _rate.submission = now;
     jsonp(url);
+    try { window._pendingPin = null; } catch {}
   });
 }
 
@@ -720,15 +950,24 @@ function bindLocationFormFallback() {
 
     const S = (s='') => s.replace(/[<>]/g, '').trim();
     const name = S(document.getElementById('locationTitle')?.value || '').slice(0,120);
-    const location = S(document.getElementById('locationShortDesc')?.value || '').slice(0,160);
+    const location = S(document.getElementById('locationShortDesc')?.value || '').slice(0,160); // may be missing; fine
     const category = S(document.getElementById('locationCategory')?.value || '').slice(0,80);
 
-    const url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
+    let url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
       + `&name=${encodeURIComponent(name)}`
       + `&location=${encodeURIComponent(location)}`
       + `&category=${encodeURIComponent(category)}`;
+    try {
+      const pin = window._pendingPin;
+      if (pin && typeof pin.lat === 'number' && typeof pin.lng === 'number') {
+        url += `&lat=${encodeURIComponent(pin.lat)}&lng=${encodeURIComponent(pin.lng)}`;
+      }
+    } catch {}
     _rate.submission = now;
     jsonp(url);
+    // Close fallback modal after submit
+    document.getElementById('addLocationModal')?.classList.add('hidden');
+    try { window._pendingPin = null; } catch {}
   });
 }
 
@@ -871,10 +1110,402 @@ function handleSubmissionResponse(data) {
   if (data.success) {
     alert('✅ Location submitted!');
     document.getElementById('submissionForm').reset();
-    closeModal(); // if this exists
+    // Auto close any open add-location modal variants
+    document.getElementById('submissionModal')?.classList.add('hidden');
+    document.getElementById('addLocationModal')?.classList.add('hidden');
+    try { closeModal?.(); } catch {}
   } else {
     alert('❌ Error submitting location.');
   }
+}
+
+// ─────────── Following System (frontend) ───────────
+function refreshFollowCounts() {
+  const me = normalizeUserKeyForBackend();
+  if (!me) return;
+  const url = `${window.SHEET_API_URL}?type=getFollows&user=${encodeURIComponent(me)}&callback=handleGetFollows`;
+  jsonp(url);
+}
+
+function handleGetFollows(resp) {
+  if (!resp || resp.success === false) return;
+  try {
+    const f1 = parseInt(resp.followersCount || 0, 10) || 0;
+    const f2 = parseInt(resp.followingCount || 0, 10) || 0;
+    const elA = document.getElementById('followersCount');
+    const elB = document.getElementById('followingCount');
+    if (elA) elA.textContent = String(f1);
+    if (elB) elB.textContent = String(f2);
+    // Cache following set for button states
+    const set = new Set((resp.following || []).map(s => normalizeUserName(s)));
+    window._followingSet = set;
+    // Update any open member card follow button
+    const name = window._memberCardDisplayName;
+    if (name) {
+      const btn = document.getElementById('memberCardFollowBtn');
+      if (btn) {
+        const isFollowing = set.has(normalizeUserName(name));
+        btn.textContent = isFollowing ? 'Following' : 'Follow';
+        btn.dataset.state = isFollowing ? 'following' : 'follow';
+      }
+    }
+  } catch {}
+}
+
+function followToggle(targetName) {
+  if (!window.isLoggedIn?.()) {
+    document.getElementById('loginModal')?.classList.remove('hidden');
+    return;
+  }
+  const actor = normalizeUserKeyForBackend();
+  if (!actor) return;
+  const target = (targetName || '').toString().trim();
+  if (!target) return;
+  const set = (window._followingSet = window._followingSet || new Set());
+  const normTarget = normalizeUserName(target);
+  const wasFollowing = set.has(normTarget);
+  const willFollow = !wasFollowing;
+
+  // Optimistic UI update
+  setFollowUI(target, willFollow);
+  window._lastFollowAction = { target, wasFollowing };
+
+  const type = willFollow ? 'follow' : 'unfollow';
+  const url = `${window.SHEET_API_URL}?type=${type}&actor=${encodeURIComponent(actor)}&target=${encodeURIComponent(target)}&callback=handleFollowResponse`;
+  jsonp(url);
+}
+
+function handleFollowResponse(resp) {
+  if (!resp || resp.success === false) { alert('Follow action failed'); return; }
+  // Update counts + local set and button
+  refreshFollowCounts();
+}
+
+// ─────────── Simple Inbox/DM Store (frontend placeholder) ───────────
+window._dmStore = { conversations: {} }; // { key: { name, messages:[{from:'me'|'them',text,ts,read:false}] } }
+
+function getConversationKey(name='') { return (name||'').toString().trim().toLowerCase(); }
+
+function updateInboxBadge() {
+  try {
+    const convos = window._dmStore.conversations || {};
+    let unread = 0;
+    Object.values(convos).forEach(c => { (c.messages||[]).forEach(m => { if (m.from !== 'me' && m.read !== true) unread++; }); });
+    const badge = document.getElementById('inboxCountBadge');
+    if (badge) badge.textContent = String(unread);
+  } catch {}
+}
+
+function markConversationRead(name) {
+  const key = getConversationKey(name);
+  const conv = window._dmStore.conversations[key];
+  if (!conv) return;
+  (conv.messages||[]).forEach(m => { if (m.from !== 'me') m.read = true; });
+  updateInboxBadge();
+}
+
+function openInboxPanel() {
+  // Ensure latest (optional backend hook; safe if not implemented yet)
+  try { refreshInbox?.(); } catch {}
+
+  let panel = document.getElementById('inboxPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'inboxPanel';
+    panel.style.cssText = [
+      'position:fixed','right:16px','bottom:64px','width:360px','max-height:68vh',
+      'display:flex','flex-direction:column','background:#000',
+      'border:1px solid rgba(234,179,8,0.6)','border-radius:14px',
+      'box-shadow:0 16px 28px rgba(0,0,0,0.45)','z-index:100000','overflow:hidden'
+    ].join(';');
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#0b0b0b;border-bottom:1px solid rgba(234,179,8,0.35);color:#facc15;">
+        <div style="font-weight:600;">Inbox</div>
+        <button id="inboxClose" style="border:1px solid rgba(234,179,8,0.5);background:#111;color:#facc15;border-radius:9999px;width:28px;height:28px;">×</button>
+      </div>
+      <div id="inboxList" style="flex:1;overflow-y:auto;padding:8px 6px;color:#e5e5e5;background:#050505;"></div>
+    `;
+    document.body.appendChild(panel);
+    panel.querySelector('#inboxClose').addEventListener('click', ()=> panel.classList.add('hidden'));
+  }
+  renderInboxList();
+  panel.classList.remove('hidden');
+}
+
+function renderInboxList() {
+  const list = document.getElementById('inboxList');
+  if (!list) return;
+  const convos = window._dmStore.conversations || {};
+  const entries = Object.values(convos).map(c => {
+    const last = (c.messages||[])[(c.messages||[]).length-1] || {};
+    const unread = (c.messages||[]).filter(m => m.from !== 'me' && m.read !== true).length;
+    const snippet = (last.text || '').slice(0,60).replace(/</g,'&lt;');
+    return { name: c.name, snippet, unread, ts: last.ts || 0 };
+  }).sort((a,b)=> b.ts - a.ts);
+  if (!entries.length) {
+    list.innerHTML = '<div style="padding:10px 8px;color:#facc15;opacity:.8;">No messages yet.</div>';
+    return;
+  }
+  list.innerHTML = entries.map(e => `
+    <button class="inbox-item" data-dm-name="${e.name.replace(/\"/g,'&quot;')}" style="width:100%;text-align:left;background:transparent;border:none;padding:8px 10px;border-radius:10px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+      <div style="flex:1;">
+        <div style="color:#fef3c7;font-weight:600;">${e.name}</div>
+        <div style="color:#d1d5db;font-size:12px;opacity:.85;">${e.snippet || '&nbsp;'}</div>
+      </div>
+      ${e.unread ? `<span style=\"min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;background:#eab308;color:#000;font-size:11px;font-weight:700;\">${e.unread}</span>` : ''}
+    </button>
+  `).join('');
+
+  list.querySelectorAll('[data-dm-name]')?.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const n = btn.getAttribute('data-dm-name') || '';
+      document.getElementById('inboxPanel')?.classList.add('hidden');
+      openChatPanel(n);
+    });
+  });
+}
+
+// Optional backend hook; safe if server not ready
+window.refreshInbox = function () {
+  const me = normalizeUserKeyForBackend();
+  if (!me) { updateInboxBadge(); return; }
+  try {
+    jsonp(`${window.SHEET_API_URL}?type=getInbox&user=${encodeURIComponent(me)}&callback=handleInbox`);
+    // Fallback: still update badge from local store
+    setTimeout(updateInboxBadge, 200);
+  } catch { updateInboxBadge(); }
+};
+
+window.handleInbox = function (resp) {
+  if (!resp || resp.success === false) { updateInboxBadge(); return; }
+  // Expect resp.messages: [{from, text, ts, read}] — group by from
+  const convos = {};
+  const arr = Array.isArray(resp.messages) ? resp.messages : [];
+  arr.forEach(m => {
+    const name = (m.from || '').toString();
+    const key = getConversationKey(name);
+    convos[key] = convos[key] || { name, messages: [] };
+    convos[key].messages.push({ from: 'them', text: (m.text||'').toString(), ts: Number(m.ts)||Date.now(), read: !!m.read });
+  });
+  window._dmStore.conversations = Object.assign({}, window._dmStore.conversations, convos);
+  updateInboxBadge();
+  if (document.getElementById('inboxPanel') && !document.getElementById('inboxPanel').classList.contains('hidden')) renderInboxList();
+  // If chat open for one of these senders, update view
+  try {
+    const openName = window._openChatName;
+    if (openName) renderChatMessages(openName);
+  } catch {}
+};
+
+// DM send + read callbacks (best-effort)
+window.handleDMSend = function (resp) {
+  // On success, refresh inbox to reflect message thread ordering (optional)
+  try { refreshInbox?.(); } catch {}
+};
+window.handleDMRead = function (resp) {
+  // After marking read on backend, refresh badge
+  try { refreshInbox?.(); } catch {}
+};
+// ─────────── Chat Panel (local UI only)
+const _chatStore = {}; // user -> [{from:'me'|'them', text, ts}]
+
+function openChatPanel(targetName = '') {
+  const name = (targetName || '').toString().trim();
+  if (!name) return;
+
+  // Close other surfaces
+  document.getElementById('profileMenu')?.classList.add('hidden');
+  window.hideMemberCard?.();
+  document.getElementById('activitySidebar')?.classList.add('translate-x-full');
+  document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+  document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+
+  let panel = document.getElementById('chatPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'chatPanel';
+    panel.className = 'pointer-events-auto';
+    panel.style.cssText = [
+      'position:fixed','right:16px','bottom:64px',
+      'width:400px','max-height:70vh',
+      'display:flex','flex-direction:column',
+      'background:#000','border:1px solid rgba(234,179,8,0.6)',
+      'border-radius:14px','box-shadow:0 16px 32px rgba(0,0,0,0.45)',
+      'z-index:100000','overflow:hidden'
+    ].join(';');
+    panel.innerHTML = `
+      <div id="chatHeader" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(0,0,0,0.9);border-bottom:1px solid rgba(234,179,8,0.3);color:#facc15;">
+        <div id="chatTitle" style="font-weight:600;">Chat</div>
+        <button id="chatClose" style="border:1px solid rgba(234,179,8,0.5);background:#111;color:#facc15;border-radius:9999px;width:28px;height:28px;">×</button>
+      </div>
+      <div id="chatBody" style="flex:1;overflow-y:auto;padding:12px;color:#e5e5e5;background:#0b0b0b;"></div>
+      <form id="chatForm" style="display:flex;gap:8px;padding:10px;border-top:1px solid rgba(234,179,8,0.3);background:#0b0b0b;">
+        <input id="chatInput" type="text" placeholder="Message..." autocomplete="off"
+               style="flex:1;border:1px solid rgba(234,179,8,0.5);background:#111;color:#fef9c3;border-radius:9999px;padding:10px 12px;outline:none;" />
+        <button type="submit" style="border:1px solid #eab308;background:#eab308;color:#000;border-radius:9999px;padding:8px 14px;font-weight:700;">Send</button>
+      </form>`;
+    document.body.appendChild(panel);
+
+    panel.querySelector('#chatClose').addEventListener('click', () => {
+      panel.classList.add('hidden');
+    });
+    panel.querySelector('#chatForm').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const input = panel.querySelector('#chatInput');
+      const text = (input.value || '').trim();
+      if (!text) return;
+      addChatMessage(name, 'me', text);
+      input.value = '';
+      // Send to backend (Apps Script)
+      const meRaw = (localStorage.getItem('memberName') || localStorage.getItem('username') || '').toString().trim();
+      if (!meRaw) {
+        // prompt login if not available
+        document.getElementById('loginModal')?.classList.remove('hidden');
+        return;
+      }
+      try {
+        const url = `${window.SHEET_API_URL}?type=dmSend&from=${encodeURIComponent(meRaw)}&to=${encodeURIComponent(name)}&text=${encodeURIComponent(text)}&callback=handleDMSend`;
+        jsonp(url);
+      } catch {}
+    });
+  }
+
+  panel.querySelector('#chatTitle').textContent = `Chat • ${name}`;
+  panel.classList.remove('hidden');
+  window._openChatName = name;
+  renderChatMessages(name);
+  // Mark inbox read for this conversation
+  markConversationRead(name);
+  // Notify backend to mark read for this conversation (best-effort)
+  try {
+    const meRaw = (localStorage.getItem('memberName') || localStorage.getItem('username') || '').toString().trim();
+    if (meRaw) jsonp(`${window.SHEET_API_URL}?type=dmMarkRead&user=${encodeURIComponent(meRaw)}&from=${encodeURIComponent(name)}&callback=handleDMRead`);
+  } catch {}
+}
+
+function addChatMessage(name, from, text) {
+  const key = normalizeUserName(name);
+  _chatStore[key] = _chatStore[key] || [];
+  _chatStore[key].push({ from, text, ts: Date.now() });
+  // Mirror to inbox store
+  const k2 = getConversationKey(name);
+  window._dmStore.conversations[k2] = window._dmStore.conversations[k2] || { name, messages: [] };
+  window._dmStore.conversations[k2].messages.push({ from, text, ts: Date.now(), read: (from === 'me') });
+  updateInboxBadge();
+  renderChatMessages(name);
+}
+
+function _mergeConversation(name) {
+  const key = normalizeUserName(name);
+  const k2 = getConversationKey(name);
+  const local = (_chatStore[key] || []);
+  const inboxMsgs = ((window._dmStore.conversations[k2]?.messages) || []).map(m => ({
+    from: (m.from === 'me' ? 'me' : 'them'),
+    text: m.text,
+    ts: Number(m.ts) || Date.now()
+  }));
+  const merged = [...local, ...inboxMsgs]
+    .filter(m => m && m.text != null)
+    .sort((a,b) => (a.ts||0) - (b.ts||0));
+  // de-dupe by from|text|ts
+  const seen = new Set();
+  const unique = [];
+  merged.forEach(m => {
+    const k = `${m.from}|${m.text}|${m.ts}`;
+    if (!seen.has(k)) { seen.add(k); unique.push(m); }
+  });
+  return unique.slice(-300);
+}
+
+function renderChatMessages(name) {
+  const list = _mergeConversation(name);
+  const body = document.getElementById('chatBody');
+  if (!body) return;
+  body.innerHTML = list.map(m => {
+    const align = m.from === 'me' ? 'flex-end' : 'flex-start';
+    const bg = m.from === 'me' ? '#eab308' : '#111';
+    const fg = m.from === 'me' ? '#000' : '#fef9c3';
+    const safe = (m.text || '').replace(/</g,'&lt;');
+    return `<div style="display:flex;justify-content:${align};margin:6px 0;">
+      <div style=\"max-width:78%;padding:8px 10px;border-radius:14px;border:1px solid rgba(234,179,8,0.4);background:${bg};color:${fg};\">${safe}</div>
+    </div>`;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+// Update local UI state for follow/unfollow immediately
+function setFollowUI(targetName, following) {
+  const normTarget = normalizeUserName(targetName || '');
+  const set = (window._followingSet = window._followingSet || new Set());
+  if (following) set.add(normTarget); else set.delete(normTarget);
+
+  // Update button if present
+  const btn = document.getElementById('memberCardFollowBtn');
+  if (btn) {
+    btn.textContent = following ? 'Following' : 'Follow';
+    btn.dataset.state = following ? 'following' : 'follow';
+  }
+
+  // Update actor following count in profile menu (optimistic)
+  try {
+    const el = document.getElementById('followingCount');
+    const cur = parseInt((el?.textContent || '0'), 10) || 0;
+    const next = following ? cur + 1 : Math.max(0, cur - 1);
+    if (el) el.textContent = String(next);
+  } catch {}
+}
+
+function showFollowList(kind = 'followers', anchorEl) {
+  const me = normalizeUserKeyForBackend();
+  if (!me) {
+    document.getElementById('loginModal')?.classList.remove('hidden');
+    return;
+  }
+  const url = `${window.SHEET_API_URL}?type=getFollows&user=${encodeURIComponent(me)}&callback=handleFollowList`;
+  window._followListKind = kind;
+  window._followListAnchor = anchorEl || document.getElementById(kind === 'followers' ? 'followersCountBtn' : 'followingCountBtn');
+  jsonp(url);
+}
+
+function handleFollowList(resp) {
+  if (!resp || resp.success === false) return;
+  const kind = window._followListKind || 'followers';
+  const items = (kind === 'followers' ? resp.followers : resp.following) || [];
+  let panel = document.getElementById('followListPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'followListPanel';
+    panel.className = 'rounded-xl border border-yellow-500/40 bg-black text-yellow-100 shadow-xl px-3 py-2 text-sm';
+    panel.style.position = 'absolute';
+    panel.style.zIndex = '100000';
+    document.body.appendChild(panel);
+  }
+  const listHtml = items.length
+    ? items.map(n => `<button class=\"block w-full text-left hover:text-yellow-300 py-1\" data-follow-name=\"${n.replace(/\"/g,'&quot;')}\">${n}</button>`).join('')
+    : `<div class=\"text-yellow-400/80 py-1\">No ${kind} yet.</div>`;
+  panel.innerHTML = `<div class=\"text-[11px] uppercase tracking-[0.25em] text-yellow-400/80 mb-1\">${kind}</div>${listHtml}`;
+  panel.classList.remove('hidden');
+
+  const anchor = window._followListAnchor;
+  const rect = (anchor || document.getElementById('profileToggle')).getBoundingClientRect();
+  panel.style.left = `${rect.left + window.scrollX}px`;
+  panel.style.top = `${rect.bottom + window.scrollY + 6}px`;
+
+  const dismiss = (e) => {
+    if (panel.contains(e.target) || (anchor && anchor.contains(e.target))) return;
+    panel.classList.add('hidden');
+    document.removeEventListener('click', dismiss);
+  };
+  setTimeout(() => document.addEventListener('click', dismiss), 0);
+
+  // Click on a name → open member card
+  panel.querySelectorAll('[data-follow-name]')?.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const name = btn.getAttribute('data-follow-name') || '';
+      panel.classList.add('hidden');
+      const anchorEl = window._followListAnchor || document.getElementById('profileToggle');
+      window.showMemberCard?.(name, anchorEl);
+    });
+  });
 }
 
 
@@ -1867,6 +2498,10 @@ function bindUIButtons() {
       document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
       pm.classList.remove('hidden');
       window.updateLockedOverlays?.();
+      // Refresh follow counts when opening profile
+      try { refreshFollowCounts(); } catch {}
+      // Update inbox badge and optionally refresh from backend
+      try { updateInboxBadge(); refreshInbox?.(); } catch {}
     } else {
       pm.classList.add('hidden');
     }
@@ -2384,6 +3019,8 @@ window.categoryIconMap = {
 window.mapCategories = [...categories].sort();
 // Try to populate immediately (in case panel is already present)
 setTimeout(() => window.populateCategoryFilters?.(), 0);
+// Also populate Add Location category selects (submission + fallback)
+setTimeout(() => window.populateCategorySelects?.(), 0);
 window.populateCategoryFilters = function () {
   const box = document.getElementById('categoryFilters');
   if (!box || !window.mapCategories) return;
@@ -2565,41 +3202,8 @@ marker.getElement().addEventListener('click', () => {
   document.getElementById('closeRequestModal')?.addEventListener('click', () => {
     document.getElementById('requestModal')?.classList.add('hidden');
   });
-
-
- document.getElementById('floatingLocateBtn')?.addEventListener('click', () => {
-  if ('geolocation' in navigator) {
-    navigator.geolocation.getCurrentPosition(position => {
-      const { latitude, longitude } = position.coords;
-      map.flyTo({ center: [longitude, latitude], zoom: 14 });
-
-      const popupHTML = `
-        <div style="
-          background: black;
-          color: gold;
-          padding: 8px 12px;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: bold;
-          border: 1px solid gold;
-          box-shadow: 0 0 10px gold;
-        ">
-          📍 Current Location
-        </div>
-      `;
-
-      new mapboxgl.Marker({
-        color: 'gold'
-      })
-        .setLngLat([longitude, latitude])
-        .setPopup(new mapboxgl.Popup({ closeButton: false }).setHTML(popupHTML))
-        .addTo(map)
-        .togglePopup();
-    });
-  } else {
-    alert('Geolocation is not supported by your browser.');
-  }
-});
+  // Initialize the FAB multi‑picker (default action: locate)
+  initFabMultiPicker();
 
   
 
@@ -2726,7 +3330,14 @@ window.showMemberCard = (name = 'Member', anchorEl) => {
           <span id="memberCardStreakChip" class="hidden text-[11px] inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5 text-yellow-300"></span>
         </div>
       </div>
-      <span class="rounded-full border border-yellow-500/30 px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-yellow-400" id="memberCardLevel">${profile.level}</span>
+      <div class="flex items-center gap-2">
+        <button id="memberCardMessageBtn" class="rounded-full border border-yellow-500/40 w-8 h-8 flex items-center justify-center text-yellow-300 hover:bg-yellow-500 hover:text-black transition" title="Message">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+        <button id="memberCardFollowBtn" class="rounded-full border border-yellow-500/40 px-3 py-1 text-[12px] text-yellow-300 hover:bg-yellow-500 hover:text-black transition">
+          Follow
+        </button>
+      </div>
     </div>
     <div class="grid gap-2 text-xs text-yellow-200">
       <div class="flex items-center justify-between">
@@ -2777,10 +3388,38 @@ window.showMemberCard = (name = 'Member', anchorEl) => {
   window._memberCardDisplayName = requestedUser;
   jsonp(url);
   renderBadgeChips(requestedUser, card.querySelector('#memberCardBadges'));
+  // Ensure icons render for the new message button
+  window.lucide?.createIcons?.();
+
+  // Init follow button label/state and behavior
+  const followBtn = card.querySelector('#memberCardFollowBtn');
+  if (followBtn) {
+    const me = (localStorage.getItem('memberName') || '').trim();
+    const target = (window._memberCardDisplayName || name || '').trim();
+    const isSelf = me && target && me.toLowerCase() === target.toLowerCase();
+    if (!isSelf) {
+      const isFollowing = !!(window._followingSet && window._followingSet.has(normalizeUserName(target)));
+      followBtn.textContent = isFollowing ? 'Following' : 'Follow';
+      followBtn.dataset.state = isFollowing ? 'following' : 'follow';
+      followBtn.addEventListener('click', () => followToggle(target));
+    } else {
+      followBtn.style.display = 'none';
+    }
+  }
+
+  // Message button → open chat panel with this user
+  const msgBtn = card.querySelector('#memberCardMessageBtn');
+  if (msgBtn) {
+    const target = (window._memberCardDisplayName || name || '').trim();
+    msgBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openChatPanel(target);
+    });
+  }
 };
 
 // Callback to update the open member card with backend community/status
-function handleMemberCardCommunity(resp) {
+window.handleMemberCardCommunity = function (resp) {
   if (!resp || !resp.success) return;
   const key = window._memberCardTarget;
   if (!key) return;
@@ -3795,6 +4434,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('logged-in');
     fetchCommunityForCurrentUser?.();
     window.ensurePostFormsVisibility?.();
+    try { refreshFollowCounts(); } catch {}
   } else {
     // Guest: clear member display in profile menu
     const nameEl = document.getElementById('memberName');
@@ -3880,6 +4520,9 @@ document.addEventListener('keydown', (e) => {
     if (show.includes('addlocation')) setTimeout(() => window.forceShowAddLocation(), 0);
     if (show.includes('favourites')) setTimeout(() => window.forceShowFavourites(), 0);
   } catch {}
+
+  // Populate category selects early with defaults; they will be refreshed when map categories load
+  try { window.populateCategorySelects?.(); } catch {}
 });
 
 // Delegated fallbacks for buttons that may render late
@@ -3988,6 +4631,25 @@ document.addEventListener('click', (ev) => {
     }
     return;
   }
+
+  // Inbox open
+  if (q('#inboxBtn')) {
+    ev.preventDefault();
+    openInboxPanel();
+    return;
+  }
+
+  // Followers/Following list popups
+  if (q('#followersCountBtn')) {
+    ev.preventDefault();
+    showFollowList('followers', t.closest('#followersCountBtn'));
+    return;
+  }
+  if (q('#followingCountBtn')) {
+    ev.preventDefault();
+    showFollowList('following', t.closest('#followingCountBtn'));
+    return;
+  }
 });
 
 // Global debug helpers (ensure they exist even if early wiring failed)
@@ -4005,13 +4667,15 @@ if (typeof window.forceShowAddLocation !== 'function') {
         <button class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl" onclick="this.closest('#addLocationModal')?.classList.add('hidden')">&times;</button>
         <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
         <form id="locationForm" class="space-y-3">
-          <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-white placeholder-yellow-400">
-          <input id="locationShortDesc" type="text" placeholder="Short description" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-white placeholder-yellow-400">
-          <input id="locationCategory" type="text" placeholder="Category (e.g. Farm, Pub)" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-white placeholder-yellow-400">
+          <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
+          <select id="locationCategory" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" required>
+            <option value="" disabled selected>Select category…</option>
+          </select>
           <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
         </form>`;
       document.body.appendChild(modal);
-      // Bind fallback submission handler
+      // Populate category select + bind fallback submission handler
+      try { window.populateCategorySelects?.(); } catch {}
       try { bindLocationFormFallback(); } catch {}
     }
     modal.classList.remove('hidden');

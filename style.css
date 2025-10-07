@@ -67,6 +67,30 @@ img, video { max-width: 100%; height: auto; }
   gap: 4px;
 }
 
+/* Ensure the floating FAB container is visible by default */
+#floatingLocateBtn { display: flex; }
+
+/* Fallback layout/styles for the floating FAB if Tailwind isn't applied yet */
+#floatingLocateBtn {
+  position: fixed;
+  right: 1rem;          /* ~right-4 */
+  bottom: 4rem;         /* ~bottom-16 (above bottom nav) */
+  z-index: 9998;
+  flex-direction: column;
+  align-items: flex-end;
+}
+#fabMain {
+  width: 48px; height: 48px;          /* ~w-12 h-12 */
+  border-radius: 9999px;
+  background: #000; color: #facc15;   /* black + gold */
+  border: 1px solid #eab308;          /* yellow-500 */
+  display: flex; align-items: center; justify-content: center;
+}
+#fabCorner {
+  position: absolute; right: -2px; bottom: -2px;
+}
+#fabMenu { position: absolute; }
+
 #bottom-nav button {
   background: none;
   border: none;

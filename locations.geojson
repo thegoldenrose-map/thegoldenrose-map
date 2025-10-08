@@ -1,25 +1,344 @@
 {
   "type": "FeatureCollection",
   "features": [
-    {"type":"Feature","properties":{"title":"🚜 Tablehurst Farm","description":"","category":"🚜 FARMS","verified":true},"geometry":{"type":"Point","coordinates":[0.045554809389905714,51.09873855938196]},"id":1},
-    {"type":"Feature","properties":{"title":"🎡 Brighton Palace Pier","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-0.1372,50.8166]},"id":2},
-    {"type":"Feature","properties":{"title":"🚗 Trade Price Autos","description":"","category":"🛍️ SHOPS","verified":true},"geometry":{"type":"Point","coordinates":[-0.00745200546967994,51.12392135153512]},"id":3},
-
-    {"type":"Feature","properties":{"title":"🕰️ Big Ben, London","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-0.1246,51.5007]},"id":100},
-    {"type":"Feature","properties":{"title":"🏛️ Library of Birmingham","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.9046,52.4810]},"id":101},
-    {"type":"Feature","properties":{"title":"🏛️ Manchester Town Hall","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-2.2447,53.4794]},"id":102},
-    {"type":"Feature","properties":{"title":"🏛️ Leeds Town Hall","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.5479,53.8008]},"id":103},
-    {"type":"Feature","properties":{"title":"🦅 Royal Liver Building, Liverpool","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-2.9935,53.4057]},"id":104},
-    {"type":"Feature","properties":{"title":"🌉 Clifton Suspension Bridge, Bristol","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-2.6267,51.4545]},"id":105},
-    {"type":"Feature","properties":{"title":"🌉 Tyne Bridge, Newcastle","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.6070,54.9710]},"id":106},
-    {"type":"Feature","properties":{"title":"🏰 Edinburgh Castle","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-3.2000,55.9486]},"id":107},
-    {"type":"Feature","properties":{"title":"🏛️ George Square, Glasgow","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-4.2518,55.8612]},"id":108},
-    {"type":"Feature","properties":{"title":"🏟️ Principality Stadium, Cardiff","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-3.1820,51.4780]},"id":109},
-    {"type":"Feature","properties":{"title":"🚢 Titanic Belfast","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-5.9099,54.6091]},"id":110},
-    {"type":"Feature","properties":{"title":"🏰 Nottingham Castle","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.1500,52.9490]},"id":111},
-    {"type":"Feature","properties":{"title":"🏛️ Sheffield City Hall","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.4700,53.3810]},"id":112},
-    {"type":"Feature","properties":{"title":"👑 Leicester Cathedral","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.1330,52.6369]},"id":113},
-    {"type":"Feature","properties":{"title":"🎓 King’s College Chapel, Cambridge","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[0.1160,52.2040]},"id":114},
-    {"type":"Feature","properties":{"title":"📚 Radcliffe Camera, Oxford","description":"","category":"🏛️ LANDMARKS","verified":false},"geometry":{"type":"Point","coordinates":[-1.2540,51.7530]},"id":115}
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🚜 Tablehurst Farm",
+        "description": "",
+        "category": "🚜 FARMS",
+        "verified": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.045554809389905714,
+          51.09873855938196
+        ]
+      },
+      "id": 1
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🎡 Brighton Palace Pier",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1372,
+          50.8166
+        ]
+      },
+      "id": 2
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🚗 Trade Price Autos",
+        "description": "",
+        "category": "🛍️ SHOPS",
+        "verified": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.00745200546967994,
+          51.12392135153512
+        ]
+      },
+      "id": 3
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🕰️ Big Ben, London",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1246,
+          51.5007
+        ]
+      },
+      "id": 100
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏛️ Library of Birmingham",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.9046,
+          52.481
+        ]
+      },
+      "id": 101
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏛️ Manchester Town Hall",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.2447,
+          53.4794
+        ]
+      },
+      "id": 102
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏛️ Leeds Town Hall",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.5479,
+          53.8008
+        ]
+      },
+      "id": 103
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🦅 Royal Liver Building, Liverpool",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.9935,
+          53.4057
+        ]
+      },
+      "id": 104
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🌉 Clifton Suspension Bridge, Bristol",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.6267,
+          51.4545
+        ]
+      },
+      "id": 105
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🌉 Tyne Bridge, Newcastle",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.607,
+          54.971
+        ]
+      },
+      "id": 106
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏰 Edinburgh Castle",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.2,
+          55.9486
+        ]
+      },
+      "id": 107
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏛️ George Square, Glasgow",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -4.2518,
+          55.8612
+        ]
+      },
+      "id": 108
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏟️ Principality Stadium, Cardiff",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.182,
+          51.478
+        ]
+      },
+      "id": 109
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🚢 Titanic Belfast",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -5.9099,
+          54.6091
+        ]
+      },
+      "id": 110
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏰 Nottingham Castle",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.15,
+          52.949
+        ]
+      },
+      "id": 111
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🏛️ Sheffield City Hall",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.47,
+          53.381
+        ]
+      },
+      "id": 112
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "👑 Leicester Cathedral",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.133,
+          52.6369
+        ]
+      },
+      "id": 113
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "🎓 King’s College Chapel, Cambridge",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.116,
+          52.204
+        ]
+      },
+      "id": 114
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "📚 Radcliffe Camera, Oxford",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.254,
+          51.753
+        ]
+      },
+      "id": 115
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Y",
+        "description": "",
+        "category": "🛍️ SHOPS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03344785205354128,
+          51.09791141013818
+        ]
+      }
+    }
   ]
 }

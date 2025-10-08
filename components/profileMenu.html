@@ -7,18 +7,26 @@
 
     <!-- 🔹 Favourites Dropdown (removed duplicate; main lives in modals.html) -->
 
-    <!-- 🔹 Member Info -->
-    <div id="memberInfo" class="text-yellow-400 px-4 py-2 bg-black space-y-1">
-      <div class="flex items-center gap-2">
-        <div id="memberName" class="text-sm font-semibold"></div>
+    <!-- 🔹 Member Info (redesigned) -->
+    <div id="memberInfo" class="relative text-yellow-400 px-4 py-3 bg-black space-y-2">
+      <div class="flex items-center gap-3">
+        <div id="memberAvatar" class="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-300 font-semibold text-sm border border-yellow-500/40">A</div>
+        <div class="flex-1">
+          <div id="memberName" class="text-[14px] font-semibold leading-tight"></div>
+          <div id="memberFollowCounts" class="text-[11px] flex items-center gap-3 text-yellow-300/90">
+            <span id="followersCountBtn" class="cursor-pointer hover:text-yellow-200"><b id="followersCount">0</b> Followers</span>
+            <span class="opacity-60">•</span>
+            <span id="followingCountBtn" class="cursor-pointer hover:text-yellow-200"><b id="followingCount">0</b> Following</span>
+          </div>
+        </div>
+        <span id="memberStreakChip" class="absolute top-2 right-3 text-[10px] inline-flex items-center gap-1 rounded-full border border-yellow-500/40 px-2 py-0.5 text-yellow-300"></span>
       </div>
-      <div id="memberFollowCounts" class="text-[11px] flex items-center gap-3 text-yellow-300/90">
-        <span id="followersCountBtn" class="cursor-pointer hover:text-yellow-200"><b id="followersCount">0</b> Followers</span>
-        <span class="opacity-60">•</span>
-        <span id="followingCountBtn" class="cursor-pointer hover:text-yellow-200"><b id="followingCount">0</b> Following</span>
+      <div>
+        <div id="memberCommunityChip" class="w-full inline-flex items-center justify-center gap-2 rounded-full border border-yellow-500/30 bg-black/60 px-3 py-1 text-[11px] text-yellow-200">
+          <i data-lucide="map"></i>
+          <span>Community: Not selected</span>
+        </div>
       </div>
-      <!-- Stacked chips (community on first line, streak on second) -->
-      <div id="memberMeta" class="text-[11px] flex flex-col gap-1"></div>
       <div id="memberMenuBadges" class="text-[11px] flex flex-wrap gap-1"></div>
     </div>
 

@@ -763,7 +763,7 @@ function handleGetStreak(resp) {
   try {
     const chip = document.getElementById('memberStreakChip');
     if (chip) {
-      if (days > 0) { chip.textContent = `🔥 ${days}-day streak`; chip.classList.remove('hidden'); }
+      if (days > 0) { chip.textContent = `🔥 ${days}`; chip.classList.remove('hidden'); }
       else { chip.classList.add('hidden'); chip.textContent = ''; }
     }
     const cardChip = document.getElementById('memberCardStreakChip');
@@ -798,7 +798,7 @@ function handleStreakPing(resp) {
   try {
     const chip = document.getElementById('memberStreakChip');
     if (chip) {
-      if (days > 0) { chip.textContent = `🔥 ${days}-day streak`; chip.classList.remove('hidden'); }
+      if (days > 0) { chip.textContent = `🔥 ${days}`; chip.classList.remove('hidden'); }
       else { chip.classList.add('hidden'); chip.textContent = ''; }
     }
     const cardChip = document.getElementById('memberCardStreakChip');
@@ -916,6 +916,9 @@ function bindSubmissionForm() {
     const location = sanitize(document.getElementById('submissionLocation').value).slice(0,160);
     const category = sanitize(document.getElementById('locationCoords').value).slice(0,80);
 
+    // Stash details for potential auto-add (admin)
+    try { window._lastSubmission = { name, location, category, pin: window._pendingPin ? { ...window._pendingPin } : null }; } catch {}
+
     let url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
               + `&name=${encodeURIComponent(name)}`
               + `&location=${encodeURIComponent(location)}`
@@ -952,6 +955,9 @@ function bindLocationFormFallback() {
     const name = S(document.getElementById('locationTitle')?.value || '').slice(0,120);
     const location = S(document.getElementById('locationShortDesc')?.value || '').slice(0,160); // may be missing; fine
     const category = S(document.getElementById('locationCategory')?.value || '').slice(0,80);
+
+    // Stash details for potential auto-add (admin)
+    try { window._lastSubmission = { name, location, category, pin: window._pendingPin ? { ...window._pendingPin } : null }; } catch {}
 
     let url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
       + `&name=${encodeURIComponent(name)}`
@@ -1107,13 +1113,46 @@ window.submitRequest = function (requestType, message) {
 };
 
 function handleSubmissionResponse(data) {
-  if (data.success) {
+  if (data && data.success) {
     alert('✅ Location submitted!');
-    document.getElementById('submissionForm').reset();
+    try { document.getElementById('submissionForm')?.reset(); } catch {}
+    try { document.getElementById('locationForm')?.reset(); } catch {}
     // Auto close any open add-location modal variants
-    document.getElementById('submissionModal')?.classList.add('hidden');
-    document.getElementById('addLocationModal')?.classList.add('hidden');
+    try { document.getElementById('submissionModal')?.classList.add('hidden'); } catch {}
+    try { document.getElementById('addLocationModal')?.classList.add('hidden'); } catch {}
     try { closeModal?.(); } catch {}
+
+    // If user is admin, immediately add to map
+    try {
+      const role = (localStorage.getItem('memberCommunityStatus') || '').toString().toLowerCase();
+      const last = window._lastSubmission || null;
+      const pin = last?.pin || null;
+      if (role === 'admin' && last && pin && typeof pin.lat === 'number' && typeof pin.lng === 'number') {
+        addLocationToMapImmediate({
+          title: last.name || 'New Location',
+          description: last.location || '',
+          category: last.category || 'General',
+          lat: pin.lat,
+          lng: pin.lng
+        });
+
+        // Persist to GitHub via Apps Script (GeoJSON commit)
+        try {
+          const actor = (localStorage.getItem('memberName') || localStorage.getItem('username') || '').toString().trim();
+          if (actor) {
+            const url = `${window.SHEET_API_URL}?type=persistGeoPin`
+              + `&actor=${encodeURIComponent(actor)}`
+              + `&title=${encodeURIComponent(last.name || '')}`
+              + `&desc=${encodeURIComponent(last.location || '')}`
+              + `&category=${encodeURIComponent(last.category || '')}`
+              + `&lat=${encodeURIComponent(pin.lat)}`
+              + `&lng=${encodeURIComponent(pin.lng)}`
+              + `&callback=handlePersistGeoPin`;
+            jsonp(url);
+          }
+        } catch (e2) { console.warn('GeoJSON persist call failed:', e2); }
+      }
+    } catch (e) { console.warn('Admin auto-add failed:', e); }
   } else {
     alert('❌ Error submitting location.');
   }
@@ -1181,6 +1220,15 @@ function handleFollowResponse(resp) {
   refreshFollowCounts();
 }
 
+// GeoJSON persistence callback (Apps Script)
+window.handlePersistGeoPin = function (resp) {
+  if (resp && resp.success) {
+    console.log('✅ GeoJSON updated in repo');
+  } else {
+    console.warn('⚠️ GeoJSON persist failed', resp);
+  }
+};
+
 // ─────────── Simple Inbox/DM Store (frontend placeholder) ───────────
 window._dmStore = { conversations: {} }; // { key: { name, messages:[{from:'me'|'them',text,ts,read:false}] } }
 
@@ -1212,6 +1260,7 @@ function openInboxPanel() {
   if (!panel) {
     panel = document.createElement('div');
     panel.id = 'inboxPanel';
+    panel.className = 'inbox-panel';
     panel.style.cssText = [
       'position:fixed','right:16px','bottom:64px','width:360px','max-height:68vh',
       'display:flex','flex-direction:column','background:#000',
@@ -1253,6 +1302,7 @@ function renderInboxList() {
         <div style="color:#d1d5db;font-size:12px;opacity:.85;">${e.snippet || '&nbsp;'}</div>
       </div>
       ${e.unread ? `<span style=\"min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;background:#eab308;color:#000;font-size:11px;font-weight:700;\">${e.unread}</span>` : ''}
+      <span class="inbox-del" data-dm-del="${e.name.replace(/\"/g,'&quot;')}" title="Delete" style="margin-left:6px;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;border:1px solid rgba(234,179,8,0.5);color:#facc15;">×</span>
     </button>
   `).join('');
 
@@ -1261,6 +1311,25 @@ function renderInboxList() {
       const n = btn.getAttribute('data-dm-name') || '';
       document.getElementById('inboxPanel')?.classList.add('hidden');
       openChatPanel(n);
+    });
+  });
+  // Delete handlers (stop click propagation to avoid opening chat)
+  list.querySelectorAll('[data-dm-del]')?.forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const name = btn.getAttribute('data-dm-del') || '';
+      const key = getConversationKey(name);
+      if (key && window._dmStore.conversations[key]) {
+        delete window._dmStore.conversations[key];
+        updateInboxBadge();
+        renderInboxList();
+        // Optional backend cleanup (ignored if not implemented)
+        try {
+          window.handleNoop = window.handleNoop || function(){};
+          const meRaw = (localStorage.getItem('memberName') || localStorage.getItem('username') || '').toString().trim();
+          if (meRaw) jsonp(`${window.SHEET_API_URL}?type=dmDelete&user=${encodeURIComponent(meRaw)}&with=${encodeURIComponent(name)}&callback=handleNoop`);
+        } catch {}
+      }
     });
   });
 }
@@ -1306,6 +1375,113 @@ window.handleDMRead = function (resp) {
   // After marking read on backend, refresh badge
   try { refreshInbox?.(); } catch {}
 };
+
+// ─────────── Add new location to map immediately (admin helper) ───────────
+function addLocationToMapImmediate({ title, description = '', category = 'General', lat, lng }) {
+  if (!window.map || typeof lat !== 'number' || typeof lng !== 'number') return;
+  try {
+    const coords = [lng, lat];
+    const el = document.createElement('div');
+    el.className = 'marker';
+    el.dataset.adminPin = '1';
+    el.style.width = '24px';
+    el.style.height = '24px';
+    el.style.backgroundImage = 'url(flower.png)';
+    el.style.backgroundSize = 'cover';
+    el.style.cursor = 'pointer';
+
+    const safeTitle = (title || '').replace(/'/g, "\\'");
+    const popupContent = `
+      <div class="custom-popup">
+        <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
+          <i data-lucide=\"heart\" class=\"w-4 h-4\"></i>
+        </button>
+        <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
+          <i data-lucide=\"x\" class=\"w-4 h-4\"></i>
+        </button>
+        <div class="title">${title}</div>
+        ${description ? `<div class=\"desc\">${description}</div>` : ''}
+        <div class="actions">
+          <button onclick="openDirections(${lat}, ${lng}, '${safeTitle}')">
+            <i data-lucide=\"navigation\"></i> Directions
+          </button>
+        </div>
+      </div>`;
+
+    const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(popupContent);
+    const marker = new mapboxgl.Marker(el).setLngLat(coords).setPopup(popup).addTo(map);
+    marker.getElement().addEventListener('click', () => setTimeout(() => window.lucide?.createIcons?.(), 50));
+
+    const feature = {
+      type: 'Feature',
+      properties: { title, description, category, verified: false, _adminTemp: true },
+      geometry: { type: 'Point', coordinates: coords }
+    };
+    geoMarkers.push({ title: (title||'').toLowerCase(), coords, marker, feature, _adminTemp: true });
+    try {
+      if (window.originalGeoData && Array.isArray(window.originalGeoData.features)) {
+        window.originalGeoData.features.push(feature);
+      }
+    } catch {}
+
+    // Keep filters/category lists in sync
+    try {
+      window.mapCategories = Array.from(new Set([...(window.mapCategories||[]), category])).sort();
+      window.populateCategoryFilters?.();
+      window.populateCategorySelects?.();
+    } catch {}
+
+    window.lucide?.createIcons?.();
+    console.log('✅ Admin auto-added location to map:', title, coords);
+  } catch (e) {
+    console.warn('Failed to add location to map immediately:', e);
+  }
+}
+
+// Remove all temporary admin-added pins from this session
+window.removeAdminPins = function () {
+  try {
+    const keep = [];
+    geoMarkers.forEach(entry => {
+      if (entry && entry._adminTemp) {
+        try { entry.marker?.remove(); } catch {}
+      } else {
+        keep.push(entry);
+      }
+    });
+    geoMarkers = keep;
+    // Also prune from originalGeoData if we appended temporary features
+    try {
+      if (window.originalGeoData && Array.isArray(window.originalGeoData.features)) {
+        window.originalGeoData.features = window.originalGeoData.features.filter(f => !f?.properties?._adminTemp);
+      }
+    } catch {}
+    console.log('🧹 Removed admin pins');
+  } catch (e) {
+    console.warn('Failed to remove admin pins', e);
+  }
+};
+
+// Remove the most recently added admin pin
+window.removeLastAdminPin = function () {
+  for (let i = geoMarkers.length - 1; i >= 0; i--) {
+    const entry = geoMarkers[i];
+    if (entry && entry._adminTemp) {
+      try { entry.marker?.remove(); } catch {}
+      geoMarkers.splice(i, 1);
+      // Remove matching feature by coordinates/title
+      try {
+        if (window.originalGeoData && Array.isArray(window.originalGeoData.features)) {
+          const idx = window.originalGeoData.features.findIndex(f => f?.properties?._adminTemp);
+          if (idx >= 0) window.originalGeoData.features.splice(idx, 1);
+        }
+      } catch {}
+      console.log('🧹 Removed last admin pin');
+      return;
+    }
+  }
+  console.log('No admin pins found to remove');
+};
 // ─────────── Chat Panel (local UI only)
 const _chatStore = {}; // user -> [{from:'me'|'them', text, ts}]
 
@@ -1324,6 +1500,7 @@ function openChatPanel(targetName = '') {
   if (!panel) {
     panel = document.createElement('div');
     panel.id = 'chatPanel';
+    panel.className = 'chat-panel';
     panel.className = 'pointer-events-auto';
     panel.style.cssText = [
       'position:fixed','right:16px','bottom:64px',
@@ -4107,7 +4284,11 @@ function showMemberOptions() {
 
   console.log('🧠 Show member UI for:', name, '| Premium:', window.isPremium);
 
-  document.getElementById('memberName').textContent = `🌹 ${name}`;
+  const nameEl = document.getElementById('memberName');
+  if (nameEl) nameEl.textContent = name;
+  // Avatar initial
+  const av = document.getElementById('memberAvatar');
+  if (av) av.textContent = (name || 'A').slice(0,1).toUpperCase();
   const streak = localStorage.getItem('streak') || 0;
   window.memberStats = window.memberStats || {};
   window.memberStats.streak = Number(streak) || 0;
@@ -4123,7 +4304,7 @@ function showMemberOptions() {
     const chip = document.getElementById('memberStreakChip');
     const days = Number(streak) || 0;
     if (chip) {
-      if (days > 0) { chip.textContent = `🔥 ${days}-day streak`; chip.classList.remove('hidden'); }
+      if (days > 0) { chip.textContent = `🔥 ${days}`; chip.classList.remove('hidden'); }
       else { chip.classList.add('hidden'); chip.textContent = ''; }
     }
   } catch {}
@@ -4173,26 +4354,17 @@ function showMemberOptions() {
 
 window.updateMemberStatsUI = function () {
   const metaEl = document.getElementById('memberMeta');
-  if (!metaEl) return;
+  const commChip = document.getElementById('memberCommunityChip');
+  if (!metaEl && !commChip) return;
   const stats = window.memberStats || {};
 
-  // Build stacked chips: community (line 1), streak (line 2)
-  const parts = [];
   const community = (stats.community || '').toString();
   const streakDays = Number(stats.streak || 0);
-  const communityChip = community ? `
-    <div>
-      <span class="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5">
-        <i data-lucide="map"></i> ${community}
-      </span>
-    </div>` : '';
-  const streakChip = streakDays > 0 ? `
-    <div>
-      <span class="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 px-2 py-0.5">🔥 ${streakDays}-day streak</span>
-    </div>` : '';
-  // Order: streak first, then community
-  parts.push(streakChip, communityChip);
-  metaEl.innerHTML = parts.filter(Boolean).join('');
+  if (metaEl) metaEl.innerHTML = '';
+  if (commChip) {
+    const span = commChip.querySelector('span');
+    if (span) span.textContent = community || 'Not selected';
+  }
 
   // Render activity badges inline under chips
   const badgesEl = document.getElementById('memberMenuBadges');

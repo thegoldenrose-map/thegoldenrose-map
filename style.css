@@ -951,3 +951,27 @@ body.theme-light .badge-chip {
   0%, 100% { text-shadow: 0 0 8px rgba(253,224,71,0.45), 0 0 18px rgba(253,224,71,0.25); }
   50% { text-shadow: 0 0 14px rgba(253,224,71,0.75), 0 0 30px rgba(253,224,71,0.45); }
 }
+#inboxPanel.inbox-panel, #chatPanel.chat-panel { }
+/* Light theme variants for chat/inbox panels */
+body.theme-light #inboxPanel,
+body.theme-light #chatPanel {
+  background: #fffef4 !important;
+  color: #2f1b00 !important;
+  border-color: #eab308 !important;
+}
+body.theme-light #inboxPanel > div:first-child,
+body.theme-light #chatPanel > div:first-child {
+  background: #fff7db !important;
+  color: #92400e !important;
+  border-color: #f5d35c !important;
+}
+body.theme-light #inboxList,
+body.theme-light #chatBody,
+body.theme-light #chatForm {
+  background: #fffdf3 !important;
+}
+body.theme-light #chatInput {
+  background: #fffaf0 !important;
+  color: #2f1b00 !important;
+  border-color: #eab308 !important;
+}

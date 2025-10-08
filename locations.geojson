@@ -355,6 +355,22 @@
           51.09791141013818
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "n",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.032713348256237396,
+          51.095797816317116
+        ]
+      }
     }
   ]
 }

@@ -371,6 +371,22 @@
           51.095797816317116
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Brambletye",
+        "description": "",
+        "category": "🛍️ SHOPS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03309513354557225,
+          51.099591351380326
+        ]
+      }
     }
   ]
 }

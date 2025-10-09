@@ -393,6 +393,34 @@ body.theme-light #entertainmentCategoryButtons .entCategoryBtn {
   border-color: #d97706 !important;
 }
 
+/* === FAQ Panel Light Theme === */
+body.theme-light #faqPanel {
+  background-color: #fffef4 !important;  /* soft cream */
+  color: #2f1b00 !important;             /* dark readable text */
+  border-color: #eab308 !important;      /* golden border */
+}
+body.theme-light #faqPanel [class*="text-yellow-"] {
+  color: #2f1b00 !important;
+}
+body.theme-light #faqPanel [class*="border-yellow-"] {
+  border-color: #d97706 !important;      /* warm brown */
+}
+body.theme-light #faqPanel [class*="bg-black"],
+body.theme-light #faqPanel .bg-zinc-900\/80 {
+  background-color: #fffaf0 !important;  /* lighten embedded dark blocks */
+  color: #2f1b00 !important;
+}
+/* Question buttons */
+body.theme-light #faqQuestions button {
+  background-color: #fffef8 !important;
+  color: #2f1b00 !important;
+  border-color: #d97706 !important;
+}
+body.theme-light #faqQuestions button:hover {
+  background-color: #fde68a !important;  /* soft yellow hover */
+  color: #1f1300 !important;
+}
+
 .marker {
   background-image: url('flower.png'); /* or SVG */
   background-size: cover;

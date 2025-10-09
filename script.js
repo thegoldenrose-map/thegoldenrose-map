@@ -45,6 +45,8 @@ window.applyTheme = function(theme) {
   updateThemeButtonLabels(normalized);
   // Keep FAB theme icon in sync
   try { updateFabThemeIcon?.(normalized); } catch (_) {}
+  // Update FAQ bubble readability
+  try { updateFaqTheme?.(normalized); } catch (_) {}
 };
 
 window.toggleTheme = function () {
@@ -70,14 +72,167 @@ window.initTheme = function () {
 
 window.initTheme();
 
+// ─────────── FAQ Panel (pre-made Q&A) ───────────
+const FAQ_QA = [
+  { id: 'what', q: 'What is The Golden Rose?', a: 'A grassroots, people-powered network: Map, Marketplace, Community, and Entertainment — no algorithms, no censorship.' },
+  { id: 'how-post', q: 'How do I add a place?', a: 'Tap the floating + (in the multi-button picker). Fill the form with a name and category, then submit for review.' },
+  { id: 'verify', q: 'How do I get verified?', a: 'Open the Onboarding panel and tap “Apply for Verification”, or use the Verification button where shown. We review and get back to you.' },
+  { id: 'filters', q: 'Where are map filters?', a: 'Tap the filter icon in the search bar. You can toggle categories and then Apply.' },
+  { id: 'theme', q: 'How to switch theme?', a: 'Open the multi-button picker (corner nub) and tap the sun/moon icon.' },
+  { id: 'contact', q: 'How can I send feedback?', a: 'Use the Feedback option in modals, or look for the “?” help badge in key panels to learn more and contact us.' },
+];
+
+function q(id) { return document.getElementById(id); }
+
+function appendFaqMessage(sender, text) {
+  const chat = q('faqChat');
+  if (!chat) return;
+  const wrap = document.createElement('div');
+  const isUser = sender === 'user';
+  wrap.className = `flex ${isUser ? 'justify-end' : 'justify-start'} w-full`;
+  const bubble = document.createElement('div');
+  bubble.className = `max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-snug border ${isUser ? 'bg-yellow-500 text-black border-yellow-600' : 'bg-zinc-900/80 text-yellow-200 border-yellow-700/40'}`;
+  bubble.textContent = text;
+  bubble.setAttribute('data-sender', isUser ? 'user' : 'bot');
+  // Light theme readability for bot bubbles
+  try {
+    const theme = (localStorage.getItem(THEME_KEY) || 'dark');
+    if (!isUser && theme === 'light') {
+      bubble.style.background = '#fff7db';   // soft cream
+      bubble.style.color = '#2f1b00';        // dark text
+      bubble.style.border = '1px solid #eab308';
+    }
+  } catch {}
+  wrap.appendChild(bubble);
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function updateFaqTheme(theme) {
+  const chat = q('faqChat');
+  if (!chat) return;
+  const botBubbles = chat.querySelectorAll('[data-sender="bot"]');
+  botBubbles.forEach(b => {
+    if (theme === 'light') {
+      b.style.background = '#fff7db';
+      b.style.color = '#2f1b00';
+      b.style.border = '1px solid #eab308';
+    } else {
+      b.style.background = '';
+      b.style.color = '';
+      b.style.border = '';
+    }
+  });
+}
+
+function renderFaqQuestions() {
+  const ctr = q('faqQuestions');
+  if (!ctr) return;
+  // Only render once
+  if (ctr.childElementCount === 0) {
+    FAQ_QA.forEach(({ id, q }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('data-faq-id', id);
+      btn.className = 'text-left text-[12px] px-2 py-2 rounded-lg border border-yellow-500/40 bg-black hover:bg-yellow-500 hover:text-black text-yellow-300 transition';
+      btn.textContent = q;
+      ctr.appendChild(btn);
+    });
+  }
+}
+
+function faqWelcomeIfEmpty() {
+  const chat = q('faqChat');
+  if (!chat) return;
+  if (chat.childElementCount === 0) {
+    appendFaqMessage('bot', 'Hi! Choose a question below to get a quick answer.');
+  }
+}
+
+window.openFaqPanel = function openFaqPanel() {
+  let panel = q('faqPanel');
+  if (!panel) {
+    // Build panel on-demand if missing (e.g., if modals.html not loaded on this page)
+    panel = document.createElement('div');
+    panel.id = 'faqPanel';
+    panel.className = 'fixed bottom-24 right-4 z-[9999] w-80 max-h-[70vh] bg-black/90 backdrop-blur-md border border-yellow-500/50 rounded-2xl shadow-xl p-3 text-yellow-200 flex flex-col';
+    panel.innerHTML = `
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full border border-yellow-500/60 bg-black text-yellow-300 flex items-center justify-center text-[12px]">?</div>
+          <h3 class="text-sm font-semibold">FAQ & Help</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="faqClearBtn" type="button" class="text-[11px] px-2 py-1 rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black">Clear</button>
+          <button id="faqCloseBtn" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <div id="faqChat" class="flex-1 overflow-y-auto space-y-2 p-1 mt-1"></div>
+      <div class="mt-2 border-t border-yellow-500/30 pt-2">
+        <div class="text-[11px] uppercase tracking-[0.2em] text-yellow-500/80 mb-1">Questions</div>
+        <div id="faqQuestions" class="grid grid-cols-2 gap-2"></div>
+      </div>
+      <div class="mt-2 text-[10px] text-yellow-500/70">Tap a question to see an answer.</div>
+    `;
+    document.body.appendChild(panel);
+    // Wire controls now that elements exist
+    panel.querySelector('#faqCloseBtn')?.addEventListener('click', () => closeFaqPanel());
+    panel.querySelector('#faqClearBtn')?.addEventListener('click', () => clearFaqChat());
+    panel.querySelector('#faqQuestions')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-faq-id]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-faq-id');
+      const item = FAQ_QA.find(x => x.id === id);
+      if (!item) return;
+      appendFaqMessage('user', item.q);
+      setTimeout(() => appendFaqMessage('bot', item.a), 200);
+    });
+    if (window.lucide?.createIcons) window.lucide.createIcons();
+  }
+  console.log('🟡 Opening FAQ panel');
+  panel.classList.remove('hidden');
+  renderFaqQuestions();
+  faqWelcomeIfEmpty();
+};
+
+window.closeFaqPanel = function closeFaqPanel() {
+  q('faqPanel')?.classList.add('hidden');
+};
+
+window.clearFaqChat = function clearFaqChat() {
+  const chat = q('faqChat');
+  if (!chat) return;
+  chat.innerHTML = '';
+  faqWelcomeIfEmpty();
+};
+
+// Bind FAQ controls (in case they exist on load)
+setTimeout(() => {
+  q('faqCloseBtn')?.addEventListener('click', () => closeFaqPanel());
+  q('faqClearBtn')?.addEventListener('click', () => clearFaqChat());
+  q('faqQuestions')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-faq-id]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-faq-id');
+    const item = FAQ_QA.find(x => x.id === id);
+    if (!item) return;
+    appendFaqMessage('user', item.q);
+    setTimeout(() => appendFaqMessage('bot', item.a), 250);
+  });
+}, 0);
+
 // ─────────── FAB MULTI‑PICKER (Locate/Add/Theme) ───────────
 const FabState = { action: 'locate' };
 
 function updateFabMainIcon(icon) {
   const holder = document.getElementById('fabMainIcon');
   if (!holder) return;
-  holder.innerHTML = `<i data-lucide="${icon}"></i>`;
-  if (window.lucide?.createIcons) window.lucide.createIcons();
+  if (icon === '__faq__') {
+    holder.innerHTML = `<span class="fab-icon" style="display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:9999px;background:#fff;color:#000;font-weight:700;border:2px solid #eab308;">?</span>`;
+  } else {
+    holder.innerHTML = `<i data-lucide="${icon}"></i>`;
+    if (window.lucide?.createIcons) window.lucide.createIcons();
+  }
 }
 
 function updateFabThemeIcon(theme) {
@@ -96,6 +251,7 @@ function setFabAction(action) {
   FabState.action = action;
   let icon = 'crosshair';
   if (action === 'add') icon = 'plus';
+  if (action === 'faq') icon = '__faq__';
   if (action === 'theme') {
     const theme = localStorage.getItem(THEME_KEY) || 'dark';
     icon = (theme === 'light') ? 'moon-star' : 'sun';
@@ -113,6 +269,19 @@ function doFabAction() {
       break;
     case 'theme':
       window.toggleTheme?.();
+      break;
+    case 'faq':
+      try {
+        const panel = document.getElementById('faqPanel');
+        const isHidden = !panel || panel.classList.contains('hidden');
+        if (isHidden) {
+          console.log('🟡 FAB main clicked (FAQ): opening');
+          window.openFaqPanel?.();
+        } else {
+          console.log('🟡 FAB main clicked (FAQ): closing');
+          window.closeFaqPanel?.();
+        }
+      } catch (_) {}
       break;
     case 'locate':
     default: {
@@ -184,6 +353,12 @@ function initFabMultiPicker() {
     btn.addEventListener('click', (e) => {
       const action = btn.getAttribute('data-action');
       if (action === 'slot3' || action === 'slot4') return; // reserved
+      if (action === 'faq') {
+        setFabAction('faq');
+        try { window.openFaqPanel?.(); } catch {}
+        closeMenu();
+        return;
+      }
       setFabAction(action);
       closeMenu();
     });
@@ -2549,6 +2724,79 @@ function bindUIButtons() {
     document.getElementById('requestModal')?.classList.add('hidden');
   });
 
+  // ───────── Profile photo control (pencil) ─────────
+  const editAvatar = document.getElementById('editAvatarBtn');
+  if (editAvatar) {
+    editAvatar.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const name = (localStorage.getItem('memberName') || '').trim();
+      if (!name) return alert('Please log in first.');
+      const choice = prompt('Paste an image URL (https://…) or leave blank to select a local file.');
+      let url = (choice || '').trim();
+      if (!url) {
+        // Fallback: pick local file and convert to data URL (small images only)
+        try {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*';
+          input.onchange = () => {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            if (file.size > 400 * 1024) {
+              alert('Please choose an image under 400KB (for now).');
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result;
+              try {
+                localStorage.setItem('memberAvatarUrl', dataUrl);
+                updateMemberDirectory(name, { avatarUrl: dataUrl });
+                showMemberOptions();
+              } catch (e) {
+                alert('Could not save photo to local storage.');
+              }
+            };
+            reader.readAsDataURL(file);
+          };
+          input.click();
+        } catch (e) {
+          alert('Could not open file picker. Please paste a URL instead.');
+        }
+        return;
+      }
+      // Basic URL validation
+      if (!/^https?:\/\//i.test(url) && !url.startsWith('data:image/')) {
+        return alert('Please enter a valid image URL (https://...) or choose a file.');
+      }
+      try {
+        localStorage.setItem('memberAvatarUrl', url);
+        updateMemberDirectory(name, { avatarUrl: url });
+        showMemberOptions();
+      } catch (e) {
+        alert('Could not save photo.');
+      }
+    });
+  }
+
+  // Long‑press on avatar triggers the same edit flow
+  const avatarEl = document.getElementById('memberAvatar');
+  if (avatarEl && editAvatar) {
+    let lpTimer = null;
+    const startLP = () => {
+      clearTimeout(lpTimer);
+      lpTimer = setTimeout(() => { try { editAvatar.click(); } catch {} }, 600);
+    };
+    const cancelLP = () => { clearTimeout(lpTimer); lpTimer = null; };
+    avatarEl.addEventListener('mousedown', startLP);
+    avatarEl.addEventListener('touchstart', startLP, { passive: true });
+    avatarEl.addEventListener('mouseup', cancelLP);
+    avatarEl.addEventListener('mouseleave', cancelLP);
+    avatarEl.addEventListener('touchend', cancelLP);
+    avatarEl.addEventListener('touchcancel', cancelLP);
+  }
+
   document.getElementById('submitRequest')?.addEventListener('click', () => {
     // Ensure upgraded fields
     window.upgradeRequestModal?.();
@@ -2673,6 +2921,8 @@ function bindUIButtons() {
       document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
       document.getElementById('activitySidebar')?.classList.add('translate-x-full');
       document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+      // Refresh avatar/name on open
+      try { showMemberOptions(); } catch {}
       pm.classList.remove('hidden');
       window.updateLockedOverlays?.();
       // Refresh follow counts when opening profile
@@ -3458,6 +3708,7 @@ window.getMemberProfile = (name = '') => {
   let streak = stored.streak;
   let community = stored.community;
   let status = stored.status;
+  let avatarUrl = stored.avatarUrl;
 
   // Treat as current user if keys match closely (email vs display name etc.)
   const localKeyBase = currentKey.split('@')[0] || currentKey;
@@ -3466,6 +3717,7 @@ window.getMemberProfile = (name = '') => {
     if (!Number.isNaN(localStreak)) streak = localStreak;
     community = localStorage.getItem('memberCommunity') || community;
     status = localStorage.getItem('memberCommunityStatus') || status;
+    avatarUrl = localStorage.getItem('memberAvatarUrl') || avatarUrl;
   }
 
   return {
@@ -3473,7 +3725,8 @@ window.getMemberProfile = (name = '') => {
     level: (record.level || 'free').toString(),
     streak: typeof streak === 'number' ? streak : (streak ? Number(streak) : 0),
     community: community || 'No community selected',
-    status: status || 'Guest'
+    status: status || 'Guest',
+    avatarUrl: avatarUrl || record.avatarUrl || ''
   };
 };
 
@@ -4286,9 +4539,22 @@ function showMemberOptions() {
 
   const nameEl = document.getElementById('memberName');
   if (nameEl) nameEl.textContent = name;
-  // Avatar initial
-  const av = document.getElementById('memberAvatar');
-  if (av) av.textContent = (name || 'A').slice(0,1).toUpperCase();
+  // Avatar: image url or initial
+  try {
+    const profile = window.getMemberProfile(name);
+    const av = document.getElementById('memberAvatar');
+    if (av) {
+      if (profile.avatarUrl) {
+        av.style.backgroundImage = `url('${profile.avatarUrl}')`;
+        av.style.backgroundSize = 'cover';
+        av.style.backgroundPosition = 'center';
+        av.textContent = '';
+      } else {
+        av.style.backgroundImage = '';
+        av.textContent = (name || 'A').slice(0,1).toUpperCase();
+      }
+    }
+  } catch {}
   const streak = localStorage.getItem('streak') || 0;
   window.memberStats = window.memberStats || {};
   window.memberStats.streak = Number(streak) || 0;

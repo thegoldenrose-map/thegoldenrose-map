@@ -321,3 +321,29 @@
     <p class="text-yellow-600 italic">No favourites yet.</p>
   </div>
 </div>
+
+<!-- 🔸 FAQ Panel (chat-like with pre-made questions) -->
+<div id="faqPanel" class="hidden fixed bottom-24 right-4 z-[9999] w-80 max-h-[70vh] bg-black/90 backdrop-blur-md border border-yellow-500/50 rounded-2xl shadow-xl p-3 text-yellow-200 flex flex-col">
+  <div class="flex items-center justify-between mb-1">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-full border border-yellow-500/60 bg-black text-yellow-300 flex items-center justify-center text-[12px]">?</div>
+      <h3 class="text-sm font-semibold">FAQ & Help</h3>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="faqClearBtn" type="button" class="text-[11px] px-2 py-1 rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black">Clear</button>
+      <button id="faqCloseBtn" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black"><i data-lucide="x"></i></button>
+    </div>
+  </div>
+  <div id="faqChat" class="flex-1 overflow-y-auto space-y-2 p-1 mt-1"></div>
+  <div class="mt-2 border-t border-yellow-500/30 pt-2">
+    <div class="text-[11px] uppercase tracking-[0.2em] text-yellow-500/80 mb-1">Questions</div>
+    <div id="faqQuestions" class="grid grid-cols-2 gap-2">
+      <!-- Buttons populated by script.js -->
+    </div>
+  </div>
+  <!-- Optional tiny footer note -->
+  <div class="mt-2 text-[10px] text-yellow-500/70">Tap a question to see an answer.</div>
+  <script>
+    // No inline logic; all wired in script.js
+  </script>
+</div>

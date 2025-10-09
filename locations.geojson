@@ -419,6 +419,22 @@
           51.09844790976567
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Chequers Inn",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03346903626072617,
+          51.09892949866685
+        ]
+      }
     }
   ]
 }

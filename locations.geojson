@@ -403,6 +403,22 @@
           51.098531487439686
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Swan",
+        "description": "",
+        "category": "🚜 FARMS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.032908897927654834,
+          51.09844790976567
+        ]
+      }
     }
   ]
 }

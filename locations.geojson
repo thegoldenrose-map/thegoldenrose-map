@@ -327,54 +327,6 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Y",
-        "description": "",
-        "category": "🛍️ SHOPS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03344785205354128,
-          51.09791141013818
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "Y",
-        "description": "",
-        "category": "🛍️ SHOPS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03344785205354128,
-          51.09791141013818
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "n",
-        "description": "",
-        "category": "🏛️ LANDMARKS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.032713348256237396,
-          51.095797816317116
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "title": "Brambletye",
         "description": "",
         "category": "🍺 PUB",

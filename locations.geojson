@@ -339,6 +339,22 @@
           51.099591351380326
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Swan",
+        "description": "",
+        "category": "🍺 PUB",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03274948163291924,
+          51.09859153705062
+        ]
+      }
     }
   ]
 }

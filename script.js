@@ -19,7 +19,7 @@ const BADGE_DEFS = [
 ];
 
 // Fallback categories for forms before map data loads
-const DEFAULT_CATEGORIES = ['cafes','pubs','events','farms','shops','services','courses','jobs','education','markets'];
+const DEFAULT_CATEGORIES = ['cafes','pubs','events','reports','farms','shops','services','courses','jobs','education','markets'];
 
 // Details for the special verified Tablehurst Farm pin
 const TABLEHURST_DETAILS = {
@@ -223,6 +223,8 @@ setTimeout(() => {
 
 // ─────────── FAB MULTI‑PICKER (Locate/Add/Theme) ───────────
 const FabState = { action: 'locate' };
+// Tracks intent across crosshair flow (e.g., 'event' or 'report')
+window._pinIntent = null;
 
 function updateFabMainIcon(icon) {
   const holder = document.getElementById('fabMainIcon');
@@ -252,6 +254,8 @@ function setFabAction(action) {
   let icon = 'crosshair';
   if (action === 'add') icon = 'plus';
   if (action === 'faq') icon = '__faq__';
+  if (action === 'event') icon = 'calendar-plus';
+  if (action === 'report') icon = 'flag';
   if (action === 'theme') {
     const theme = localStorage.getItem(THEME_KEY) || 'dark';
     icon = (theme === 'light') ? 'moon-star' : 'sun';
@@ -264,8 +268,16 @@ function doFabAction() {
   switch (FabState.action) {
     case 'add':
       // Enter crosshair placement mode; confirm opens title modal
-      try { Crosshair.enter(); }
-      catch (_) { window.forceShowAddLocation?.(); }
+      try { window._pinIntent = null; Crosshair.enter(); }
+      catch (_) { window._pinIntent = null; window.forceShowAddLocation?.(); }
+      break;
+    case 'event':
+      try { window._pinIntent = 'event'; Crosshair.enter(); }
+      catch (_) { window._pinIntent = 'event'; window.forceShowAddLocation?.(); }
+      break;
+    case 'report':
+      try { window._pinIntent = 'report'; Crosshair.enter(); }
+      catch (_) { window._pinIntent = 'report'; window.forceShowAddLocation?.(); }
       break;
     case 'theme':
       window.toggleTheme?.();
@@ -377,7 +389,7 @@ function initFabMultiPicker() {
 
 // Populate category selects in Add Location forms using map-derived categories
 window.populateCategorySelects = function () {
-  const cats = (window.mapCategories && window.mapCategories.length ? window.mapCategories : DEFAULT_CATEGORIES).slice();
+  const cats = Array.from(new Set([...(DEFAULT_CATEGORIES || []), ...((window.mapCategories && window.mapCategories.length) ? window.mapCategories : [])]));
   if (!cats.length) return;
   const fill = (sel) => {
     if (!sel) return;
@@ -389,6 +401,17 @@ window.populateCategorySelects = function () {
   fill(document.getElementById('locationCoords'));
   fill(document.getElementById('locationCategory'));
 };
+
+function prefillCategoryForIntent(intent) {
+  if (!intent) return;
+  const cat = intent === 'event' ? 'events' : (intent === 'report' ? 'reports' : '');
+  if (!cat) return;
+  try { window.populateCategorySelects?.(); } catch {}
+  const selA = document.getElementById('locationCoords');
+  const selB = document.getElementById('locationCategory');
+  if (selA) selA.value = cat;
+  if (selB) selB.value = cat;
+}
 
 function refreshFabMenuVisibility() {
   const menu = document.getElementById('fabMenu');
@@ -428,8 +451,10 @@ const Crosshair = {
     document.body.appendChild(wrap);
     this.el = wrap;
     this.info = wrap.querySelector('#pinReadout');
-    wrap.querySelector('#pinConfirm').addEventListener('click', () => this.confirm());
-    wrap.querySelector('#pinCancel').addEventListener('click', () => this.exit());
+    const onConfirm = (e) => { try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch(_) {} this.confirm(); };
+    const onCancel  = (e) => { try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch(_) {} this.exit(); };
+    wrap.querySelector('#pinConfirm').addEventListener('click', onConfirm);
+    wrap.querySelector('#pinCancel').addEventListener('click', onCancel);
   },
   enter() {
     this.init();
@@ -460,6 +485,20 @@ const Crosshair = {
     this.exit();
     // Open the Add Location modal for title/details
     window.forceShowAddLocation?.();
+    // Prefill category (events/reports) if intent is set
+    try {
+      setTimeout(() => {
+        prefillCategoryForIntent(window._pinIntent);
+        // Focus name field for quick entry
+        const nameA = document.getElementById('locationName');
+        const nameB = document.getElementById('locationTitle');
+        (nameA || nameB)?.focus?.();
+        // If modal failed to open, try once more
+        const modal = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
+        const isHidden = modal ? modal.classList.contains('hidden') : true;
+        if (isHidden) setTimeout(() => window.forceShowAddLocation?.(), 100);
+      }, 0);
+    } catch {}
   }
 };
 
@@ -1088,7 +1127,9 @@ function bindSubmissionForm() {
 
     const sanitize = (s='') => s.replace(/[<>]/g, '').trim();
     const name = sanitize(document.getElementById('locationName').value).slice(0,120);
-    const location = sanitize(document.getElementById('submissionLocation').value).slice(0,160);
+    const address = sanitize(document.getElementById('submissionLocation').value).slice(0,160);
+    const descOpt = sanitize(document.getElementById('submissionDescription')?.value || '').slice(0,280);
+    const location = descOpt ? `${address} — ${descOpt}`.slice(0,320) : address;
     const category = sanitize(document.getElementById('locationCoords').value).slice(0,80);
 
     // Stash details for potential auto-add (admin)
@@ -1128,7 +1169,7 @@ function bindLocationFormFallback() {
 
     const S = (s='') => s.replace(/[<>]/g, '').trim();
     const name = S(document.getElementById('locationTitle')?.value || '').slice(0,120);
-    const location = S(document.getElementById('locationShortDesc')?.value || '').slice(0,160); // may be missing; fine
+    const location = S(document.getElementById('locationShortDesc')?.value || '').slice(0,320); // optional
     const category = S(document.getElementById('locationCategory')?.value || '').slice(0,80);
 
     // Stash details for potential auto-add (admin)
@@ -1326,6 +1367,17 @@ function handleSubmissionResponse(data) {
             jsonp(url);
           }
         } catch (e2) { console.warn('GeoJSON persist call failed:', e2); }
+      } else if (last && pin && typeof pin.lat === 'number' && typeof pin.lng === 'number') {
+        // Non-admin: show a temporary local marker as immediate feedback
+        try {
+          addLocationToMapImmediate({
+            title: last.name || 'Submitted Location',
+            description: (last.location ? `${last.location} — ` : '') + 'Pending review',
+            category: last.category || 'General',
+            lat: pin.lat,
+            lng: pin.lng
+          });
+        } catch (e3) { console.warn('Temp pin add failed:', e3); }
       }
     } catch (e) { console.warn('Admin auto-add failed:', e); }
   } else {
@@ -1467,14 +1519,14 @@ function renderInboxList() {
     return { name: c.name, snippet, unread, ts: last.ts || 0 };
   }).sort((a,b)=> b.ts - a.ts);
   if (!entries.length) {
-    list.innerHTML = '<div style="padding:10px 8px;color:#facc15;opacity:.8;">No messages yet.</div>';
+    list.innerHTML = '<div style="padding:10px 8px;color:#eab308;opacity:1;">No messages yet.</div>';
     return;
   }
   list.innerHTML = entries.map(e => `
     <button class="inbox-item" data-dm-name="${e.name.replace(/\"/g,'&quot;')}" style="width:100%;text-align:left;background:transparent;border:none;padding:8px 10px;border-radius:10px;display:flex;align-items:center;gap:8px;cursor:pointer;">
       <div style="flex:1;">
-        <div style="color:#fef3c7;font-weight:600;">${e.name}</div>
-        <div style="color:#d1d5db;font-size:12px;opacity:.85;">${e.snippet || '&nbsp;'}</div>
+        <div style="color:#eab308;font-weight:600;">${e.name}</div>
+        <div style="color:#eab308;font-size:12px;opacity:1;">${e.snippet || '&nbsp;'}</div>
       </div>
       ${e.unread ? `<span style=\"min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;background:#eab308;color:#000;font-size:11px;font-weight:700;\">${e.unread}</span>` : ''}
       <span class="inbox-del" data-dm-del="${e.name.replace(/\"/g,'&quot;')}" title="Delete" style="margin-left:6px;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;border:1px solid rgba(234,179,8,0.5);color:#facc15;">×</span>
@@ -1561,7 +1613,11 @@ function addLocationToMapImmediate({ title, description = '', category = 'Genera
     el.dataset.adminPin = '1';
     el.style.width = '24px';
     el.style.height = '24px';
-    el.style.backgroundImage = 'url(flower.png)';
+    const catLower = (category || '').toString().toLowerCase();
+    const isEvent = (catLower === 'events' || catLower === 'event');
+    const bgImg = isEvent ? 'events.icon.png' : 'flower.png';
+    el.style.backgroundImage = `url(${bgImg})`;
+    if (isEvent) el.classList.add('event-marker');
     el.style.backgroundSize = 'cover';
     el.style.cursor = 'pointer';
 
@@ -1776,7 +1832,7 @@ function renderChatMessages(name) {
   body.innerHTML = list.map(m => {
     const align = m.from === 'me' ? 'flex-end' : 'flex-start';
     const bg = m.from === 'me' ? '#eab308' : '#111';
-    const fg = m.from === 'me' ? '#000' : '#fef9c3';
+    const fg = m.from === 'me' ? '#000' : '#eab308'; // or '#FFD700'
     const safe = (m.text || '').replace(/</g,'&lt;');
     return `<div style="display:flex;justify-content:${align};margin:6px 0;">
       <div style=\"max-width:78%;padding:8px 10px;border-radius:14px;border:1px solid rgba(234,179,8,0.4);background:${bg};color:${fg};\">${safe}</div>
@@ -2603,6 +2659,17 @@ function bindActivityPostForm() {
 function bindUIButtons() {
   console.log('🔗 bindUIButtons() running');
 
+  // Bottom nav active state helper
+  window.setActiveNav = function setActiveNav(id) {
+    try {
+      document.querySelectorAll('#bottom-nav .pill-item').forEach(el => el.classList.remove('active'));
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      const wrap = btn.closest('.pill-item');
+      if (wrap) wrap.classList.add('active');
+    } catch {}
+  };
+
   bindSubmissionForm();
   // Also bind a fallback Add Location form if present
   try { bindLocationFormFallback(); } catch {}
@@ -2898,6 +2965,7 @@ function bindUIButtons() {
   });
 
   document.getElementById('marketplaceBtn')?.addEventListener('click', () => {
+    window.setActiveNav?.('marketplaceBtn');
     // Close other sidebars first, then open marketplace
     document.getElementById('activitySidebar')?.classList.add('translate-x-full');
     document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
@@ -2917,6 +2985,7 @@ function bindUIButtons() {
     if (!pm) return;
     const opening = pm.classList.contains('hidden');
     if (opening) {
+      window.setActiveNav?.('profileToggle');
       // Close sidebars when opening profile
       document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
       document.getElementById('activitySidebar')?.classList.add('translate-x-full');
@@ -2942,6 +3011,7 @@ function bindUIButtons() {
   // No guest-only request/favourite/add location entries
 
   document.getElementById('activityBtn')?.addEventListener('click', () => {
+    window.setActiveNav?.('activityBtn');
     window.keepActivityOpen = true;
     document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
     document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
@@ -2952,6 +3022,7 @@ function bindUIButtons() {
   });
 
   document.getElementById('entertainmentBtn')?.addEventListener('click', () => {
+    window.setActiveNav?.('entertainmentBtn');
     document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
     if (!window.keepActivityOpen) document.getElementById('activitySidebar')?.classList.add('translate-x-full');
     document.getElementById('entertainmentSidebar')?.classList.remove('translate-x-full');
@@ -3433,6 +3504,7 @@ window.categoryIconMap = {
     pubs: '🍺',
     pub: '🍺',
     events: '🎪',
+    reports: '🚩',
     farms: '🌾',
     farm: '🌾',
     shops: '🛍️',
@@ -3496,7 +3568,12 @@ if (filterBox) {
         el.className = `marker${isVerified ? ' verified-marker' : ''}`;
         el.style.width = isVerified ? '30px' : '24px';
         el.style.height = isVerified ? '30px' : '24px';
-        el.style.backgroundImage = 'url(flower.png)';
+        // Use a distinct icon for events
+        const cat = (feature.properties.category || '').toString().toLowerCase();
+        const isEvent = (cat === 'events' || cat === 'event');
+        const bgImg = isEvent ? 'events.icon.png' : 'flower.png';
+        el.style.backgroundImage = `url(${bgImg})`;
+        if (isEvent) el.classList.add('event-marker');
         el.style.backgroundSize = 'cover';
         el.style.cursor = 'pointer';
 
@@ -4923,9 +5000,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Debug helpers: force-show modals if needed
   window.forceShowAddLocation = function () {
-    // Prefer the bound submission modal if present
-    const modal = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
-    if (!modal) return;
+    // Prefer the bound submission modal if present; otherwise build a fallback
+    let modal = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
+    if (!modal) {
+      console.warn('Add Location modal not found — creating fallback');
+      modal = document.createElement('div');
+      modal.id = 'addLocationModal';
+      modal.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] w-[22rem] bg-black border border-yellow-500 rounded-xl shadow-lg p-6 text-yellow-400 space-y-4';
+      modal.innerHTML = `
+        <button class="absolute top-3 right-3 text-yellow-400 hover:text-yellow-200 text-2xl" onclick="this.closest('#addLocationModal')?.classList.add('hidden')">&times;</button>
+        <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
+        <form id="locationForm" class="space-y-3">
+          <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
+          <textarea id="locationShortDesc" rows="3" placeholder="Description (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600"></textarea>
+          <select id="locationCategory" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" required>
+            <option value="" disabled selected>Select category…</option>
+          </select>
+          <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
+        </form>`;
+      document.body.appendChild(modal);
+      try { window.populateCategorySelects?.(); } catch {}
+      try { bindLocationFormFallback(); } catch {}
+    }
     modal.classList.remove('hidden');
     modal.style.display = 'block';
     modal.style.opacity = '1';
@@ -5106,6 +5202,7 @@ if (typeof window.forceShowAddLocation !== 'function') {
         <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
         <form id="locationForm" class="space-y-3">
           <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
+          <textarea id="locationShortDesc" rows="3" placeholder="Description (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600"></textarea>
           <select id="locationCategory" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" required>
             <option value="" disabled selected>Select category…</option>
           </select>

@@ -252,7 +252,8 @@
     <!-- Honeypot field for spam bots -->
     <input type="text" name="company" id="hp-submission" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" aria-hidden="true">
     <input type="text" id="locationName" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Name" required>
-    <input type="text" id="submissionLocation" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Location" required>
+    <input type="text" id="submissionLocation" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Location / Address" required>
+    <textarea id="submissionDescription" rows="3" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 placeholder-yellow-400 text-white focus:outline-none" placeholder="Description (optional)"></textarea>
     <select id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 text-yellow-200 focus:outline-none" required>
       <option value="" disabled selected>Select category…</option>
     </select>
@@ -300,6 +301,7 @@
      <h3 class="text-lg font-semibold text-yellow-300">➕ Add Location</h3>
   <form id="locationForm" class="space-y-3">
     <input id="locationTitle" type="text" placeholder="Name" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600">
+    <textarea id="locationShortDesc" rows="3" placeholder="Description (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200 placeholder-yellow-600"></textarea>
     <select id="locationCategory" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" required>
       <option value="" disabled selected>Select category…</option>
     </select>

@@ -46,9 +46,10 @@
         </div>
       </div>
     </div>
-    <div class="flex items-center gap-3 pr-1">
+    <div class="flex items-center gap-3 pr-1 relative">
       <button id="activityInfoBtn" type="button" class="help-badge w-8 h-8 rounded-full border border-yellow-500/50 bg-black/80 text-yellow-300 hover:bg-yellow-500 hover:text-black flex items-center justify-center text-[12px] shrink-0 z-50 shadow-md">?</button>
-      <button onclick="document.getElementById('activitySidebar').classList.add('translate-x-full')" class="text-yellow-500 z-50 text-2xl font-bold leading-none">×</button>
+      <!-- Force the close button to always be visible on mobile -->
+      <button onclick="document.getElementById('activitySidebar').classList.add('translate-x-full')" class="absolute right-0 top-0 text-yellow-500 z-50 text-2xl font-bold leading-none px-1">×</button>
     </div>
   </div>
 </div>

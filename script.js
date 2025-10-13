@@ -51,7 +51,8 @@ window.applyTheme = function(theme) {
   try {
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
-    meta.setAttribute('content', normalized === 'light' ? '#fff8e1' : '#000000');
+    // Force dark status bar to avoid the white top bar look on iOS
+    meta.setAttribute('content', '#000000');
   } catch {}
 };
 

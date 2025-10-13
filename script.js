@@ -1646,7 +1646,7 @@ function addLocationToMapImmediate({ title, description = '', category = 'Genera
         </div>
       </div>`;
 
-    const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(popupContent);
+  const popup = new mapboxgl.Popup({ offset: 110, closeButton: false }).setHTML(popupContent);
     const marker = new mapboxgl.Marker(el).setLngLat(coords).setPopup(popup).addTo(map);
     marker.getElement().addEventListener('click', () => setTimeout(() => window.lucide?.createIcons?.(), 50));
 
@@ -3305,7 +3305,8 @@ window.handleEntertainment = function (rawRows) {
 // Hide the floating locate button and bottom pill when any sidebar is open
 (function initOverlayAwareVisibility() {
   const locateBtn = document.getElementById('floatingLocateBtn');
-  if (!locateBtn) return;
+  const bottomNav = document.getElementById('bottom-nav');
+  if (!locateBtn && !bottomNav) return;
 
   const sidebars = [
     document.getElementById('activitySidebar'),
@@ -3316,6 +3317,7 @@ window.handleEntertainment = function (rawRows) {
   const update = () => {
     const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'));
     if (locateBtn) locateBtn.style.display = anyOpen ? 'none' : 'flex';
+    if (bottomNav) bottomNav.style.display = anyOpen ? 'none' : 'block';
   };
 
   const observer = new MutationObserver(update);
@@ -3659,7 +3661,7 @@ if (filterBox) {
 
         
 
-   const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+   const popup = new mapboxgl.Popup({ offset: 110, closeButton: false })
   .setHTML(popupContent);
 
 

@@ -47,6 +47,12 @@ window.applyTheme = function(theme) {
   try { updateFabThemeIcon?.(normalized); } catch (_) {}
   // Update FAQ bubble readability
   try { updateFaqTheme?.(normalized); } catch (_) {}
+  // Update browser theme color to remove white status bar on iOS
+  try {
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
+    meta.setAttribute('content', normalized === 'light' ? '#fff8e1' : '#000000');
+  } catch {}
 };
 
 window.toggleTheme = function () {
@@ -3298,8 +3304,7 @@ window.handleEntertainment = function (rawRows) {
 // Hide the floating locate button and bottom pill when any sidebar is open
 (function initOverlayAwareVisibility() {
   const locateBtn = document.getElementById('floatingLocateBtn');
-  const bottomNav = document.getElementById('bottom-nav');
-  if (!locateBtn && !bottomNav) return;
+  if (!locateBtn) return;
 
   const sidebars = [
     document.getElementById('activitySidebar'),
@@ -3310,7 +3315,6 @@ window.handleEntertainment = function (rawRows) {
   const update = () => {
     const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'));
     if (locateBtn) locateBtn.style.display = anyOpen ? 'none' : 'flex';
-    if (bottomNav) bottomNav.style.display = anyOpen ? 'none' : 'block';
   };
 
   const observer = new MutationObserver(update);

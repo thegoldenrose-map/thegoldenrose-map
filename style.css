@@ -26,7 +26,7 @@ body.theme-light {
   top: 0;
   left: 0;
   right: 0;
-  bottom: 60px;
+  bottom: 72px; /* leave room for floating nav */
   z-index: 0;
   height: 100vh;
 }
@@ -179,11 +179,16 @@ body.theme-light .search-wrapper input {
   box-shadow: inset 0 0 0 1px rgba(234,179,8,0.15), 0 0 8px rgba(234, 179, 8, 0.18);
 }
 
+/* Keep Mapbox controls visible above the pill */
+.mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right {
+  margin-bottom: 88px !important;
+}
+
 /* Responsive tweaks */
 @media (max-width: 640px) {
   /* Leave space for the FAB on the right and compress spacing */
   #bottom-nav .bottom-pill {
-    width: min(92%, 900px);
+    width: min(94%, 900px);
     margin-right: auto; /* center pill */
     grid-template-columns: auto auto minmax(108px, 1fr) auto auto;
     gap: 6px;
@@ -199,7 +204,26 @@ body.theme-light .search-wrapper input {
 /* Raise FAB a bit on all devices and slightly more on mobile */
 body #floatingLocateBtn { bottom: 6.25rem !important; }
 @media (max-width: 640px) {
-  body #floatingLocateBtn { bottom: 7.75rem !important; right: 0.75rem; }
+  body #floatingLocateBtn { bottom: 8.25rem !important; right: 0.75rem; }
+}
+
+/* Responsive verified card: compact on small screens */
+@media (max-width: 480px) {
+  .custom-popup { width: min(86vw, 320px); }
+  .custom-popup.verified, .vcard { width: min(92vw, 360px); }
+  .custom-popup.verified {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'badge'
+      'image'
+      'title'
+      'desc'
+      'hours'
+      'actions';
+  }
+  .custom-popup.verified .hero-image { width: 100%; height: 120px; }
+  .custom-popup .title { font-size: 0.95rem; }
+  .custom-popup .desc { font-size: 0.8rem; }
 }
 
 /* Ensure the pill search cell can shrink on small screens */

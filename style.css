@@ -185,16 +185,25 @@ body.theme-light .search-wrapper input {
   #bottom-nav .bottom-pill {
     width: calc(100% - 88px);
     margin-right: 72px; /* clear the floating FAB */
-    grid-template-columns: 1fr 1fr minmax(118px, 2fr) 1fr 1fr;
+    grid-template-columns: auto auto minmax(108px, 1fr) auto auto;
     gap: 6px;
     padding: 8px 10px;
   }
-  #bottom-nav .icon-wrap { width: 32px; height: 32px; }
+  #bottom-nav .icon-wrap { width: 30px; height: 30px; }
   #bottom-nav .icon-wrap svg { width: 18px; height: 18px; }
-  #bottom-nav .label { font-size: 11px; }
+  #bottom-nav .label { display: none; }
   .search-wrapper input { padding: 7px 36px 7px 12px; font-size: 14px; }
   #filterBtn { width: 30px; height: 30px; right: 4px; }
 }
+
+/* Raise FAB a bit on all devices and slightly more on mobile */
+body #floatingLocateBtn { bottom: 5.5rem !important; }
+@media (max-width: 640px) {
+  body #floatingLocateBtn { bottom: 6.5rem !important; right: 0.75rem; }
+}
+
+/* Ensure the pill search cell can shrink on small screens */
+#bottom-nav .pill-search { min-width: 108px; }
 
 @media (min-width: 1024px) {
   #bottom-nav .bottom-pill { width: min(86%, 960px); }

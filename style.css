@@ -212,8 +212,8 @@ body #floatingLocateBtn { bottom: 6.25rem !important; }
 
 /* Responsive verified card: compact on small/medium screens */
 @media (max-width: 768px) {
-  .custom-popup { width: min(84vw, 300px); }
-  .custom-popup.verified, .vcard { width: min(90vw, 340px); }
+  .custom-popup { width: min(82vw, 290px); }
+  .custom-popup.verified, .vcard { width: min(86vw, 320px); }
   .custom-popup.verified {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -224,17 +224,17 @@ body #floatingLocateBtn { bottom: 6.25rem !important; }
       'hours'
       'actions';
   }
-  .custom-popup.verified .hero-image { width: 100%; height: 110px; }
-  .custom-popup .title { font-size: 0.92rem; }
-  .custom-popup .desc { font-size: 0.78rem; }
+  .custom-popup.verified .hero-image { width: 100%; height: 100px; }
+  .custom-popup .title { font-size: 0.88rem; }
+  .custom-popup .desc { font-size: 0.76rem; }
   /* vcard responsive stack */
   .vgrid { grid-template-columns: 1fr; gap: 10px; }
-  .vhero { height: 120px; }
-  .vtitle { font-size: 15px; }
-  .vdesc { font-size: 12.5px; line-height: 1.35; }
+  .vhero { height: 100px; }
+  .vtitle { font-size: 14px; }
+  .vdesc { font-size: 12px; line-height: 1.32; }
   .vicon { width: 28px; height: 28px; }
   .vactions { grid-template-columns: 1fr; }
-  .vbtn { padding: 9px 10px; font-size: 14px; }
+  .vbtn { padding: 8px 10px; font-size: 13.5px; }
 }
 
 /* Ensure the pill search cell can shrink on small screens */

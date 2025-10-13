@@ -3305,8 +3305,7 @@ window.handleEntertainment = function (rawRows) {
 // Hide the floating locate button and bottom pill when any sidebar is open
 (function initOverlayAwareVisibility() {
   const locateBtn = document.getElementById('floatingLocateBtn');
-  const bottomNav = document.getElementById('bottom-nav');
-  if (!locateBtn && !bottomNav) return;
+  if (!locateBtn) return;
 
   const sidebars = [
     document.getElementById('activitySidebar'),
@@ -3317,7 +3316,6 @@ window.handleEntertainment = function (rawRows) {
   const update = () => {
     const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'));
     if (locateBtn) locateBtn.style.display = anyOpen ? 'none' : 'flex';
-    if (bottomNav) bottomNav.style.display = anyOpen ? 'none' : 'block';
   };
 
   const observer = new MutationObserver(update);
@@ -5298,3 +5296,49 @@ document.addEventListener('click', (ev) => {
     alert('Failed to submit request.');
   }
 });
+  // Filter button: explicit binding to avoid delegated issues on iOS
+  try {
+    const fb = document.getElementById('filterBtn');
+    if (fb) {
+      fb.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openFilterPanel(); });
+    }
+  } catch {}
+// Dedicated filter panel open helper (used by explicit binding and delegated fallback)
+function openFilterPanel() {
+  try {
+    const s = document.getElementById('suggestions');
+    if (s) { s.classList.add('hidden'); s.style.display = 'none'; }
+  } catch {}
+  const panels = document.querySelectorAll('#filterPanel');
+  if (panels.length === 0) {
+    const shell = document.createElement('div');
+    shell.id = 'filterPanel';
+    shell.className = 'fixed bottom-28 left-6 z-[100200] w-[18rem]';
+    shell.innerHTML = `
+      <div class="rounded-2xl border border-yellow-500/50 bg-black/90 px-4 py-5 text-yellow-200 shadow-[0_18px_32px_rgba(255,215,0,0.12)]">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <p class="text-[10px] uppercase tracking-[0.35em] text-yellow-500/70">Filters</p>
+            <h2 class="text-lg font-semibold text-yellow-100">Refine Map</h2>
+          </div>
+          <button id="closeFilterPanel" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black transition">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-yellow-500/80 mb-3">
+          <span>Categories</span>
+          <button type="button" class="text-yellow-400 hover:text-yellow-200" onclick="showAllLocations()">Reset</button>
+        </div>
+        <div id="categoryFilters" class="max-h-44 overflow-y-auto pr-1 mb-4 space-y-2"></div>
+        <button onclick="filterByCategory()" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
+          <i data-lucide="check"></i>
+          <span>Apply</span>
+        </button>
+      </div>`;
+    document.body.appendChild(shell);
+    window.lucide?.createIcons?.();
+    setTimeout(() => window.populateCategoryFilters?.(), 0);
+  } else {
+    panels.forEach(p => p.classList.remove('hidden'));
+  }
+}

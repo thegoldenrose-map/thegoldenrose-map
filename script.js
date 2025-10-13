@@ -5270,7 +5270,8 @@ function openFilterPanel() {
   if (panels.length === 0) {
     const shell = document.createElement('div');
     shell.id = 'filterPanel';
-    shell.className = 'fixed bottom-28 left-6 z-[100200] w-[18rem]';
+    shell.className = 'fixed bottom-28 left-6 w-[18rem]';
+    shell.style.zIndex = '100200';
     shell.innerHTML = `
       <div class="rounded-2xl border border-yellow-500/50 bg-black/90 px-4 py-5 text-yellow-200 shadow-[0_18px_32px_rgba(255,215,0,0.12)]">
         <div class="flex items-start justify-between gap-3 mb-4">

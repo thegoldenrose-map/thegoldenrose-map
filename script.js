@@ -3294,11 +3294,12 @@ window.handleEntertainment = function (rawRows) {
   console.log(`📸 Rendered ${items.length} entertainment items`);
 };
 
-// ─────────── LOCATE BUTTON VISIBILITY ───────────
-// Hide the floating locate button when any sidebar is open
-(function initLocateBtnVisibility() {
+// ─────────── NAV + FAB VISIBILITY ───────────
+// Hide the floating locate button and bottom pill when any sidebar is open
+(function initOverlayAwareVisibility() {
   const locateBtn = document.getElementById('floatingLocateBtn');
-  if (!locateBtn) return;
+  const bottomNav = document.getElementById('bottom-nav');
+  if (!locateBtn && !bottomNav) return;
 
   const sidebars = [
     document.getElementById('activitySidebar'),
@@ -3306,22 +3307,21 @@ window.handleEntertainment = function (rawRows) {
     document.getElementById('marketplaceSidebar')
   ].filter(Boolean);
 
-  const updateLocateBtnVisibility = () => {
+  const update = () => {
     const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'));
-    locateBtn.style.display = anyOpen ? 'none' : 'flex';
+    if (locateBtn) locateBtn.style.display = anyOpen ? 'none' : 'flex';
+    if (bottomNav) bottomNav.style.display = anyOpen ? 'none' : 'block';
   };
 
-  // Observe class changes on sidebars to react to open/close
-  const observer = new MutationObserver(updateLocateBtnVisibility);
+  const observer = new MutationObserver(update);
   sidebars.forEach(el => observer.observe(el, { attributes: true, attributeFilter: ['class'] }));
 
-  // Also re-check when navigation buttons are clicked
   ['activityBtn','entertainmentBtn','marketplaceBtn','profileToggle'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', () => setTimeout(updateLocateBtnVisibility, 0));
+    document.getElementById(id)?.addEventListener('click', () => setTimeout(update, 0));
   });
 
   // Initial state
-  updateLocateBtnVisibility();
+  update();
 })();
 
 // Callbacks for entertainment like/comment

@@ -183,8 +183,8 @@ body.theme-light .search-wrapper input {
 @media (max-width: 640px) {
   /* Leave space for the FAB on the right and compress spacing */
   #bottom-nav .bottom-pill {
-    width: calc(100% - 88px);
-    margin-right: 72px; /* clear the floating FAB */
+    width: min(92%, 900px);
+    margin-right: auto; /* center pill */
     grid-template-columns: auto auto minmax(108px, 1fr) auto auto;
     gap: 6px;
     padding: 8px 10px;
@@ -197,9 +197,9 @@ body.theme-light .search-wrapper input {
 }
 
 /* Raise FAB a bit on all devices and slightly more on mobile */
-body #floatingLocateBtn { bottom: 5.5rem !important; }
+body #floatingLocateBtn { bottom: 6.25rem !important; }
 @media (max-width: 640px) {
-  body #floatingLocateBtn { bottom: 6.5rem !important; right: 0.75rem; }
+  body #floatingLocateBtn { bottom: 7.75rem !important; right: 0.75rem; }
 }
 
 /* Ensure the pill search cell can shrink on small screens */

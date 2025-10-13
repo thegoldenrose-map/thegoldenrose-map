@@ -5070,51 +5070,8 @@ document.addEventListener('click', (ev) => {
   if (!(t instanceof Element)) return;
   const q = (sel) => t.closest(sel);
 
-  // Filter open/close
-  if (q('#filterBtn')) {
-    ev.preventDefault();
-    try {
-      const s = document.getElementById('suggestions');
-      if (s) { s.classList.add('hidden'); s.style.display = 'none'; }
-    } catch {}
-    const panels = document.querySelectorAll('#filterPanel');
-    if (panels.length === 0) {
-      console.warn('Filter panel not in DOM');
-      // Create a minimal filter panel shell so UI still works
-      const shell = document.createElement('div');
-      shell.id = 'filterPanel';
-      shell.className = 'fixed bottom-28 left-6 z-[99999] w-[18rem]';
-      shell.innerHTML = `
-        <div class="rounded-2xl border border-yellow-500/50 bg-black/85 px-4 py-5 text-yellow-200 shadow-[0_18px_32px_rgba(255,215,0,0.12)]">
-          <div class="flex items-start justify-between gap-3 mb-4">
-            <div>
-              <p class="text-[10px] uppercase tracking-[0.35em] text-yellow-500/70">Filters</p>
-              <h2 class="text-lg font-semibold text-yellow-100">Refine Map</h2>
-            </div>
-            <button id="closeFilterPanel" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black transition">
-              <i data-lucide="x"></i>
-            </button>
-          </div>
-          <div class="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-yellow-500/80 mb-3">
-            <span>Categories</span>
-            <button type="button" class="text-yellow-400 hover:text-yellow-200" onclick="showAllLocations()">Reset</button>
-          </div>
-          <div id="categoryFilters" class="max-h-44 overflow-y-auto pr-1 mb-4 space-y-2"></div>
-          <button onclick="filterByCategory()" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
-            <i data-lucide="check"></i>
-            <span>Apply</span>
-          </button>
-        </div>`;
-      document.body.appendChild(shell);
-      window.lucide?.createIcons?.();
-      // Populate category checkboxes now that panel exists
-      setTimeout(() => window.populateCategoryFilters?.(), 0);
-      // Let the existing category population code run on next map load
-    } else {
-      panels.forEach(p => p.classList.toggle('hidden'));
-    }
-    return;
-  }
+  // Filter open/close (delegate to a single helper)
+  if (q('#filterBtn')) { ev.preventDefault(); openFilterPanel(); return; }
   if (q('#closeFilterPanel')) {
     ev.preventDefault();
     const panels = document.querySelectorAll('#filterPanel');

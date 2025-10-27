@@ -435,6 +435,22 @@
           51.09761883254015
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "N",
+        "description": "",
+        "category": "events",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.04113454268403416,
+          51.099178914268606
+        ]
+      }
     }
   ]
 }

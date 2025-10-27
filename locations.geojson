@@ -339,6 +339,22 @@
           51.09852110350974
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Swan",
+        "description": "",
+        "category": "🛍️ SHOPS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.032762939034114424,
+          51.0985334265369
+        ]
+      }
     }
   ]
 }

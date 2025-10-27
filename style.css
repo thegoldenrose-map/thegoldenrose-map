@@ -396,9 +396,9 @@ body.theme-light .like-btn {
 }
 #helpJoinBtn {
   position: fixed !important;
-  bottom: 8rem !important;
+  bottom: 11rem !important;
   right: 1rem !important;
-  z-index: 100500 !important; /* above FAB selector */
+  z-index: 100000 !important; /* above FAB selector */
   pointer-events: auto !important;
 }
 
@@ -413,9 +413,7 @@ body.theme-light .like-btn {
   z-index: 60;
   pointer-events: auto;
 }
-#favouritesDropdown {
-  z-index: 10000 !important; /* ABOVE profileMenu */
-}
+#favouritesDropdown { z-index: 100600 !important; }
 
 /* Filter panel entrance animation (slide + fade) */
 #filterPanel > div {

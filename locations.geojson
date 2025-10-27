@@ -323,71 +323,8 @@
         ]
       },
       "id": 115
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "Brambletye",
-        "description": "",
-        "category": "🍺 PUB",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03309513354557225,
-          51.099591351380326
-        ]
-      },
-      "id": 116
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "The Swan",
-        "description": "",
-        "category": "🍺 PUB",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03274948163291924,
-          51.09859153705062
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "Yo",
-        "description": "",
-        "category": "events",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03340000000002874,
-          51.09789999999998
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "G",
-        "description": "",
-        "category": "shops",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.0323076423267139,
-          51.09657443775055
-        ]
-      }
     }
+    
+    
   ]
 }

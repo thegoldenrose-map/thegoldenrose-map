@@ -1877,8 +1877,17 @@ function addLocationToMapImmediate({ title, description = '', category = 'Genera
         </div>
       </div>`;
 
-  const popup = new mapboxgl.Popup({ offset: 110, closeButton: false }).setHTML(popupContent);
-    const marker = new mapboxgl.Marker(el).setLngLat(coords).setPopup(popup).addTo(map);
+  const popup = new mapboxgl.Popup({
+    closeButton: false,
+    anchor: 'bottom',
+    offset: 10
+  }).setHTML(popupContent);
+    const marker = new mapboxgl.Marker({
+      element: el,
+      anchor: 'bottom',
+      pitchAlignment: 'map',
+      rotationAlignment: 'map'
+    }).setLngLat(coords).setPopup(popup).addTo(map);
     marker.getElement().addEventListener('click', () => setTimeout(() => window.lucide?.createIcons?.(), 50));
 
     const feature = {
@@ -3771,6 +3780,11 @@ console.log('🧠 isPremium:', isPremium);
     center: [0.3, 50.95],
     zoom: 9
   });
+
+  // Keep projection in sync when viewport changes size
+  try {
+    window.addEventListener('resize', () => { try { map.resize(); } catch {} });
+  } catch {}
   
 
   // 🔥 Fetch and add markers AFTER map is initialized
@@ -3849,79 +3863,104 @@ if (filterBox) {
   window.populateCategoryFilters();
 }
 
-      data.features.forEach(feature => {
-        const title = feature.properties.title || '';
-        const isTablehurst = /tablehurst\s*farm/i.test(title);
-        const isTradeAutos = /trade\s*price\s*autos/i.test(title);
+      // Render as a symbol layer for pixel-perfect stability
+      try {
+        if (!map.getSource('places')) {
+          map.addSource('places', { type: 'geojson', data });
+        } else {
+          map.getSource('places').setData(data);
+        }
+        const addLayerNow = () => {
+          // Remove existing layers if present
+          try { map.removeLayer('places'); } catch {}
+          try { map.removeLayer('places-verified-glow'); } catch {}
+          try { map.removeLayer('places-event-glow'); } catch {}
 
-        const el = document.createElement('div');
-        const isVerified = isTablehurst || isTradeAutos;
-        el.className = `marker${isVerified ? ' verified-marker' : ''}`;
-        el.style.width = isVerified ? '30px' : '24px';
-        el.style.height = isVerified ? '30px' : '24px';
-        // Use a distinct icon for events
-        const cat = (feature.properties.category || '').toString().toLowerCase();
-        const isEvent = (cat === 'events' || cat === 'event');
-        const bgImg = isEvent ? 'events.icon.png' : 'flower.png';
-        el.style.backgroundImage = `url(${bgImg})`;
-        if (isEvent) el.classList.add('event-marker');
-        el.style.backgroundSize = 'cover';
-        el.style.cursor = 'pointer';
+          // Soft gold glow for verified
+          map.addLayer({
+            id: 'places-verified-glow',
+            type: 'circle',
+            source: 'places',
+            filter: ['==', ['get', 'verified'], true],
+            paint: {
+              'circle-color': 'rgba(253, 224, 71, 0.75)',
+              'circle-blur': 1.2,
+              'circle-opacity': 0.45,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 6, 10, 10, 14, 14, 16, 18]
+            }
+          });
 
-        const coordsRaw = feature && feature.geometry && Array.isArray(feature.geometry.coordinates)
-          ? feature.geometry.coordinates
-          : null;
-        let lon = (coordsRaw && typeof coordsRaw[0] !== 'undefined') ? Number(coordsRaw[0]) : NaN;
-        let lat = (coordsRaw && typeof coordsRaw[1] !== 'undefined') ? Number(coordsRaw[1]) : NaN;
-        // Heuristic: fix accidentally swapped [lat,lng] persisted rows
-        // UK bounds: lon ~ [-10..3], lat ~ [49..61]
-        if (Number.isFinite(lon) && Number.isFinite(lat)) {
-          const looksSwapped = (Math.abs(lon) > 10 && Math.abs(lat) < 10) || (lon > 20) || (lon < -20);
-          if (looksSwapped) {
-            const tmp = lon; lon = lat; lat = tmp;
+          // Pink halo for events
+          map.addLayer({
+            id: 'places-event-glow',
+            type: 'circle',
+            source: 'places',
+            filter: ['match', ['downcase', ['to-string', ['get', 'category']]], ['events','event'], true, false],
+            paint: {
+              'circle-color': 'rgba(236, 72, 153, 0.7)',
+              'circle-blur': 1.2,
+              'circle-opacity': 0.45,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 5, 10, 8, 14, 12, 16, 14]
+            }
+          });
+
+          // Main symbol layer, pick icon per category and scale by zoom
+          // Keep a clear, consistent icon size across zooms
+          const baseSize = 0.06;
+          map.addLayer({
+            id: 'places',
+            type: 'symbol',
+            source: 'places',
+            layout: {
+              'icon-image': ['match', ['downcase', ['to-string', ['get', 'category']]], ['events','event'], 'gr-event', 'gr-flower'],
+              'icon-size': ['*', baseSize, ['case', ['boolean', ['get', 'verified'], false], 1.15, 1]],
+              'icon-anchor': 'bottom',
+              'icon-allow-overlap': true,
+              'icon-ignore-placement': true,
+              'icon-pitch-alignment': 'map',
+              'icon-rotation-alignment': 'map',
+              'symbol-sort-key': ['case', ['boolean', ['get', 'verified'], false], 10, 0]
+            }
+          });
+        };
+        // Ensure both images are available (flower + event)
+        const ensureImages = (cb) => {
+          const needFlower = !map.hasImage('gr-flower');
+          const needEvent = !map.hasImage('gr-event');
+          let pending = (needFlower?1:0) + (needEvent?1:0);
+          if (pending === 0) { cb(); return; }
+          const done = () => { pending -= 1; if (pending <= 0) cb(); };
+          if (needFlower) {
+            map.loadImage('flower.png', (err, img) => {
+              if (!err && img) { try { map.addImage('gr-flower', img, { sdf: false }); } catch {} }
+              done();
+            });
           }
-        }
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-          console.warn('⛔ Skipping feature with invalid coordinates:', feature && feature.properties ? feature.properties.title : feature);
-          return; // skip this feature
-        }
-        // Clamp to UK bounds if still out-of-bounds after swap
-        if (lat < 49 || lat > 61 || lon < -10 || lon > 3) {
-          console.warn('⚠️ Coords out of UK bounds; snapping near Forest Row for', title, lon, lat);
-          lon = 0.0334; lat = 51.0979;
-        }
-        const coords = [lon, lat];
-        const normalize = (s) => s
-          .toLowerCase()
-          .normalize('NFKD')
-          .replace(/[’'`]/g, '')
-          .replace(/[^\p{L}\p{N} ]+/gu, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        const safeTitle = title.replace(/'/g, "\\'");
-        // use the validated lat/lon above
-
-        let popupContent = `
+          if (needEvent) {
+            map.loadImage('events.icon.png', (err, img) => {
+              if (!err && img) { try { map.addImage('gr-event', img, { sdf: false }); } catch {} }
+              done();
+            });
+          }
+        };
+        ensureImages(addLayerNow);
+        // Click handler: build and show popup at feature coordinates
+        const buildPopupHTML = (feature) => {
+          const title = feature.properties.title || '';
+          const isTablehurst = /tablehurst\s*farm/i.test(title);
+          const isTradeAutos = /trade\s*price\s*autos/i.test(title);
+          const safeTitle = title.replace(/'/g, "\\'");
+          const [lon, lat] = feature.geometry.coordinates || [0,0];
+          let html = `
   <div class="custom-popup">
-    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
-      <i data-lucide="heart" class="w-4 h-4"></i>
-    </button>
-    <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
-      <i data-lucide="x" class="w-4 h-4"></i>
-    </button>
+    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')"><i data-lucide="heart" class="w-4 h-4"></i></button>
+    <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide="x" class="w-4 h-4"></i></button>
     <div class="title">${title}</div>
-    ${feature.properties.description ? `<div class="desc">${feature.properties.description}</div>` : ''}
-    <div class="actions">
-      <button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')">
-        <i data-lucide="navigation"></i> Directions
-      </button>
-    </div>
-  </div>
-`;
-
-        if (isTablehurst) {
-          popupContent = `
+    ${feature.properties.description ? `<div class=\"desc\">${feature.properties.description}</div>` : ''}
+    <div class="actions"><button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')"><i data-lucide="navigation"></i> Directions</button></div>
+  </div>`;
+          if (isTablehurst) {
+            html = `
   <div class="vcard">
     <div class="vcard-top">
       <span class="vbadge"><i>🌹</i> Verified Farm</span>
@@ -3941,8 +3980,8 @@ if (filterBox) {
       <button class="vbtn vprimary" onclick="window.open('${TABLEHURST_DETAILS.website}', '_blank')"><span>Visit Site</span></button>
     </div>
   </div>`;
-        } else if (isTradeAutos) {
-          popupContent = `
+          } else if (isTradeAutos) {
+            html = `
   <div class="vcard">
     <div class="vcard-top">
       <span class="vbadge"><i>🌹</i> Verified Shop</span>
@@ -3962,35 +4001,34 @@ if (filterBox) {
       <button class="vbtn vprimary" onclick="window.open('${TRADEPRICE_DETAILS.website}', '_blank')"><span>Visit Site</span></button>
     </div>
   </div>`;
-        }
+          }
+          return html;
+        };
+        map.on('click', 'places', (e) => {
+          const feat = e.features && e.features[0];
+          if (!feat) return;
+          const coords = feat.geometry.coordinates.slice();
+          new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+            .setLngLat(coords)
+            .setHTML(buildPopupHTML(feat))
+            .addTo(map);
+          setTimeout(() => window.lucide?.createIcons?.(), 80);
+        });
+      } catch (err) {
+        console.warn('⚠️ Falling back to DOM markers due to layer error', err);
+      }
 
-        
-
-   const popup = new mapboxgl.Popup({ offset: 110, closeButton: false })
-  .setHTML(popupContent);
-
-
-const marker = new mapboxgl.Marker(el)
-  .setLngLat(coords)
-  .setPopup(popup)
-  .addTo(map);
-
-// 🔄 Re-render icons after popup opens
-marker.getElement().addEventListener('click', () => {
-  setTimeout(() => window.lucide?.createIcons?.(), 100);
-});
-
-
- geoMarkers.push({
-  title: normalize(title),
-  coords,
-  marker,
-  feature
-});
-
-
-        console.log('📍 geoMarker added:', title.toLowerCase(), coords);
-
+      // Build lightweight list for search/flyTo
+      geoMarkers = [];
+      data.features.forEach(feature => {
+        const coordsRaw = feature && feature.geometry && Array.isArray(feature.geometry.coordinates)
+          ? feature.geometry.coordinates : null;
+        if (!coordsRaw) return;
+        const lon = Number(coordsRaw[0]);
+        const lat = Number(coordsRaw[1]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+        const normalize = (s='') => s.toLowerCase().normalize('NFKD').replace(/[’'`]/g,'').replace(/[^\p{L}\p{N} ]+/gu,' ').replace(/\s+/g,' ').trim();
+        geoMarkers.push({ title: normalize(feature.properties.title || ''), coords: [lon,lat], marker: null, feature });
       });
 
       if (window.lucide) lucide.createIcons();
@@ -4030,27 +4068,24 @@ marker.getElement().addEventListener('click', () => {
 
   if (localStorage.getItem('membershipLevel')) setTimeout(() => showMemberOptions(), 0);
 
-  // 🔍 Category Filters
+  // 🔍 Category Filters (using symbol layer filter)
   window.filterByCategory = () => {
-  const checked = Array.from(document.querySelectorAll('#categoryFilters input:checked')).map(i => i.value);
-  geoMarkers.forEach(({ marker, feature }) => {
-    if (checked.includes((feature.properties.category || '').toString())) {
-      marker.getElement().style.display = 'block';
-    } else {
-      marker.getElement().style.display = 'none';
-    }
-  });
-};
+    const checked = Array.from(document.querySelectorAll('#categoryFilters input:checked')).map(i => i.value);
+    const filter = (!checked.length)
+      ? ['==', ['get', 'category'], '___none___']
+      : ['in', ['get', 'category'], ['literal', checked]];
+    try { map.setFilter('places', filter); } catch {}
+    try { map.setFilter('places-verified-glow', filter); } catch {}
+    try { map.setFilter('places-event-glow', filter); } catch {}
+  };
 
-// Show all markers
-window.showAllLocations = () => {
-  document.querySelectorAll('#categoryFilters input[type="checkbox"]').forEach(cb => {
-    cb.checked = true;
-  });
-  geoMarkers.forEach(({ marker }) => {
-    marker.getElement().style.display = 'block';
-  });
-};
+  // Show all markers
+  window.showAllLocations = () => {
+    document.querySelectorAll('#categoryFilters input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+    try { map.setFilter('places', null); } catch {}
+    try { map.setFilter('places-verified-glow', null); } catch {}
+    try { map.setFilter('places-event-glow', null); } catch {}
+  };
 
 const MEMBER_DIRECTORY_KEY = 'gr_member_directory_v1';
 const normalizeMemberKey = (value = '') => value.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -4490,7 +4525,17 @@ searchInput.addEventListener('input', async () => {
             map.easeTo({ center: m.coords, zoom: 16 });
           }
           setTimeout(() => {
-            try { m.marker.togglePopup(); } catch(_) {}
+            if (m.marker && m.marker.togglePopup) {
+              try { m.marker.togglePopup(); } catch(_) {}
+            } else {
+              // No DOM marker: show a popup at coords
+              try {
+                new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+                  .setLngLat(m.coords)
+                  .setHTML(`<div class="custom-popup"><div class="title">${m.feature?.properties?.title || ''}</div></div>`)
+                  .addTo(map);
+              } catch {}
+            }
           }, 350);
         } else {
           console.warn('⚠️ Marker or map not ready');
@@ -4549,7 +4594,18 @@ const handleSuggestionActivate = async (text) => {
   const local = geoMarkers.filter(m => m.title.includes(q));
   if (local.length && map && local[0].marker) {
     try { map.flyTo({ center: local[0].coords, zoom: 16 }); } catch { map.easeTo({ center: local[0].coords, zoom: 16 }); }
-    setTimeout(() => { try { local[0].marker.togglePopup(); } catch(_) {} }, 350);
+    setTimeout(() => {
+      const mm = local[0];
+      if (mm.marker && mm.marker.togglePopup) { try { mm.marker.togglePopup(); } catch(_) {} }
+      else {
+        try {
+          new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+            .setLngLat(mm.coords)
+            .setHTML(`<div class=\"custom-popup\"><div class=\"title\">${mm.feature?.properties?.title || ''}</div></div>`)
+            .addTo(map);
+        } catch {}
+      }
+    }, 350);
     searchInput.value = '';
     suggestionsBox.innerHTML = '';
     suggestionsBox.style.display = 'none';
@@ -4599,7 +4655,18 @@ searchInput.addEventListener('keydown', async (e) => {
   const local = geoMarkers.filter(m => m.title.includes(query));
   if (local.length && map && local[0].marker) {
     try { map.flyTo({ center: local[0].coords, zoom: 16 }); } catch { map.easeTo({ center: local[0].coords, zoom: 16 }); }
-    setTimeout(() => { try { local[0].marker.togglePopup(); } catch(_) {} }, 350);
+    setTimeout(() => {
+      const mm = local[0];
+      if (mm.marker && mm.marker.togglePopup) { try { mm.marker.togglePopup(); } catch(_) {} }
+      else {
+        try {
+          new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+            .setLngLat(mm.coords)
+            .setHTML(`<div class=\"custom-popup\"><div class=\"title\">${mm.feature?.properties?.title || ''}</div></div>`)
+            .addTo(map);
+        } catch {}
+      }
+    }, 350);
     suggestionsBox.innerHTML = '';
     suggestionsBox.style.display = 'none';
     return;
@@ -5314,10 +5381,13 @@ document.addEventListener('DOMContentLoaded', () => {
   bind('profileLoginBtn', openLogin);
   bind('openSignupLink', openSignup);
   bind('profileSignupBtn', openSignup);
-  // Direct binding for Favourites toggle
+  // Direct binding for Favourites (force open)
   try {
     const fav = document.getElementById('favouritesBtn');
-    fav?.addEventListener('click', (e) => { e.preventDefault(); window.toggleFavourites?.(); });
+    fav?.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.openFavouritesStrict?.();
+    });
   } catch {}
   // Upgrade/fix the Request modal structure if needed
   window.upgradeRequestModal?.();
@@ -5449,10 +5519,10 @@ document.addEventListener('click', (ev) => {
     return;
   }
 
-  // Favourites dropdown toggle
+  // Favourites dropdown (force open)
   if (q('#favouritesBtn')) {
     ev.preventDefault();
-    window.toggleFavourites?.();
+    window.openFavouritesStrict?.();
     return;
   }
 
@@ -5598,6 +5668,45 @@ if (typeof window.toggleFavourites !== 'function') {
         if (u) setTimeout(() => loadUserFavourites(u), 0);
       } catch {}
     }
+  };
+}
+
+// Strict opener: always ends visible, creating fallback if needed
+if (typeof window.openFavouritesStrict !== 'function') {
+  window.openFavouritesStrict = function () {
+    if (window._disableFavAdd) return;
+    let dd = document.getElementById('favouritesDropdown');
+    if (!dd) {
+      // If not present, use the robust creator
+      window.forceShowFavourites?.();
+      dd = document.getElementById('favouritesDropdown');
+    }
+    if (!dd) {
+      // Ultimate fallback: build a minimal dropdown
+      const el = document.createElement('div');
+      el.id = 'favouritesDropdown';
+      el.className = 'fixed bottom-24 right-4 z-[100600] w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-xl shadow-lg p-4 text-yellow-400 space-y-2';
+      el.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-sm font-semibold">🌹 Saved Favourites</h3>
+          <button onclick="document.getElementById('favouritesDropdown')?.classList.add('hidden')" class="text-yellow-400 hover:text-red-500 text-sm">✕</button>
+        </div>
+        <div id="favouritesList" class="space-y-2 text-sm">
+          <p class="text-yellow-600 italic">No favourites yet.</p>
+        </div>`;
+      document.body.appendChild(el);
+      dd = el;
+    }
+    // Force visible state
+    dd.classList.remove('hidden');
+    dd.style.display = 'block';
+    dd.style.opacity = '1';
+    dd.style.pointerEvents = 'auto';
+    try { document.getElementById('profileMenu')?.classList.add('hidden'); } catch {}
+    try {
+      const u = localStorage.getItem('username');
+      if (u) setTimeout(() => loadUserFavourites(u), 0);
+    } catch {}
   };
 }
 

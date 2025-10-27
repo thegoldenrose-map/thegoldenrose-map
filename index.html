@@ -42,8 +42,9 @@ window.loadAllUI = async function () {
     'components/adminPanel.html'
   ];
 
+  const version = Date.now();
   const loadComponent = async (path) => {
-    const res = await fetch(path);
+    const res = await fetch(`${path}?v=${version}`);
     const html = await res.text();
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -58,7 +59,7 @@ window.loadAllUI = async function () {
   console.log('✅ All components loaded');
 
   const script = document.createElement('script');
-  script.src = 'script.js';
+  script.src = `script.js?v=${version}`;
   script.onload = () => {
     console.log('✅ script.js loaded');
     window.isPremium = (localStorage.getItem('membershipLevel') || '').toLowerCase() === 'premium';

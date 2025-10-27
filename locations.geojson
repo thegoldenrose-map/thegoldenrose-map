@@ -451,6 +451,22 @@
           51.099178914268606
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "N",
+        "description": "",
+        "category": "reports",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.027585964594067036,
+          51.024155937158184
+        ]
+      }
     }
   ]
 }

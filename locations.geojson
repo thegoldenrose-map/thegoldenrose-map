@@ -355,6 +355,22 @@
           51.0985334265369
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Yo",
+        "description": "",
+        "category": "events",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03427618366151819,
+          51.09775108246723
+        ]
+      }
     }
   ]
 }

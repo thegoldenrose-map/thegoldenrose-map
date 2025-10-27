@@ -41,6 +41,11 @@
 <div id="memberOptions" class="hidden">
 
     <div class="space-y-1 bg-black px-4 py-2">
+      <!-- Admin Panel (only visible if memberCommunityStatus === 'admin') -->
+      <button id="adminPanelBtn" class="hidden flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+        <i data-lucide="crown"></i>
+        <span>Admin Panel</span>
+      </button>
       <!-- Inbox (above Favourites) -->
       <button id="inboxBtn" class="flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
         <i data-lucide="send"></i>

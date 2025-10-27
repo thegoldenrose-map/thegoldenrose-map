@@ -1,0 +1,64 @@
+<!-- 🔸 Admin Panel Modal -->
+<div id="adminPanel" class="modal hidden fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
+  <div class="relative w-full max-w-3xl bg-black border border-yellow-500 rounded-2xl shadow-2xl text-yellow-200">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-yellow-500/40">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full border border-yellow-500/60 bg-black text-yellow-300 flex items-center justify-center">
+          <i data-lucide="crown"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-yellow-100">Admin Dashboard</h2>
+          <div class="text-[11px] text-yellow-500/80">Private tools for admins</div>
+        </div>
+      </div>
+      <button id="closeAdminPanel" class="flex h-8 w-8 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="px-5 py-4 space-y-6">
+      <!-- Analytics Link -->
+      <div class="rounded-xl border border-yellow-500/30 bg-zinc-900/50 p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg border border-yellow-500/40 bg-black text-yellow-300 flex items-center justify-center">
+            <i data-lucide="bar-chart-3"></i>
+          </div>
+          <div>
+            <div class="text-sm font-semibold text-yellow-100">Analytics</div>
+            <div class="text-[12px] text-yellow-500/80">Open Umami shared analytics</div>
+          </div>
+        </div>
+        <a href="https://cloud.umami.is/analytics/eu/share/yru0c1G1isu2CtsG" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-yellow-500 text-black font-semibold px-4 py-2 hover:bg-yellow-600">
+          <i data-lucide="external-link"></i>
+          <span>View Data</span>
+        </a>
+      </div>
+
+      <!-- Members Table -->
+      <div class="rounded-xl border border-yellow-500/30 bg-zinc-900/30">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-yellow-500/20">
+          <div class="flex items-center gap-2">
+            <i data-lucide="users"></i>
+            <h3 class="text-sm font-semibold text-yellow-100">Members</h3>
+          </div>
+          <div class="text-[12px] text-yellow-500/80" id="adminMembersMeta">Loading…</div>
+        </div>
+        <div class="overflow-auto max-h-[50vh]">
+          <table class="w-full text-sm">
+            <thead class="sticky top-0 bg-black/80">
+              <tr class="text-left text-yellow-300 border-b border-yellow-500/20">
+                <th class="px-4 py-2">Username</th>
+                <th class="px-4 py-2">Community</th>
+              </tr>
+            </thead>
+            <tbody id="adminMembersBody" class="divide-y divide-yellow-500/10">
+              <tr><td class="px-4 py-3 text-yellow-400" colspan="2">Loading members…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

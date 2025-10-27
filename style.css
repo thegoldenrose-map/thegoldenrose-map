@@ -398,7 +398,7 @@ body.theme-light .like-btn {
   position: fixed !important;
   bottom: 8rem !important;
   right: 1rem !important;
-  z-index: 9999 !important;
+  z-index: 100500 !important; /* above FAB selector */
   pointer-events: auto !important;
 }
 
@@ -652,14 +652,29 @@ body.theme-light #activityCommunityMeta > span i {
 /* Professional verified card */
 .vcard {
   width: 380px;
-  background: #fffaf0; /* warm cream */
-  border: 1px solid #f4c977; /* ultra‑light amber */
+  background: #fffaf0; /* light theme */
+  border: 1px solid #f4c977;
   border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10); /* softer */
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
   padding: 16px;
   color: #2f1b00;
   position: relative;
 }
+/* Dark theme for verified card */
+body.theme-dark .vcard {
+  background: #0b0b0b !important;
+  border-color: rgba(234,179,8,0.5) !important;
+  color: #facc15 !important;
+}
+body.theme-dark .vbadge { background: rgba(253,224,71,0.08) !important; border-color: rgba(234,179,8,0.5) !important; color: #facc15 !important; }
+body.theme-dark .vicon { background: #111 !important; border-color: rgba(234,179,8,0.4) !important; color: #facc15 !important; }
+body.theme-dark .vhero { border-color: rgba(234,179,8,0.3) !important; }
+body.theme-dark .vtitle { color: #f3e8ff !important; }
+body.theme-dark .vdesc { color: #fef3c7 !important; }
+body.theme-dark .vmeta { color: #fde68a !important; }
+body.theme-dark .vactions { border-top-color: rgba(234,179,8,0.2) !important; }
+body.theme-dark .vbtn { background: #111 !important; color: #facc15 !important; border-color: rgba(234,179,8,0.5) !important; }
+body.theme-dark .vbtn.vprimary { background: #eab308 !important; color: #000 !important; border-color: #eab308 !important; }
 .vcard-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .vbadge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid #f4c977; background: #fff6d8; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #7c2d12; }
 .vbadge i { font-style: normal; }

@@ -18,6 +18,89 @@ const BADGE_DEFS = [
   { id: 'conversationalist', label: 'Conversationalist', icon: 'message-circle', test: (s) => s.comments >= 1 },
 ];
 
+// Admin panel data sources
+const ADMIN_SHEET_ID = '1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw';
+const ADMIN_MEMBERS_GID = '1135863289';
+
+function parseGvizResponse(text) {
+  try {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('Invalid gviz payload');
+    const json = JSON.parse(text.slice(start, end + 1));
+    return json;
+  } catch (e) {
+    console.warn('Failed to parse gviz response', e);
+    return null;
+  }
+}
+
+async function fetchAdminMembers() {
+  const url = `https://docs.google.com/spreadsheets/d/${ADMIN_SHEET_ID}/gviz/tq?gid=${ADMIN_MEMBERS_GID}&tqx=out:json`;
+  const res = await fetch(url, { cache: 'no-store' });
+  const txt = await res.text();
+  const data = parseGvizResponse(txt);
+  if (!data || !data.table) return [];
+  const cols = (data.table.cols || []).map(c => (c.label || '').toString().trim());
+  const idxUser = cols.findIndex(c => c.toLowerCase().includes('user'));
+  const idxCommunity = cols.findIndex(c => c.toLowerCase().includes('community'));
+  const rows = (data.table.rows || []).map(r => r.c || []);
+  const out = [];
+  for (const r of rows) {
+    const u = r[idxUser]?.v ?? r[0]?.v ?? '';
+    const c = r[idxCommunity]?.v ?? '';
+    if (!u && !c) continue;
+    out.push({ username: (u || '').toString(), community: (c || '').toString() });
+  }
+  // Drop possible header row duplicates
+  return out.filter(x => (x.username || '').toLowerCase() !== 'username');
+}
+
+window.updateAdminUI = function updateAdminUI() {
+  const role = (localStorage.getItem('memberCommunityStatus') || '').toLowerCase();
+  const btn = document.getElementById('adminPanelBtn');
+  if (btn) btn.classList.toggle('hidden', role !== 'admin');
+};
+
+window.openAdminPanel = async function openAdminPanel() {
+  const role = (localStorage.getItem('memberCommunityStatus') || '').toLowerCase();
+  if (role !== 'admin') return;
+  const modal = document.getElementById('adminPanel');
+  if (!modal) return;
+  document.getElementById('profileMenu')?.classList.add('hidden');
+  // Hide FAB selector while admin panel is open
+  document.getElementById('floatingLocateBtn')?.classList.add('hidden');
+  modal.classList.remove('hidden');
+
+  const meta = document.getElementById('adminMembersMeta');
+  const body = document.getElementById('adminMembersBody');
+  if (meta) meta.textContent = 'Loading…';
+  if (body) body.innerHTML = '<tr><td class="px-4 py-3 text-yellow-400" colspan="2">Loading members…</td></tr>';
+
+  try {
+    const list = await fetchAdminMembers();
+    if (meta) meta.textContent = `${list.length} rows`;
+    if (body) {
+      if (!list.length) {
+        body.innerHTML = '<tr><td class="px-4 py-3 text-yellow-400" colspan="2">No data</td></tr>';
+      } else {
+        body.innerHTML = list.map(({ username, community }) => `
+          <tr class="hover:bg-yellow-500/5">
+            <td class="px-4 py-2 text-yellow-100">${(username || '').toString()}</td>
+            <td class="px-4 py-2 text-yellow-300">${(community || '').toString()}</td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch (e) {
+    console.warn('Admin members fetch failed', e);
+    if (meta) meta.textContent = 'Error loading';
+    if (body) body.innerHTML = '<tr><td class="px-4 py-3 text-red-400" colspan="2">Failed to load members</td></tr>';
+  }
+
+  try { window.lucide?.createIcons?.(); } catch {}
+};
+
 // Fallback categories for forms before map data loads
 const DEFAULT_CATEGORIES = ['cafes','pubs','events','reports','farms','shops','services','courses','jobs','education','markets'];
 
@@ -73,7 +156,7 @@ function updateThemeButtonLabels(theme) {
 }
 
 window.initTheme = function () {
-  const saved = localStorage.getItem(THEME_KEY) || 'light';
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
   window.applyTheme(saved);
 };
 
@@ -606,6 +689,19 @@ const Crosshair = {
       window._pendingPin = { lat: c.lat, lng: c.lng };
     } catch { window._pendingPin = null; }
     this.exit();
+    // Immediate visual feedback: place a temporary marker now
+    try {
+      const pin = window._pendingPin;
+      if (pin && typeof pin.lat === 'number' && typeof pin.lng === 'number') {
+        addLocationToMapImmediate({
+          title: 'New Location',
+          description: 'Pending details…',
+          category: (window._pinIntent === 'event' ? 'events' : (window._pinIntent === 'report' ? 'reports' : 'General')),
+          lat: pin.lat,
+          lng: pin.lng
+        });
+      }
+    } catch {}
     // Open the Add Location modal for title/details (exclusive + force-show)
     try {
       const preferSubmission = !!document.getElementById('submissionModal');
@@ -1039,6 +1135,7 @@ function handleGetCommunity(resp) {
     localStorage.setItem('memberCommunity', community);
     localStorage.setItem('memberCommunityStatus', status);
     window.updateActivityCommunityStatus?.(status, community);
+    window.updateAdminUI?.();
     const stats = window.memberStats || {};
     stats.community = community;
     stats.status = status;
@@ -1065,6 +1162,7 @@ function handleSetCommunity(resp) {
     localStorage.setItem('memberCommunity', community);
     localStorage.setItem('memberCommunityStatus', status);
     window.updateActivityCommunityStatus?.(status, community);
+    window.updateAdminUI?.();
     // Refresh members count using backend meta for accuracy
     requestCommunityMeta(community);
     const stats = window.memberStats || {};
@@ -1742,7 +1840,12 @@ window.handleDMRead = function (resp) {
 function addLocationToMapImmediate({ title, description = '', category = 'General', lat, lng }) {
   if (!window.map || typeof lat !== 'number' || typeof lng !== 'number') return;
   try {
-    const coords = [lng, lat];
+    // Sanity: auto-fix swapped or out-of-bounds coords
+    let _lat = Number(lat), _lng = Number(lng);
+    const outOfBounds = !Number.isFinite(_lat) || !Number.isFinite(_lng) || _lat < 49 || _lat > 61 || _lng < -10 || _lng > 3;
+    const looksSwapped = Number.isFinite(_lat) && Number.isFinite(_lng) && ((Math.abs(_lng) > 10 && Math.abs(_lat) < 10) || _lng > 20 || _lng < -20);
+    if (looksSwapped || outOfBounds) { const t = _lat; _lat = _lng; _lng = t; }
+    const coords = [_lng, _lat];
     const el = document.createElement('div');
     el.className = 'marker';
     el.dataset.adminPin = '1';
@@ -1768,7 +1871,7 @@ function addLocationToMapImmediate({ title, description = '', category = 'Genera
         <div class="title">${title}</div>
         ${description ? `<div class=\"desc\">${description}</div>` : ''}
         <div class="actions">
-          <button onclick="openDirections(${lat}, ${lng}, '${safeTitle}')">
+          <button onclick="openDirections(${_lat}, ${_lng}, '${safeTitle}')">
             <i data-lucide=\"navigation\"></i> Directions
           </button>
         </div>
@@ -2791,8 +2894,8 @@ function bindActivityPostForm() {
   });
 }
 
-function bindUIButtons() {
-  console.log('🔗 bindUIButtons() running');
+  function bindUIButtons() {
+    console.log('🔗 bindUIButtons() running');
 
   // Bottom nav active state helper
   window.setActiveNav = function setActiveNav(id) {
@@ -2925,6 +3028,25 @@ function bindUIButtons() {
   document.getElementById('closeRequestModal')?.addEventListener('click', () => {
     document.getElementById('requestModal')?.classList.add('hidden');
   });
+
+  // Admin Panel bindings
+  try {
+    document.getElementById('adminPanelBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.openAdminPanel?.();
+    });
+    document.getElementById('closeAdminPanel')?.addEventListener('click', () => {
+      document.getElementById('adminPanel')?.classList.add('hidden');
+      // Restore FAB selector after closing admin panel
+      document.getElementById('floatingLocateBtn')?.classList.remove('hidden');
+    });
+    document.getElementById('adminPanel')?.addEventListener('click', (ev) => {
+      if (ev.target && ev.target.id === 'adminPanel') {
+        document.getElementById('adminPanel')?.classList.add('hidden');
+        document.getElementById('floatingLocateBtn')?.classList.remove('hidden');
+      }
+    });
+  } catch {}
 
   // ───────── Profile photo control (pencil) ─────────
   const editAvatar = document.getElementById('editAvatarBtn');
@@ -3145,6 +3267,36 @@ function bindUIButtons() {
   document.querySelectorAll('#themeToggleBtn,#themeToggleBtnGuest').forEach(btn => {
     btn.addEventListener('click', () => window.toggleTheme?.());
   });
+  // Direct bindings for controls inside profile menu (propagation may be stopped on container)
+  try {
+    const inboxBtn = document.getElementById('inboxBtn');
+    if (inboxBtn) {
+      inboxBtn.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch {}
+        const p = document.getElementById('inboxPanel');
+        if (p && !p.classList.contains('hidden')) { p.classList.add('hidden'); }
+        else { openInboxPanel(); }
+      });
+    }
+    const fA = document.getElementById('followersCountBtn');
+    if (fA) {
+      fA.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch {}
+        const panel = document.getElementById('followListPanel');
+        if (panel && !panel.classList.contains('hidden')) { panel.classList.add('hidden'); }
+        else { showFollowList('followers', fA); }
+      });
+    }
+    const fB = document.getElementById('followingCountBtn');
+    if (fB) {
+      fB.addEventListener('click', (e) => {
+        try { e.preventDefault(); e.stopPropagation(); } catch {}
+        const panel = document.getElementById('followListPanel');
+        if (panel && !panel.classList.contains('hidden')) { panel.classList.add('hidden'); }
+        else { showFollowList('following', fB); }
+      });
+    }
+  } catch {}
   // No guest-only request/favourite/add location entries
 
   document.getElementById('activityBtn')?.addEventListener('click', () => {
@@ -3719,11 +3871,24 @@ if (filterBox) {
         const coordsRaw = feature && feature.geometry && Array.isArray(feature.geometry.coordinates)
           ? feature.geometry.coordinates
           : null;
-        const lon = (coordsRaw && typeof coordsRaw[0] !== 'undefined') ? Number(coordsRaw[0]) : NaN;
-        const lat = (coordsRaw && typeof coordsRaw[1] !== 'undefined') ? Number(coordsRaw[1]) : NaN;
+        let lon = (coordsRaw && typeof coordsRaw[0] !== 'undefined') ? Number(coordsRaw[0]) : NaN;
+        let lat = (coordsRaw && typeof coordsRaw[1] !== 'undefined') ? Number(coordsRaw[1]) : NaN;
+        // Heuristic: fix accidentally swapped [lat,lng] persisted rows
+        // UK bounds: lon ~ [-10..3], lat ~ [49..61]
+        if (Number.isFinite(lon) && Number.isFinite(lat)) {
+          const looksSwapped = (Math.abs(lon) > 10 && Math.abs(lat) < 10) || (lon > 20) || (lon < -20);
+          if (looksSwapped) {
+            const tmp = lon; lon = lat; lat = tmp;
+          }
+        }
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
           console.warn('⛔ Skipping feature with invalid coordinates:', feature && feature.properties ? feature.properties.title : feature);
           return; // skip this feature
+        }
+        // Clamp to UK bounds if still out-of-bounds after swap
+        if (lat < 49 || lat > 61 || lon < -10 || lon > 3) {
+          console.warn('⚠️ Coords out of UK bounds; snapping near Forest Row for', title, lon, lat);
+          lon = 0.0334; lat = 51.0979;
         }
         const coords = [lon, lat];
         const normalize = (s) => s
@@ -4793,6 +4958,7 @@ function showMemberOptions() {
   window.updateMemberStatsUI?.();
   document.getElementById('memberOptions')?.classList.remove('hidden');
   document.getElementById('guestOptions')?.classList.add('hidden');
+  window.updateAdminUI?.();
 
   // Render streak chip in profile menu
   try {
@@ -5096,6 +5262,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupLogin?.();
   bindMarketplacePostForm?.();
   window.updateLockedOverlays?.();
+  window.updateAdminUI?.();
   // If already logged in (legacy username or memberName), sync UI and community
   if (window.isLoggedIn?.()) {
     document.body.classList.add('logged-in');
@@ -5147,8 +5314,29 @@ document.addEventListener('DOMContentLoaded', () => {
   bind('profileLoginBtn', openLogin);
   bind('openSignupLink', openSignup);
   bind('profileSignupBtn', openSignup);
+  // Direct binding for Favourites toggle
+  try {
+    const fav = document.getElementById('favouritesBtn');
+    fav?.addEventListener('click', (e) => { e.preventDefault(); window.toggleFavourites?.(); });
+  } catch {}
   // Upgrade/fix the Request modal structure if needed
   window.upgradeRequestModal?.();
+
+  // Admin button
+  document.getElementById('adminPanelBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.openAdminPanel?.();
+  });
+  // Close Admin modal
+  document.getElementById('closeAdminPanel')?.addEventListener('click', () => {
+    document.getElementById('adminPanel')?.classList.add('hidden');
+  });
+  // Click outside to close
+  document.getElementById('adminPanel')?.addEventListener('click', (ev) => {
+    if (ev.target && ev.target.id === 'adminPanel') {
+      document.getElementById('adminPanel')?.classList.add('hidden');
+    }
+  });
 
   // Debug helpers: force-show modals if needed
   window.forceShowAddLocation = function () {
@@ -5264,44 +5452,57 @@ document.addEventListener('click', (ev) => {
   // Favourites dropdown toggle
   if (q('#favouritesBtn')) {
     ev.preventDefault();
-    const dropdowns = document.querySelectorAll('#favouritesDropdown');
-    if (dropdowns.length) {
-      dropdowns.forEach(dd => {
-        dd.classList.toggle('hidden');
-        if (!dd.classList.contains('hidden')) {
-          dd.style.display = 'block';
-          dd.style.opacity = '1';
-          dd.style.pointerEvents = 'auto';
-        }
-      });
-      // Refresh favourites when opening, if we know the user
-      try {
-        const u = localStorage.getItem('username');
-        if (u) setTimeout(() => loadUserFavourites(u), 0);
-      } catch {}
-    } else {
-      console.warn('Favourites dropdown not found — creating fallback');
-      window.forceShowFavourites?.();
-    }
+    window.toggleFavourites?.();
     return;
   }
 
   // Inbox open
   if (q('#inboxBtn')) {
     ev.preventDefault();
-    openInboxPanel();
+    const p = document.getElementById('inboxPanel');
+    if (p && !p.classList.contains('hidden')) { p.classList.add('hidden'); }
+    else { openInboxPanel(); }
     return;
   }
 
   // Followers/Following list popups
   if (q('#followersCountBtn')) {
     ev.preventDefault();
-    showFollowList('followers', t.closest('#followersCountBtn'));
+    let panel = document.getElementById('followListPanel');
+    if (panel && !panel.classList.contains('hidden')) { panel.classList.add('hidden'); }
+    else {
+      // Show a tiny spinner near the button while loading
+      const anchor = t.closest('#followersCountBtn');
+      if (anchor) {
+        let spin = document.getElementById('followSpinner');
+        if (!spin) { spin = document.createElement('div'); spin.id = 'followSpinner'; document.body.appendChild(spin); }
+        const r = anchor.getBoundingClientRect();
+        spin.style.cssText = 'position:absolute;width:16px;height:16px;border-radius:9999px;border:2px solid rgba(234,179,8,0.4);border-top-color:#eab308;animation:spin 0.8s linear infinite;z-index:100200;';
+        spin.style.left = `${r.left + window.scrollX - 20}px`;
+        spin.style.top  = `${r.top  + window.scrollY - 2}px`;
+      }
+      showFollowList('followers', anchor);
+      setTimeout(() => document.getElementById('followSpinner')?.remove(), 1200);
+    }
     return;
   }
   if (q('#followingCountBtn')) {
     ev.preventDefault();
-    showFollowList('following', t.closest('#followingCountBtn'));
+    let panel = document.getElementById('followListPanel');
+    if (panel && !panel.classList.contains('hidden')) { panel.classList.add('hidden'); }
+    else {
+      const anchor = t.closest('#followingCountBtn');
+      if (anchor) {
+        let spin = document.getElementById('followSpinner');
+        if (!spin) { spin = document.createElement('div'); spin.id = 'followSpinner'; document.body.appendChild(spin); }
+        const r = anchor.getBoundingClientRect();
+        spin.style.cssText = 'position:absolute;width:16px;height:16px;border-radius:9999px;border:2px solid rgba(234,179,8,0.4);border-top-color:#eab308;animation:spin 0.8s linear infinite;z-index:100200;';
+        spin.style.left = `${r.left + window.scrollX - 20}px`;
+        spin.style.top  = `${r.top  + window.scrollY - 2}px`;
+      }
+      showFollowList('following', anchor);
+      setTimeout(() => document.getElementById('followSpinner')?.remove(), 1200);
+    }
     return;
   }
 });
@@ -5370,6 +5571,33 @@ if (typeof window.forceShowFavourites !== 'function') {
       const u = localStorage.getItem('username');
       if (u) setTimeout(() => loadUserFavourites(u), 0);
     } catch {}
+  };
+}
+// Strong toggle helper that creates the dropdown if missing
+if (typeof window.toggleFavourites !== 'function') {
+  window.toggleFavourites = function () {
+    if (window._disableFavAdd) return;
+    let dd = document.getElementById('favouritesDropdown');
+    if (!dd) {
+      // create fallback, then open
+      window.forceShowFavourites?.();
+      dd = document.getElementById('favouritesDropdown');
+    }
+    if (!dd) return;
+    const willShow = dd.classList.contains('hidden');
+    dd.classList.toggle('hidden');
+    if (willShow) {
+      dd.style.display = 'block';
+      dd.style.opacity = '1';
+      dd.style.pointerEvents = 'auto';
+      // Ensure it sits above profile menu; also close the menu
+      try { document.getElementById('profileMenu')?.classList.add('hidden'); } catch {}
+      // Load latest favourites
+      try {
+        const u = localStorage.getItem('username');
+        if (u) setTimeout(() => loadUserFavourites(u), 0);
+      } catch {}
+    }
   };
 }
 

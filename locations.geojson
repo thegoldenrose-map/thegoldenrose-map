@@ -403,6 +403,22 @@
           51.09667155031556
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "B",
+        "description": "",
+        "category": "🏛️ LANDMARKS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03281773710887137,
+          51.10069335897836
+        ]
+      }
     }
   ]
 }

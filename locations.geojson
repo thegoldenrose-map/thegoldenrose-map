@@ -387,6 +387,22 @@
           51.0971537368587
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "K",
+        "description": "",
+        "category": "events",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.0354107965611945,
+          51.09667155031556
+        ]
+      }
     }
   ]
 }

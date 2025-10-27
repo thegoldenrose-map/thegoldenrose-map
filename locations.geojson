@@ -323,6 +323,106 @@
         ]
       },
       "id": 115
+<<<<<<< HEAD
+=======
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Brambletye",
+        "description": "",
+        "category": "🍺 PUB",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03309513354557225,
+          51.099591351380326
+        ]
+      },
+      "id": 116
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Swan",
+        "description": "",
+        "category": "🍺 PUB",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03274948163291924,
+          51.09859153705062
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Yo",
+        "description": "",
+        "category": "events",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03340000000002874,
+          51.09789999999998
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "G",
+        "description": "",
+        "category": "shops",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.0323076423267139,
+          51.09657443775055
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Java Jazz",
+        "description": "",
+        "category": "cafes",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.033516656134935374,
+          51.09929257605745
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Swan",
+        "description": "",
+        "category": "pubs",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.032787828410306474,
+          51.09851330100486
+        ]
+      }
+>>>>>>> d4a2751fcc7eaf1f7fafd84763b5b78688646337
     }
     
     

@@ -371,6 +371,22 @@
           51.09775108246723
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "H",
+        "description": "",
+        "category": "cafes",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.032615194097047606,
+          51.0971537368587
+        ]
+      }
     }
   ]
 }

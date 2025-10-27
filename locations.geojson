@@ -388,6 +388,22 @@
           51.09657443775055
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Java Jazz",
+        "description": "",
+        "category": "cafes",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.033516656134935374,
+          51.09929257605745
+        ]
+      }
     }
   ]
 }

@@ -3,7 +3,7 @@
   <div class="bottom-pill" role="tablist" aria-label="Primary Navigation">
     <!-- Activity -->
     <div class="pill-item" data-key="activity">
-      <button id="activityBtn" title="Activity" class="pill-btn" aria-label="Activity">
+      <button id="activityBtn" type="button" title="Activity" class="pill-btn" aria-label="Activity">
         <div class="icon-wrap"><i data-lucide="newspaper"></i></div>
         <span class="label">Activity</span>
       </button>
@@ -11,7 +11,7 @@
 
     <!-- Entertainment -->
     <div class="pill-item" data-key="entertainment">
-      <button id="entertainmentBtn" title="Entertainment" class="pill-btn" aria-label="Entertainment">
+      <button id="entertainmentBtn" type="button" title="Entertainment" class="pill-btn" aria-label="Entertainment">
         <div class="icon-wrap"><i data-lucide="play"></i></div>
         <span class="label">Entertainment</span>
       </button>
@@ -20,8 +20,8 @@
     <!-- Search -->
     <div class="pill-search">
       <div class="search-wrapper relative flex items-center">
-        <input type="text" id="search" placeholder="Search..." autocomplete="off" class="rounded-full px-4 py-2 pr-12 bg-zinc-800 text-yellow-300 placeholder-yellow-600 focus:outline-none border border-yellow-500/60 focus:border-yellow-400 transition w-full" />
-        <button id="filterBtn" type="button" title="Filter" onclick="window.openFilterPanel && window.openFilterPanel()" class="absolute right-1.5 h-8 w-8 flex items-center justify-center rounded-full border border-yellow-500 bg-black text-yellow-400 hover:bg-yellow-500 hover:text-black transition">
+        <input type="text" id="search" placeholder="Search..." autocomplete="off" class="rounded-full px-4 py-2 pr-12 bg-zinc-800 text-yellow-300 placeholder-yellow-600 focus:outline-none border border-yellow-500/60 focus:border-yellow-400 transition w-full" aria-label="Map search" />
+        <button id="filterBtn" type="button" title="Filter" onclick="window.toggleFilterPanel && window.toggleFilterPanel()" class="absolute right-1.5 h-8 w-8 flex items-center justify-center rounded-full border border-yellow-500 bg-black text-yellow-400 hover:bg-yellow-500 hover:text-black transition">
           <i data-lucide="sliders-horizontal"></i>
         </button>
         <div id="suggestions" class="absolute bottom-[105%] left-0 w-full bg-black z-[9999] pointer-events-auto hidden border border-yellow-600 rounded-xl shadow-lg text-sm text-yellow-300 overflow-hidden"></div>
@@ -30,7 +30,7 @@
 
     <!-- Marketplace -->
     <div class="pill-item" data-key="marketplace">
-      <button id="marketplaceBtn" title="Marketplace" class="pill-btn" aria-label="Marketplace">
+      <button id="marketplaceBtn" type="button" title="Marketplace" class="pill-btn" aria-label="Marketplace">
         <div class="icon-wrap"><i data-lucide="store"></i></div>
         <span class="label">Marketplace</span>
       </button>
@@ -38,7 +38,7 @@
 
     <!-- Profile -->
     <div class="pill-item" data-key="profile">
-      <button id="profileToggle" title="Profile" class="pill-btn" aria-label="Profile">
+      <button id="profileToggle" type="button" title="Profile" class="pill-btn" aria-label="Profile">
         <div class="icon-wrap"><i data-lucide="user"></i></div>
         <span class="label">Profile</span>
       </button>
@@ -81,7 +81,7 @@
   <div id="fabMain" role="button" tabindex="0" class="relative w-12 h-12 rounded-full shadow-xl text-xl font-bold bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-400 flex items-center justify-center cursor-pointer">
     <span id="fabMainIcon" class="fab-icon"><i data-lucide="crosshair"></i></span>
     <!-- Small corner toggle nub -->
-    <div id="fabCorner" onclick="document.getElementById('fabMenu')?.classList.toggle('hidden')" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-yellow-500 text-black border border-yellow-700 shadow flex items-center justify-center text-[8px] leading-none cursor-pointer" title="More">
+    <div id="fabCorner" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-yellow-500 text-black border border-yellow-700 shadow flex items-center justify-center text-[8px] leading-none cursor-pointer" title="More">
       <i data-lucide="chevrons-up"></i>
     </div>
   </div>

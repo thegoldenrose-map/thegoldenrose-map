@@ -24,11 +24,9 @@
       <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> Jobs
     </button>
 
-    <!-- 🔸 Close Button aligned with tabs -->
-    <button id="marketplaceInfoBtn" type="button" class="help-badge absolute right-10 top-2 w-6 h-6 rounded-full border border-yellow-500/50 text-yellow-300 hover:bg-yellow-500 hover:text-black flex items-center justify-center text-[11px]">?</button>
-    <button onclick="document.getElementById('marketplaceSidebar').classList.add('translate-x-full')" class="absolute right-2 top-1/2 -translate-y-1/2 text-yellow-500 z-50 text-xl font-bold leading-none">
-      ×
-    </button>
+    <!-- 🔸 Absolute controls: X on top, ? below -->
+    <button onclick="document.getElementById('marketplaceSidebar').classList.add('translate-x-full')" class="absolute right-3 top-2 inline-flex items-center justify-center w-8 h-8 rounded-full border border-yellow-500/50 text-yellow-400 hover:bg-yellow-500 hover:text-black text-lg font-bold z-[100300] bg-black/80">×</button>
+    <button id="marketplaceInfoBtn" type="button" class="absolute right-3 top-12 w-8 h-8 rounded-full border border-yellow-500/50 bg-black/80 text-yellow-300 hover:bg-yellow-500 hover:text-black flex items-center justify-center text-[12px] z-[100300]">?</button>
   </div>
 
   <!-- 🔸 Scrollable Marketplace Content -->

@@ -79,6 +79,42 @@ window.initTheme = function () {
 
 window.initTheme();
 
+// Early defensive stubs for the Filter panel so the bottom‑nav button always works,
+// even before later helpers are defined further down the file.
+if (typeof window.openFilterPanel !== 'function') {
+  window.openFilterPanel = function () {
+    try {
+      let panel = document.getElementById('filterPanel');
+      if (!panel) {
+        // Minimal fallback build if component not present yet
+        panel = document.createElement('div');
+        panel.id = 'filterPanel';
+        panel.style.cssText = 'position:fixed;left:16px;bottom:112px;z-index:100500;width:288px;min-width:288px;pointer-events:auto;';
+        panel.innerHTML = '<div class="rounded-2xl border border-yellow-500/50 bg-black/90 px-4 py-5 text-yellow-200">\n  <div class="flex items-start justify-between mb-3">\n    <h2 class="text-lg font-semibold text-yellow-100">Filters</h2>\n    <button id="closeFilterPanel" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300">×</button>\n  </div>\n  <div id="categoryFilters" class="max-h-44 overflow-y-auto pr-1 mb-4 space-y-2"></div>\n  <button onclick="filterByCategory()" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black">Apply</button>\n</div>';
+        document.body.appendChild(panel);
+        try { window.populateCategoryFilters?.(); } catch {}
+      }
+      panel.classList.remove('hidden');
+      panel.style.display = 'block';
+      panel.style.opacity = '1';
+      panel.style.pointerEvents = 'auto';
+      panel.style.position = 'fixed';
+      panel.style.left = '16px';
+      panel.style.bottom = '112px';
+      panel.style.zIndex = '100500';
+    } catch {}
+  };
+}
+if (typeof window.toggleFilterPanel !== 'function') {
+  window.toggleFilterPanel = function () {
+    const p = document.getElementById('filterPanel');
+    if (!p) { window.openFilterPanel(); return; }
+    const hidden = p.classList.contains('hidden') || p.style.display === 'none';
+    if (hidden) window.openFilterPanel();
+    else { p.classList.add('hidden'); p.style.display = 'none'; p.style.opacity = '0'; p.style.pointerEvents = 'none'; }
+  };
+}
+
 // ─────────── FAQ Panel (pre-made Q&A) ───────────
 const FAQ_QA = [
   { id: 'what', q: 'What is The Golden Rose?', a: 'A grassroots, people-powered network: Map, Marketplace, Community, and Entertainment — no algorithms, no censorship.' },
@@ -182,6 +218,11 @@ window.openFaqPanel = function openFaqPanel() {
       <div class="mt-2 text-[10px] text-yellow-500/70">Tap a question to see an answer.</div>
     `;
     document.body.appendChild(panel);
+    // Ensure very high stacking so it's never hidden
+    panel.style.zIndex = '100300';
+    panel.style.position = 'fixed';
+    panel.style.right = panel.style.right || '1rem';
+    panel.style.bottom = panel.style.bottom || '8rem';
     // Wire controls now that elements exist
     panel.querySelector('#faqCloseBtn')?.addEventListener('click', () => closeFaqPanel());
     panel.querySelector('#faqClearBtn')?.addEventListener('click', () => clearFaqChat());
@@ -197,7 +238,24 @@ window.openFaqPanel = function openFaqPanel() {
     if (window.lucide?.createIcons) window.lucide.createIcons();
   }
   console.log('🟡 Opening FAQ panel');
+  panel.style.zIndex = '100500';
+  panel.style.display = 'block';
+  panel.style.opacity = '1';
+  panel.style.pointerEvents = 'auto';
+  panel.style.visibility = 'visible';
   panel.classList.remove('hidden');
+  // If layout collapses for any reason, enforce minimum size/position
+  setTimeout(() => {
+    try {
+      const r = panel.getBoundingClientRect();
+      if (!r.width || !r.height) {
+        panel.style.minWidth = '320px';
+        panel.style.minHeight = '200px';
+        panel.style.right = '16px';
+        panel.style.bottom = '112px';
+      }
+    } catch {}
+  }, 0);
   renderFaqQuestions();
   faqWelcomeIfEmpty();
 };
@@ -271,36 +329,61 @@ function setFabAction(action) {
   refreshFabMenuVisibility();
 }
 
-function doFabAction() {
-  switch (FabState.action) {
-    case 'add':
-      // Enter crosshair placement mode; confirm opens title modal
-      try { window._pinIntent = null; Crosshair.enter(); }
-      catch (_) { window._pinIntent = null; window.forceShowAddLocation?.(); }
-      break;
-    case 'event':
-      try { window._pinIntent = 'event'; Crosshair.enter(); }
-      catch (_) { window._pinIntent = 'event'; window.forceShowAddLocation?.(); }
-      break;
-    case 'report':
-      try { window._pinIntent = 'report'; Crosshair.enter(); }
-      catch (_) { window._pinIntent = 'report'; window.forceShowAddLocation?.(); }
-      break;
-    case 'theme':
+  function doFabAction() {
+    switch (FabState.action) {
+      case 'add': {
+        // Crosshair placement; confirm opens Add Location modal
+        try {
+          // Close any open overlays to avoid focus conflicts
+          document.getElementById('profileMenu')?.classList.add('hidden');
+          document.getElementById('requestModal')?.classList.add('hidden');
+          document.getElementById('feedbackModal')?.classList.add('hidden');
+          window._pinIntent = null;
+          Crosshair.enter();
+        } catch (_) {
+          // Fallback: open the add modal directly
+          window.forceShowAddLocation?.();
+          forceShowModal('submissionModal');
+          forceShowModal('addLocationModal');
+        }
+        break;
+      }
+      case 'event': {
+        // Crosshair with event intent; confirm pre-fills category to events
+        try {
+          document.getElementById('profileMenu')?.classList.add('hidden');
+          window._pinIntent = 'event';
+          Crosshair.enter();
+        } catch (_) {
+          window._pinIntent = 'event';
+          window.forceShowAddLocation?.();
+          setTimeout(() => prefillCategoryForIntent('event'), 0);
+        }
+        break;
+      }
+      case 'report': {
+        // Crosshair with report intent; confirm pre-fills category to reports
+        try {
+          document.getElementById('profileMenu')?.classList.add('hidden');
+          window._pinIntent = 'report';
+          Crosshair.enter();
+        } catch (_) {
+          window._pinIntent = 'report';
+          window.forceShowAddLocation?.();
+          setTimeout(() => prefillCategoryForIntent('report'), 0);
+        }
+        break;
+      }
+      case 'theme':
       window.toggleTheme?.();
       break;
     case 'faq':
+      // Open FAQ panel exclusively and assert visibility
       try {
-        const panel = document.getElementById('faqPanel');
-        const isHidden = !panel || panel.classList.contains('hidden');
-        if (isHidden) {
-          console.log('🟡 FAB main clicked (FAQ): opening');
-          window.openFaqPanel?.();
-        } else {
-          console.log('🟡 FAB main clicked (FAQ): closing');
-          window.closeFaqPanel?.();
-        }
-      } catch (_) {}
+        if (!document.getElementById('faqPanel')) window.openFaqPanel?.();
+        openModalExclusive('faqPanel');
+        forceShowModal('faqPanel');
+      } catch (_) { try { window.openFaqPanel?.(); forceShowModal('faqPanel'); } catch {} }
       break;
     case 'locate':
     default: {
@@ -335,7 +418,7 @@ function doFabAction() {
   }
 }
 
-function initFabMultiPicker() {
+  function initFabMultiPicker() {
   const container = document.getElementById('floatingLocateBtn');
   const main = document.getElementById('fabMain');
   const corner = document.getElementById('fabCorner');
@@ -353,33 +436,65 @@ function initFabMultiPicker() {
   updateFabThemeIcon(localStorage.getItem(THEME_KEY) || 'dark');
   refreshFabMenuVisibility();
 
-  const closeMenu = () => menu.classList.add('hidden');
-  const toggleMenu = () => menu.classList.toggle('hidden');
+  // Suppress accidental main click-through after a menu tap (iOS under-finger retarget)
+  // Use a global guard and pointer-events disable for robustness across rebinds
+  window._fabGuardUntil = window._fabGuardUntil || 0;
+  const closeMenu = () => { console.log('FAB: closeMenu()'); menu.classList.add('hidden'); };
+  const toggleMenu = () => {
+    menu.classList.toggle('hidden');
+    const opened = !menu.classList.contains('hidden');
+    console.log('FAB: toggleMenu()', opened ? 'opened' : 'closed');
+    try {
+      const hj = document.getElementById('helpJoinBtn');
+      if (hj) hj.style.display = opened ? 'none' : '';
+    } catch {}
+  };
 
   main.addEventListener('click', (e) => {
     // ignore clicks on the corner nub inside
     if (e.target && (e.target.id === 'fabCorner' || e.target.closest('#fabCorner'))) return;
+    if (Date.now() < (window._fabGuardUntil || 0)) { console.log('FAB: main click suppressed'); return; }
+    console.log('FAB: main clicked; action =', FabState.action);
     doFabAction();
   });
 
   corner.addEventListener('click', (e) => {
     e.stopPropagation();
+    console.log('FAB: corner nub clicked');
     toggleMenu();
   });
 
-  // Menu item selection sets the default action and closes menu
+  // Menu item selection: PERFORM the action immediately, and also set as default icon
   menu.querySelectorAll('button[data-action]').forEach(btn => {
     btn.addEventListener('click', (e) => {
+      try { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); } catch {}
       const action = btn.getAttribute('data-action');
       if (action === 'slot3' || action === 'slot4') return; // reserved
+      console.log('FAB: menu action clicked →', action);
+      // Minimal guard to avoid immediate main click; no global blockers
+      window._fabGuardUntil = Date.now() + 150;
+      try { main.style.pointerEvents = 'none'; setTimeout(() => { try { main.style.pointerEvents = ''; } catch(_){} }, 180); } catch {}
       if (action === 'faq') {
         setFabAction('faq');
-        try { window.openFaqPanel?.(); } catch {}
-        closeMenu();
+        try {
+          window.openFaqPanel?.();
+          setTimeout(() => {
+            const p = document.getElementById('faqPanel');
+            if (p) { p.classList.remove('hidden'); p.style.display = 'block'; p.style.opacity = '1'; p.style.pointerEvents = 'auto'; p.style.zIndex = '100700'; }
+          }, 0);
+        } catch {}
+        setTimeout(closeMenu, 10);
+        return;
+      }
+      if (action === 'theme') {
+        setFabAction('theme');
+        try { window.toggleTheme?.(); } catch {}
+        setTimeout(closeMenu, 10);
         return;
       }
       setFabAction(action);
-      closeMenu();
+      try { doFabAction(); } catch (err) { console.warn('FAB: doFabAction failed', err); }
+      setTimeout(closeMenu, 10);
     });
   });
 
@@ -441,7 +556,8 @@ const Crosshair = {
     if (this.el) return;
     const wrap = document.createElement('div');
     wrap.id = 'pinCrosshair';
-    wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;display:none;';
+  // Ensure crosshair overlay sits above bottom nav and sidebars
+  wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:100300;display:none;';
     wrap.innerHTML = `
       <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;">
         <div style="width:18px;height:18px;border-radius:50%;border:2px solid #facc15;box-shadow:0 0 10px rgba(250,204,21,.6);"></div>
@@ -490,21 +606,33 @@ const Crosshair = {
       window._pendingPin = { lat: c.lat, lng: c.lng };
     } catch { window._pendingPin = null; }
     this.exit();
-    // Open the Add Location modal for title/details
-    window.forceShowAddLocation?.();
-    // Prefill category (events/reports) if intent is set
+    // Open the Add Location modal for title/details (exclusive + force-show)
     try {
+      const preferSubmission = !!document.getElementById('submissionModal');
+      if (preferSubmission) {
+        openModalExclusive('submissionModal');
+        forceShowModal('submissionModal');
+      } else {
+        window.forceShowAddLocation?.();
+        forceShowModal('addLocationModal');
+      }
+      // Prefill category (events/reports) if intent is set and focus the input
       setTimeout(() => {
-        prefillCategoryForIntent(window._pinIntent);
-        // Focus name field for quick entry
-        const nameA = document.getElementById('locationName');
-        const nameB = document.getElementById('locationTitle');
-        (nameA || nameB)?.focus?.();
-        // If modal failed to open, try once more
-        const modal = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
-        const isHidden = modal ? modal.classList.contains('hidden') : true;
-        if (isHidden) setTimeout(() => window.forceShowAddLocation?.(), 100);
+        try { prefillCategoryForIntent(window._pinIntent); } catch {}
+        const m = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
+        try { (m?.querySelector('#locationName') || m?.querySelector('#locationTitle'))?.focus(); } catch {}
       }, 0);
+      // Safety: if still hidden after a moment, assert visibility again
+      setTimeout(() => {
+        const m = document.getElementById('submissionModal') || document.getElementById('addLocationModal');
+        if (!m) return;
+        const hidden = m.classList.contains('hidden') || m.style.display === 'none';
+        if (hidden) {
+          if (m.id === 'submissionModal') openModalExclusive('submissionModal');
+          else openModalExclusive('addLocationModal');
+          forceShowModal(m.id);
+        }
+      }, 120);
     } catch {}
   }
 };
@@ -2541,7 +2669,7 @@ function ensureActivityPostFormNode() {
   if (!feed) return;
   form = document.createElement('form');
   form.id = 'activityPostForm';
-  form.className = 'absolute bottom-12 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20';
+  form.className = 'absolute bottom-0 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20';
   form.innerHTML = `
     <input id="postInput" type="text" placeholder="Write your post..." required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
     <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
@@ -3005,6 +3133,8 @@ function bindUIButtons() {
       try { refreshFollowCounts(); } catch {}
       // Update inbox badge and optionally refresh from backend
       try { updateInboxBadge(); refreshInbox?.(); } catch {}
+      // Prevent clicks passing through to FAB while profile menu is open
+      try { pm.addEventListener('click', (e) => { e.stopPropagation(); }, { passive: true }); } catch {}
     } else {
       pm.classList.add('hidden');
     }
@@ -3302,32 +3432,35 @@ window.handleEntertainment = function (rawRows) {
 };
 
 // ─────────── NAV + FAB VISIBILITY ───────────
-// Hide the floating locate button and bottom pill when any sidebar is open
-(function initOverlayAwareVisibility() {
-  const locateBtn = document.getElementById('floatingLocateBtn');
-  if (!locateBtn) return;
+  // Hide the floating locate button when any sidebar or the profile menu is open
+  (function initOverlayAwareVisibility() {
+    const locateBtn = document.getElementById('floatingLocateBtn');
+    if (!locateBtn) return;
 
-  const sidebars = [
-    document.getElementById('activitySidebar'),
-    document.getElementById('entertainmentSidebar'),
-    document.getElementById('marketplaceSidebar')
-  ].filter(Boolean);
+    const sidebars = [
+      document.getElementById('activitySidebar'),
+      document.getElementById('entertainmentSidebar'),
+      document.getElementById('marketplaceSidebar')
+    ].filter(Boolean);
+    const profileMenu = document.getElementById('profileMenu');
 
-  const update = () => {
-    const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'));
-    if (locateBtn) locateBtn.style.display = anyOpen ? 'none' : 'flex';
-  };
+    const update = () => {
+      const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'))
+        || (profileMenu && !profileMenu.classList.contains('hidden'));
+      if (locateBtn) locateBtn.style.display = anyOpen ? 'none' : 'flex';
+    };
 
-  const observer = new MutationObserver(update);
-  sidebars.forEach(el => observer.observe(el, { attributes: true, attributeFilter: ['class'] }));
+    const observer = new MutationObserver(update);
+    sidebars.forEach(el => observer.observe(el, { attributes: true, attributeFilter: ['class'] }));
+    if (profileMenu) observer.observe(profileMenu, { attributes: true, attributeFilter: ['class'] });
 
-  ['activityBtn','entertainmentBtn','marketplaceBtn','profileToggle'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', () => setTimeout(update, 0));
-  });
+    ['activityBtn','entertainmentBtn','marketplaceBtn','profileToggle'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', () => setTimeout(update, 0));
+    });
 
-  // Initial state
-  update();
-})();
+    // Initial state
+    update();
+  })();
 
 // Callbacks for entertainment like/comment
 window.handleEntertainmentLike = function (resp) {
@@ -3492,6 +3625,7 @@ console.log('🧠 isPremium:', isPremium);
   fetch('locations.geojson')
     .then(res => res.json())
     .then(data => {
+      const exec = () => {
       originalGeoData = data;
       // If a community is already selected, zoom to it
       const savedCommunity = localStorage.getItem('memberCommunity');
@@ -3525,17 +3659,18 @@ window.mapCategories = [...categories].sort();
 setTimeout(() => window.populateCategoryFilters?.(), 0);
 // Also populate Add Location category selects (submission + fallback)
 setTimeout(() => window.populateCategorySelects?.(), 0);
-window.populateCategoryFilters = function () {
-  const box = document.getElementById('categoryFilters');
-  if (!box || !window.mapCategories) return;
+window.populateCategoryFiltersInto = function (box) {
+  if (!box) return;
+  const cats = (Array.isArray(window.mapCategories) && window.mapCategories.length)
+    ? window.mapCategories
+    : (Array.isArray(DEFAULT_CATEGORIES) ? DEFAULT_CATEGORIES : []);
+  if (!cats.length) return;
   box.innerHTML = '';
-  window.mapCategories.forEach(cat => {
+  cats.forEach(cat => {
     const safeId = `filter-${cat.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
     const row = document.createElement('div');
     row.className = 'flex items-center gap-2';
-
     const icon = (window.categoryIconMap || {})[cat.toLowerCase()] || '📍';
-
     const label = document.createElement('label');
     label.className = 'group flex flex-1 items-center gap-3 rounded-xl border border-yellow-500/20 bg-black/60 px-3 py-2 text-xs text-yellow-200 transition hover:border-yellow-400';
     label.innerHTML = `
@@ -3545,19 +3680,18 @@ window.populateCategoryFilters = function () {
       <span class="tg-toggle relative inline-flex h-6 w-11 items-center rounded-full bg-yellow-500/20 transition-[background,box-shadow] duration-300 ease-out peer-checked:bg-yellow-500 peer-checked:shadow-[0_0_12px_rgba(250,204,21,0.45)]">
         <span class="tg-knob inline-block h-5 w-5 translate-x-1 rounded-full bg-yellow-200 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] peer-checked:translate-x-5 peer-checked:bg-black"></span>
       </span>`;
-
     const onlyBtn = document.createElement('button');
     onlyBtn.type = 'button';
     onlyBtn.textContent = 'Only';
     onlyBtn.className = 'text-[10px] uppercase tracking-[0.25em] text-yellow-500/80 hover:text-yellow-200 transition px-2 py-1 rounded-full border border-yellow-500/20 bg-black/40';
-    onlyBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      window.setExclusiveCategory(cat);
-    });
-
+    onlyBtn.addEventListener('click', e => { e.stopPropagation(); window.setExclusiveCategory(cat); });
     row.append(label, onlyBtn);
     box.appendChild(row);
   });
+};
+
+window.populateCategoryFilters = function () {
+  window.populateCategoryFiltersInto(document.getElementById('categoryFilters'));
 }
 if (filterBox) {
   window.populateCategoryFilters();
@@ -3582,7 +3716,16 @@ if (filterBox) {
         el.style.backgroundSize = 'cover';
         el.style.cursor = 'pointer';
 
-        const coords = feature.geometry.coordinates;
+        const coordsRaw = feature && feature.geometry && Array.isArray(feature.geometry.coordinates)
+          ? feature.geometry.coordinates
+          : null;
+        const lon = (coordsRaw && typeof coordsRaw[0] !== 'undefined') ? Number(coordsRaw[0]) : NaN;
+        const lat = (coordsRaw && typeof coordsRaw[1] !== 'undefined') ? Number(coordsRaw[1]) : NaN;
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          console.warn('⛔ Skipping feature with invalid coordinates:', feature && feature.properties ? feature.properties.title : feature);
+          return; // skip this feature
+        }
+        const coords = [lon, lat];
         const normalize = (s) => s
           .toLowerCase()
           .normalize('NFKD')
@@ -3592,8 +3735,7 @@ if (filterBox) {
           .trim();
 
         const safeTitle = title.replace(/'/g, "\\'");
-        const lat = coords[1];
-        const lon = coords[0];
+        // use the validated lat/lon above
 
         let popupContent = `
   <div class="custom-popup">
@@ -3689,6 +3831,11 @@ marker.getElement().addEventListener('click', () => {
       if (window.lucide) lucide.createIcons();
 
       // Optional: also populate category filters here
+      };
+      try {
+        if (!(map && map.isStyleLoaded && map.isStyleLoaded())) { map.once('load', exec); return; }
+      } catch (_) {}
+      exec();
     });
   
 
@@ -5031,6 +5178,10 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.style.display = 'block';
     modal.style.opacity = '1';
     modal.style.pointerEvents = 'auto';
+    modal.style.position = modal.style.position || 'fixed';
+    modal.style.zIndex = '100700';
+    try { (modal.querySelector('#locationName') || modal.querySelector('#locationTitle'))?.focus(); } catch {}
+    try { modal.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
   };
   window.forceShowFavourites = function () {
     const dropdowns = document.querySelectorAll('#favouritesDropdown');
@@ -5070,12 +5221,19 @@ document.addEventListener('click', (ev) => {
   if (!(t instanceof Element)) return;
   const q = (sel) => t.closest(sel);
 
+  // Debug taps on core controls
+  if (q('#fabCorner')) console.log('Event: document click on #fabCorner');
+  if (q('#filterBtn')) console.log('Event: document click on #filterBtn');
+
   // Filter open/close (delegate to a single helper)
   if (q('#filterBtn')) { ev.preventDefault(); openFilterPanel(); return; }
   if (q('#closeFilterPanel')) {
     ev.preventDefault();
+    console.log('Filter: close clicked');
     const panels = document.querySelectorAll('#filterPanel');
-    panels.forEach(p => p.classList.add('hidden'));
+    panels.forEach(p => { p.classList.add('hidden'); p.style.display = 'none'; });
+    const portal = document.getElementById('filterPanelPortal');
+    if (portal) portal.remove();
     return;
   }
 
@@ -5257,46 +5415,219 @@ document.addEventListener('click', (ev) => {
   try {
     const fb = document.getElementById('filterBtn');
     if (fb) {
-      fb.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openFilterPanel(); });
+      fb.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); window.toggleFilterPanel?.(); });
     }
   } catch {}
 // Dedicated filter panel open helper (used by explicit binding and delegated fallback)
-function openFilterPanel() {
+window.openFilterPanel = function openFilterPanel() {
+  console.log('Filter: openFilterPanel() called');
   try {
     const s = document.getElementById('suggestions');
     if (s) { s.classList.add('hidden'); s.style.display = 'none'; }
   } catch {}
-  const panels = document.querySelectorAll('#filterPanel');
-  if (panels.length === 0) {
-    const shell = document.createElement('div');
-    shell.id = 'filterPanel';
-    shell.className = 'fixed bottom-28 left-6 w-[18rem]';
-    shell.style.zIndex = '100200';
-    shell.innerHTML = `
-      <div class="rounded-2xl border border-yellow-500/50 bg-black/90 px-4 py-5 text-yellow-200 shadow-[0_18px_32px_rgba(255,215,0,0.12)]">
-        <div class="flex items-start justify-between gap-3 mb-4">
-          <div>
-            <p class="text-[10px] uppercase tracking-[0.35em] text-yellow-500/70">Filters</p>
-            <h2 class="text-lg font-semibold text-yellow-100">Refine Map</h2>
-          </div>
-          <button id="closeFilterPanel" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black transition">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
-        <div class="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-yellow-500/80 mb-3">
-          <span>Categories</span>
-          <button type="button" class="text-yellow-400 hover:text-yellow-200" onclick="showAllLocations()">Reset</button>
-        </div>
-        <div id="categoryFilters" class="max-h-44 overflow-y-auto pr-1 mb-4 space-y-2"></div>
-        <button onclick="filterByCategory()" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
-          <i data-lucide="check"></i>
-          <span>Apply</span>
-        </button>
-      </div>`;
-    document.body.appendChild(shell);
-    window.lucide?.createIcons?.();
+  // Prefer existing panel from components/modals.html
+  let panel = document.getElementById('filterPanel');
+  // Always lift the panel to document.body to avoid being inside any hidden container
+  try { if (panel && panel.parentElement !== document.body) document.body.appendChild(panel); } catch {}
+  // If multiple panels somehow exist, keep the first and remove others
+  try {
+    const all = Array.from(document.querySelectorAll('#filterPanel'));
+    if (all.length > 1) {
+      all.slice(1).forEach(p => p.remove());
+      panel = all[0];
+    }
+  } catch {}
+  if (panel) {
+    panel.classList.remove('hidden');
+    panel.style.display = 'block';
+    panel.style.position = 'fixed';
+    panel.style.left = '16px';
+    panel.style.bottom = '112px';
+    panel.style.zIndex = '100500';
+    panel.style.pointerEvents = 'auto';
+    panel.style.visibility = 'visible';
+    // Always set explicit width, do not rely on Tailwind arbitrary class
+    panel.style.width = '288px';
+    panel.style.minWidth = '288px';
+    const inner = panel.firstElementChild || panel;
+    if (inner) {
+      inner.style.display = 'block';
+      inner.style.opacity = '1';
+      inner.style.width = '100%';
+      inner.style.minHeight = inner.style.minHeight || '220px';
+    }
+    try { window.lucide?.createIcons?.(); } catch {}
     setTimeout(() => window.populateCategoryFilters?.(), 0);
-  } else {
-    panels.forEach(p => p.classList.remove('hidden'));
+    // Force a reflow before measuring
+    try { void panel.offsetWidth; } catch {}
+    // Defer measurement to ensure layout
+    setTimeout(() => {
+      // As a final safety, apply a min-height if computed height is 0
+      const r0 = panel.getBoundingClientRect();
+      if (!r0.height || !r0.width) {
+        panel.style.minHeight = '260px';
+        panel.style.minWidth = '288px';
+        panel.style.visibility = 'visible';
+        // If still 0 after one more tick, build a portal fallback panel that is guaranteed visible
+        setTimeout(() => {
+          const r1 = panel.getBoundingClientRect();
+          if (!r1.height || !r1.width) {
+            let portal = document.getElementById('filterPanelPortal');
+            if (!portal) {
+              portal = document.createElement('div');
+              portal.id = 'filterPanelPortal';
+              portal.style.cssText = 'position:fixed;left:16px;bottom:112px;z-index:100600;width:288px;min-width:288px;min-height:260px;pointer-events:auto;';
+              portal.innerHTML = `
+                <div class="rounded-2xl border border-yellow-500/50 bg-black/90 px-4 py-5 text-yellow-200 shadow-[0_18px_32px_rgba(255,215,0,0.12)]">
+                  <div class="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <p class="text-[10px] uppercase tracking-[0.35em] text-yellow-500/70">Filters</p>
+                      <h2 class="text-lg font-semibold text-yellow-100">Refine Map</h2>
+                    </div>
+                    <button id="closeFilterPanel" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black transition">×</button>
+                  </div>
+                  <div class="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-yellow-500/80 mb-3">
+                    <span>Categories</span>
+                    <button type="button" class="text-yellow-400 hover:text-yellow-200" onclick="showAllLocations()">Reset</button>
+                  </div>
+                  <div id="categoryFiltersPortal" class="max-h-44 overflow-y-auto pr-1 mb-4 space-y-2"></div>
+                  <button onclick="filterByCategory()" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
+                    <span>Apply</span>
+                  </button>
+                </div>`;
+              document.body.appendChild(portal);
+              try { window.populateCategoryFiltersInto?.(portal.querySelector('#categoryFiltersPortal')); } catch {}
+              try { portal.querySelector('#closeFilterPanel')?.addEventListener('click', () => { portal.remove(); }); } catch {}
+            }
+            // Hide original if portal is used
+            panel.classList.add('hidden');
+            panel.style.display = 'none';
+          }
+        }, 0);
+      }
+      const rect = panel.getBoundingClientRect();
+      console.log('Filter: rect fresh', { w: rect.width, h: rect.height, y: rect.y });
+    }, 0);
+    return;
   }
+  // Fallback build if missing
+  panel = document.createElement('div');
+  panel.id = 'filterPanel';
+  panel.className = 'fixed bottom-28 left-6';
+  panel.style.zIndex = '100500';
+  panel.style.width = '288px';
+  panel.style.minWidth = '288px';
+  panel.innerHTML = `
+    <div class="rounded-2xl border border-yellow-500/50 bg-black/90 px-4 py-5 text-yellow-200 shadow-[0_18px_32px_rgba(255,215,0,0.12)]">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <p class="text-[10px] uppercase tracking-[0.35em] text-yellow-500/70">Filters</p>
+          <h2 class="text-lg font-semibold text-yellow-100">Refine Map</h2>
+        </div>
+        <button id="closeFilterPanel" type="button" class="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-black transition">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-yellow-500/80 mb-3">
+        <span>Categories</span>
+        <button type="button" class="text-yellow-400 hover:text-yellow-200" onclick="showAllLocations()">Reset</button>
+      </div>
+      <div id="categoryFilters" class="max-h-44 overflow-y-auto pr-1 mb-4 space-y-2"></div>
+      <button onclick="filterByCategory()" class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
+        <i data-lucide="check"></i>
+        <span>Apply</span>
+      </button>
+    </div>`;
+  document.body.appendChild(panel);
+  // Wire the close button for the fallback panel (defensive)
+  try { panel.querySelector('#closeFilterPanel')?.addEventListener('click', () => { panel.classList.add('hidden'); panel.style.display = 'none'; panel.style.opacity = '0'; panel.style.pointerEvents = 'none'; }); } catch {}
+  try { window.lucide?.createIcons?.(); } catch {}
+  setTimeout(() => {
+    try { window.populateCategoryFilters?.(); } catch {}
+    const rect = panel.getBoundingClientRect();
+    console.log('Filter: rect fresh', { w: rect.width, h: rect.height, y: rect.y });
+  }, 0);
+}
+
+// Toggle helper for filter button: show if hidden, hide if visible
+window.toggleFilterPanel = function toggleFilterPanel() {
+  const p = document.getElementById('filterPanel');
+  if (!p) { openFilterPanel(); return; }
+  const isHidden = p.classList.contains('hidden') || p.style.display === 'none';
+  if (isHidden) { openFilterPanel(); }
+  else {
+    p.classList.add('hidden');
+    p.style.display = 'none';
+    p.style.opacity = '0';
+    p.style.pointerEvents = 'none';
+    const portal = document.getElementById('filterPanelPortal');
+    if (portal) portal.remove();
+  }
+};
+// Show one modal exclusively; closes others and overlays to avoid double-open
+function openModalExclusive(targetId) {
+  try {
+    const ids = [
+      'requestModal','feedbackModal','submissionModal','addLocationModal',
+      'loginModal','signupModal','faqPanel'
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === targetId) return;
+      el.classList.add('hidden');
+      el.style.display = 'none';
+      el.style.pointerEvents = 'none';
+    });
+    // Close sidebars to prevent click-through/overlap
+    ['marketplaceSidebar','activitySidebar','entertainmentSidebar'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('translate-x-full');
+    });
+    // Hide profile menu
+    document.getElementById('profileMenu')?.classList.add('hidden');
+    // Show target
+    const t = document.getElementById(targetId);
+    if (t) {
+      t.classList.remove('hidden');
+      t.style.display = 'block';
+      t.style.opacity = '1';
+      t.style.pointerEvents = 'auto';
+      t.style.zIndex = '100700';
+    }
+  } catch {}
+}
+// Force-show a modal/panel by id and re-assert visibility on next tick
+function forceShowModal(id) {
+  try {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    // Promote to top-level to avoid hidden ancestors
+    if (el.parentElement !== document.body) {
+      try { document.body.appendChild(el); } catch {}
+    }
+    el.classList.remove('hidden');
+    el.style.display = 'block';
+    el.style.opacity = '1';
+    el.style.pointerEvents = 'auto';
+    el.style.position = el.style.position || 'fixed';
+    el.style.zIndex = '100700';
+    el.style.visibility = 'visible';
+    // Center typical small modals (not full-screen overlays)
+    if (!/inset-0/.test(el.className)) {
+      el.style.left = '50%';
+      el.style.top = '50%';
+      el.style.bottom = 'auto';
+      el.style.transform = 'translate(-50%,-50%)';
+    }
+    setTimeout(() => {
+      el.classList.remove('hidden');
+      el.style.display = 'block';
+      el.style.opacity = '1';
+      el.style.pointerEvents = 'auto';
+      el.style.zIndex = '100700';
+      el.style.visibility = 'visible';
+    }, 0);
+    return true;
+  } catch (_) { return false; }
 }

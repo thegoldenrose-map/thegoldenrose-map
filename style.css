@@ -57,10 +57,9 @@ img, video { max-width: 100%; height: auto; }
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 99990; /* always above sidebars */
+  z-index: 40; /* below sidebars (z-50), above map */
   padding-bottom: max(env(safe-area-inset-bottom), 6px);
   background: transparent;
-  pointer-events: none; /* allow inner pill to receive events */
 }
 
 #bottom-nav .bottom-pill {
@@ -111,6 +110,17 @@ body.theme-light #bottom-nav .bottom-pill {
   position: absolute; right: -2px; bottom: -2px;
 }
 #fabMenu { position: absolute; }
+
+/* FAB speed‑dial buttons: ensure dark mode styling is consistent */
+#fabMenu button {
+  background: #0b0b0b !important;
+  color: #facc15 !important;
+  border-color: #eab308 !important;
+}
+body.theme-light #fabMenu button {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
 
 /* Buttons in the pill */
 #bottom-nav .pill-item { display: flex; align-items: center; justify-content: center; }
@@ -419,20 +429,45 @@ body.theme-light .like-btn {
   opacity: 1;
 }
 
+/* Filter panel portal (fallback) */
+#filterPanelPortal { pointer-events: auto; position: fixed; z-index: 100600 !important; width: 18rem; min-width: 16rem; }
+#filterPanelPortal > div {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+  will-change: transform, opacity;
+}
+#filterPanelPortal:not(.hidden) > div { transform: translateY(0); opacity: 1; }
+
 /* Light mode: Filter panel readability */
 body.theme-light #filterPanel > div {
   background-color: #fff9e6 !important;   /* cream */
   color: #2f1b00 !important;               /* dark text */
   border-color: #d97706 !important;        /* warm brown border */
 }
+body.theme-light #filterPanelPortal > div {
+  background-color: #fff9e6 !important;
+  color: #2f1b00 !important;
+  border-color: #d97706 !important;
+}
 body.theme-light #filterPanel [class*="text-yellow-"] {
   color: #2f1b00 !important;               /* darken labels/chips */
+}
+body.theme-light #filterPanelPortal [class*="text-yellow-"] {
+  color: #2f1b00 !important;
 }
 body.theme-light #filterPanel [class*="border-yellow-"] {
   border-color: #d97706 !important;
 }
+body.theme-light #filterPanelPortal [class*="border-yellow-"] {
+  border-color: #d97706 !important;
+}
 body.theme-light #filterPanel [class*="bg-black"] {
   background-color: #fff7d6 !important;    /* lighten card rows */
+  color: #2f1b00 !important;
+}
+body.theme-light #filterPanelPortal [class*="bg-black"] {
+  background-color: #fff7d6 !important;
   color: #2f1b00 !important;
 }
 
@@ -1124,3 +1159,7 @@ body.theme-light #chatInput {
   border-color: #eab308 !important;
 }
 #fabMenu { z-index: 100200; }
+#fabCorner { pointer-events: auto; }
+#filterPanel { pointer-events: auto; position: fixed; z-index: 100500 !important; width: 18rem; min-width: 16rem; }
+#filterPanel.hidden { display: none !important; }
+#faqPanel { pointer-events: auto; z-index: 100700 !important; }

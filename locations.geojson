@@ -355,6 +355,22 @@
           51.09859153705062
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "The Swan",
+        "description": "T",
+        "category": "pubs",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03340000000002874,
+          51.09789999999998
+        ]
+      }
     }
   ]
 }

@@ -1846,56 +1846,25 @@ function addLocationToMapImmediate({ title, description = '', category = 'Genera
     const looksSwapped = Number.isFinite(_lat) && Number.isFinite(_lng) && ((Math.abs(_lng) > 10 && Math.abs(_lat) < 10) || _lng > 20 || _lng < -20);
     if (looksSwapped || outOfBounds) { const t = _lat; _lat = _lng; _lng = t; }
     const coords = [_lng, _lat];
-    const el = document.createElement('div');
-    el.className = 'marker';
-    el.dataset.adminPin = '1';
-    el.style.width = '24px';
-    el.style.height = '24px';
-    const catLower = (category || '').toString().toLowerCase();
-    const isEvent = (catLower === 'events' || catLower === 'event');
-    const bgImg = isEvent ? 'events.icon.png' : 'flower.png';
-    el.style.backgroundImage = `url(${bgImg})`;
-    if (isEvent) el.classList.add('event-marker');
-    el.style.backgroundSize = 'cover';
-    el.style.cursor = 'pointer';
-
-    const safeTitle = (title || '').replace(/'/g, "\\'");
-    const popupContent = `
-      <div class="custom-popup">
-        <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')">
-          <i data-lucide=\"heart\" class=\"w-4 h-4\"></i>
-        </button>
-        <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()">
-          <i data-lucide=\"x\" class=\"w-4 h-4\"></i>
-        </button>
-        <div class="title">${title}</div>
-        ${description ? `<div class=\"desc\">${description}</div>` : ''}
-        <div class="actions">
-          <button onclick="openDirections(${_lat}, ${_lng}, '${safeTitle}')">
-            <i data-lucide=\"navigation\"></i> Directions
-          </button>
-        </div>
-      </div>`;
-
-  const popup = new mapboxgl.Popup({
-    closeButton: false,
-    anchor: 'bottom',
-    offset: 10
-  }).setHTML(popupContent);
-    const marker = new mapboxgl.Marker({
-      element: el,
-      anchor: 'bottom',
-      pitchAlignment: 'map',
-      rotationAlignment: 'map'
-    }).setLngLat(coords).setPopup(popup).addTo(map);
-    marker.getElement().addEventListener('click', () => setTimeout(() => window.lucide?.createIcons?.(), 50));
 
     const feature = {
       type: 'Feature',
       properties: { title, description, category, verified: false, _adminTemp: true },
       geometry: { type: 'Point', coordinates: coords }
     };
-    geoMarkers.push({ title: (title||'').toLowerCase(), coords, marker, feature, _adminTemp: true });
+    // Update Mapbox source so the symbol layer renders it immediately
+    try {
+      if (map.getSource('places')) {
+        if (!window.originalGeoData || !Array.isArray(window.originalGeoData.features)) {
+          window.originalGeoData = { type: 'FeatureCollection', features: [] };
+        }
+        window.originalGeoData.features.push(feature);
+        map.getSource('places').setData(window.originalGeoData);
+      }
+    } catch {}
+
+    // Keep in-memory list for search/navigation (no DOM marker)
+    geoMarkers.push({ title: (title||'').toLowerCase(), coords, marker: null, feature, _adminTemp: true });
     try {
       if (window.originalGeoData && Array.isArray(window.originalGeoData.features)) {
         window.originalGeoData.features.push(feature);
@@ -1910,7 +1879,7 @@ function addLocationToMapImmediate({ title, description = '', category = 'Genera
     } catch {}
 
     window.lucide?.createIcons?.();
-    console.log('✅ Admin auto-added location to map:', title, coords);
+    console.log('✅ Admin auto-added location to map (layer):', title, coords);
   } catch (e) {
     console.warn('Failed to add location to map immediately:', e);
   }
@@ -3785,6 +3754,35 @@ console.log('🧠 isPremium:', isPremium);
   try {
     window.addEventListener('resize', () => { try { map.resize(); } catch {} });
   } catch {}
+
+  // Smooth pulsating glow for verified + event halos
+  if (typeof window.startGlowPulse !== 'function') {
+    window._glowPulseStarted = false;
+    window.startGlowPulse = function () {
+      if (window._glowPulseStarted) return; // one loop only
+      window._glowPulseStarted = true;
+      let t = 0;
+      const step = () => {
+        try {
+          if (!map || !map.getLayer('places')) { window._glowPulseStarted = false; return; }
+          t += 0.05;
+          const z = typeof map.getZoom === 'function' ? map.getZoom() : 12;
+          // Base radius by zoom (kept modest)
+          let base = 8; if (z > 9) base = 10; if (z > 11) base = 12; if (z > 13) base = 14; if (z > 15) base = 18;
+          const vRadius = base * (1 + 0.28 * Math.sin(t));
+          const eRadius = (base * 0.95) * (1 + 0.35 * Math.sin(t + 0.6));
+          const vOpacity = 0.38 + 0.18 * Math.abs(Math.sin(t));
+          const eOpacity = 0.38 + 0.2 * Math.abs(Math.sin(t + 0.6));
+          map.setPaintProperty('places-verified-glow', 'circle-radius', vRadius);
+          map.setPaintProperty('places-verified-glow', 'circle-opacity', vOpacity);
+          map.setPaintProperty('places-event-glow', 'circle-radius', eRadius);
+          map.setPaintProperty('places-event-glow', 'circle-opacity', eOpacity);
+        } catch {}
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+  }
   
 
   // 🔥 Fetch and add markers AFTER map is initialized
@@ -3883,10 +3881,10 @@ if (filterBox) {
             source: 'places',
             filter: ['==', ['get', 'verified'], true],
             paint: {
-              'circle-color': 'rgba(253, 224, 71, 0.75)',
-              'circle-blur': 1.2,
-              'circle-opacity': 0.45,
-              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 6, 10, 10, 14, 14, 16, 18]
+              'circle-color': 'rgba(253, 224, 71, 1.0)',
+              'circle-blur': 2.0,
+              'circle-opacity': 0.5,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 8, 10, 12, 14, 16, 16, 20]
             }
           });
 
@@ -3897,10 +3895,10 @@ if (filterBox) {
             source: 'places',
             filter: ['match', ['downcase', ['to-string', ['get', 'category']]], ['events','event'], true, false],
             paint: {
-              'circle-color': 'rgba(236, 72, 153, 0.7)',
-              'circle-blur': 1.2,
-              'circle-opacity': 0.45,
-              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 5, 10, 8, 14, 12, 16, 14]
+              'circle-color': 'rgba(236, 72, 153, 1.0)',
+              'circle-blur': 2.0,
+              'circle-opacity': 0.5,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 7, 10, 10, 14, 14, 16, 18]
             }
           });
 
@@ -3944,6 +3942,9 @@ if (filterBox) {
           }
         };
         ensureImages(addLayerNow);
+
+        // Start glow pulse animation once layers exist
+        setTimeout(() => { try { window.startGlowPulse?.(); } catch {} }, 100);
         // Click handler: build and show popup at feature coordinates
         const buildPopupHTML = (feature) => {
           const title = feature.properties.title || '';

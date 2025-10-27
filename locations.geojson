@@ -323,7 +323,7 @@
         ]
       },
       "id": 115
-<<<<<<< Updated upstream
+
     },
     {
       "type": "Feature",
@@ -340,136 +340,6 @@
           51.09852110350974
         ]
       }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "The Swan",
-        "description": "",
-        "category": "🛍️ SHOPS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.032762939034114424,
-          51.0985334265369
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "Yo",
-        "description": "",
-        "category": "events",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03427618366151819,
-          51.09775108246723
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "H",
-        "description": "",
-        "category": "cafes",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.032615194097047606,
-          51.0971537368587
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "K",
-        "description": "",
-        "category": "events",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.0354107965611945,
-          51.09667155031556
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "B",
-        "description": "",
-        "category": "🏛️ LANDMARKS",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03281773710887137,
-          51.10069335897836
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "M",
-        "description": "",
-        "category": "events",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.03676835304881365,
-          51.09761883254015
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "N",
-        "description": "",
-        "category": "events",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          0.04113454268403416,
-          51.099178914268606
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "title": "N",
-        "description": "",
-        "category": "reports",
-        "verified": false
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -0.027585964594067036,
-          51.024155937158184
-        ]
-      }
-=======
->>>>>>> Stashed changes
     }
   ]
 }

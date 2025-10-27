@@ -419,6 +419,22 @@
           51.10069335897836
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "M",
+        "description": "",
+        "category": "events",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03676835304881365,
+          51.09761883254015
+        ]
+      }
     }
   ]
 }

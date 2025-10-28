@@ -3686,52 +3686,41 @@ document.getElementById('tryPremiumBtn')?.addEventListener('click', () => {
     console.warn('❌ helpJoinBtn not found');
   }
 
-  // Auto-open onboarding for visitors with no memberName (treat as logged out)
-  try {
-    const notLoggedIn = !(localStorage.getItem('memberName') || '').trim();
-    if (notLoggedIn) {
-      const m = document.getElementById('onboardingModal');
-      if (m) {
-        m.classList.remove('hidden');
-        m.style.display = 'block';
-        m.style.opacity = '1';
-        m.style.pointerEvents = 'auto';
-      }
-    }
-  } catch {}
-
-  // Fallback: also trigger after full window load to avoid timing issues
-  window.addEventListener('load', () => {
+  // Auto-open onboarding only once per device for logged-out visitors
+  function maybeShowOnboardingOnce(force = false) {
     try {
-      const notLoggedIn = !(localStorage.getItem('memberName') || '').trim();
-      // Also allow URL param force: ?onboarding=1
-      const force = (() => { try { return new URL(window.location.href).searchParams.get('onboarding') === '1'; } catch { return false; } })();
-      if (notLoggedIn || force) {
-        const m = document.getElementById('onboardingModal');
-        if (m) {
+      const logged = !!(
+        (localStorage.getItem('memberName') || '').trim() ||
+        (localStorage.getItem('username') || '').trim() ||
+        (localStorage.getItem('membershipLevel') || '').trim()
+      );
+      const seen = localStorage.getItem('onboardingShown_v1') === '1';
+      if ((!logged && !seen) || force) {
+        const show = () => {
+          const m = document.getElementById('onboardingModal');
+          if (!m) return false;
           m.classList.remove('hidden');
           m.style.display = 'block';
           m.style.opacity = '1';
           m.style.pointerEvents = 'auto';
-        } else {
-          // Observe for it to appear (in case components load late)
-          let tries = 0;
-          const max = 60; // ~1s @ 60fps
-          const tick = () => {
-            const mm = document.getElementById('onboardingModal');
-            if (mm) {
-              mm.classList.remove('hidden');
-              mm.style.display = 'block';
-              mm.style.opacity = '1';
-              mm.style.pointerEvents = 'auto';
-              return;
-            }
-            if (tries++ < max) requestAnimationFrame(tick);
-          };
+          // mark as shown so it doesn't auto-open again
+          try { localStorage.setItem('onboardingShown_v1', '1'); } catch {}
+          return true;
+        };
+        if (!show()) {
+          // Wait for modal to be available if components load late
+          let tries = 0; const max = 60;
+          const tick = () => { if (!show() && tries++ < max) requestAnimationFrame(tick); };
           requestAnimationFrame(tick);
         }
       }
     } catch {}
+  }
+  // Immediate attempt and again on full load; allow URL param force with ?onboarding=1
+  maybeShowOnboardingOnce();
+  window.addEventListener('load', () => {
+    const force = (() => { try { return new URL(window.location.href).searchParams.get('onboarding') === '1'; } catch { return false; } })();
+    maybeShowOnboardingOnce(force);
   });
 
 
@@ -3952,11 +3941,15 @@ if (filterBox) {
           const isTradeAutos = /trade\s*price\s*autos/i.test(title);
           const safeTitle = title.replace(/'/g, "\\'");
           const [lon, lat] = feature.geometry.coordinates || [0,0];
+          const rawCat = (feature.properties.category || '').toString();
+          const catKey = rawCat.toLowerCase();
+          const catIcon = ((window.categoryIconMap || {})[catKey]) || '📍';
           let html = `
   <div class="custom-popup">
     <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')"><i data-lucide="heart" class="w-4 h-4"></i></button>
     <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide="x" class="w-4 h-4"></i></button>
     <div class="title">${title}</div>
+    ${rawCat ? `<div class=\"category\">${catIcon} <span>${rawCat}</span></div>` : ''}
     ${feature.properties.description ? `<div class=\"desc\">${feature.properties.description}</div>` : ''}
     <div class="actions"><button onclick="openDirections(${lat}, ${lon}, '${safeTitle}')"><i data-lucide="navigation"></i> Directions</button></div>
   </div>`;
@@ -5311,13 +5304,12 @@ document.getElementById('searchButton')?.addEventListener('click', () => {
   searchInput.dispatchEvent(new Event('input'));
 });
 
-// Do not auto-show onboarding based on login state; keep hidden by default
+// Onboarding close: hide and mark as seen so it won’t re-open automatically
 const onboardingModal = document.getElementById('onboardingModal');
-onboardingModal?.classList.add('hidden');
-  // Close button logic
-  document.getElementById('closeOnboarding')?.addEventListener('click', () => {
-    onboardingModal.classList.add('hidden');
-  });
+document.getElementById('closeOnboarding')?.addEventListener('click', () => {
+  try { localStorage.setItem('onboardingShown_v1', '1'); } catch {}
+  onboardingModal?.classList.add('hidden');
+});
 }
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🔥 DOM loaded');

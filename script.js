@@ -42,15 +42,18 @@ async function fetchAdminMembers() {
   const data = parseGvizResponse(txt);
   if (!data || !data.table) return [];
   const cols = (data.table.cols || []).map(c => (c.label || '').toString().trim());
-  const idxUser = cols.findIndex(c => c.toLowerCase().includes('user'));
-  const idxCommunity = cols.findIndex(c => c.toLowerCase().includes('community'));
+  const lc = cols.map(c => c.toLowerCase());
+  const idxUser = lc.findIndex(c => c.includes('user'));
+  const idxCommunity = lc.findIndex(c => c === 'community' || (c.includes('community') && !c.includes('status')));
+  const idxLast = lc.findIndex(c => c.replace(/\s+/g,'') === 'laststreakday');
   const rows = (data.table.rows || []).map(r => r.c || []);
   const out = [];
   for (const r of rows) {
     const u = r[idxUser]?.v ?? r[0]?.v ?? '';
     const c = r[idxCommunity]?.v ?? '';
-    if (!u && !c) continue;
-    out.push({ username: (u || '').toString(), community: (c || '').toString() });
+    const last = idxLast >= 0 ? (r[idxLast]?.v ?? r[idxLast]?.f ?? '') : '';
+    if (!u && !c && !last) continue;
+    out.push({ username: (u || '').toString(), community: (c || '').toString(), lastActive: (last || '').toString() });
   }
   // Drop possible header row duplicates
   return out.filter(x => (x.username || '').toLowerCase() !== 'username');
@@ -75,21 +78,48 @@ window.openAdminPanel = async function openAdminPanel() {
   const meta = document.getElementById('adminMembersMeta');
   const body = document.getElementById('adminMembersBody');
   if (meta) meta.textContent = 'Loading…';
-  if (body) body.innerHTML = '<tr><td class="px-4 py-3 text-yellow-400" colspan="2">Loading members…</td></tr>';
+  if (body) body.innerHTML = '<tr><td class="px-4 py-3 text-yellow-400" colspan="3">Loading members…</td></tr>';
 
   try {
     const list = await fetchAdminMembers();
     if (meta) meta.textContent = `${list.length} rows`;
     if (body) {
       if (!list.length) {
-        body.innerHTML = '<tr><td class="px-4 py-3 text-yellow-400" colspan="2">No data</td></tr>';
+        body.innerHTML = '<tr><td class="px-4 py-3 text-yellow-400" colspan="3">No data</td></tr>';
       } else {
-        body.innerHTML = list.map(({ username, community }) => `
+        const fmt = (s) => {
+          const str = (s || '').toString().trim();
+          if (!str) return '';
+          const t = Date.parse(str);
+          if (!isNaN(t)) {
+            const d = new Date(t);
+            const dd = String(d.getDate()).padStart(2,'0');
+            const mm = String(d.getMonth()+1).padStart(2,'0');
+            const yy = String(d.getFullYear()).slice(-2);
+            return `${dd}/${mm}/${yy}`;
+          }
+          // Try to coerce YYYY-MM-DD style without timezone
+          const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (m) return `${m[3]}/${m[2]}/${m[1].slice(-2)}`;
+          return str;
+        };
+        body.innerHTML = list.map(({ username, community, lastActive }) => `
           <tr class="hover:bg-yellow-500/5">
-            <td class="px-4 py-2 text-yellow-100">${(username || '').toString()}</td>
+            <td class="px-4 py-2">
+              <button type="button" class="admin-user-link text-left text-yellow-100 hover:underline" data-username="${(username||'').toString().replace(/"/g,'&quot;')}">${(username || '').toString()}</button>
+            </td>
             <td class="px-4 py-2 text-yellow-300">${(community || '').toString()}</td>
+            <td class="px-4 py-2 text-yellow-200">${fmt(lastActive)}</td>
           </tr>
         `).join('');
+        // Bind username click → show member card
+        body.querySelectorAll('.admin-user-link').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const uname = e.currentTarget.getAttribute('data-username') || '';
+            if (!uname) return;
+            try { window.showMemberCard(uname, e.currentTarget); } catch (err) { console.warn('member card error', err); }
+          });
+        });
       }
     }
   } catch (e) {

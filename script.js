@@ -4739,7 +4739,7 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
         // include broad synonyms; keep 'code' to support legacy passcodes
         password: findCol('password','pass','pwd','code','passcode','pass code','secret','key'),
         community: findCol('community'),
-        communitystatus: findCol('communitystatus','community status','status')
+        communitystatus: findCol('communitystatus','community status','communitystatu','communitystat','commstatus','role','status')
       };
       // Guard against fuzzy collisions (e.g., name vs username, community vs communitystatus)
       try {

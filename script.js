@@ -4696,40 +4696,115 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
   const submitBtn = loginForm.querySelector('button[type="submit"]');
   if (submitBtn) submitBtn.disabled = true;
 
+  // Helpers for consistent ID normalization
+  const normalizeSimpleId = (v) => (v || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    // remove any non-alphanumeric characters anywhere (spaces, dots, punctuation)
+    .replace(/[^a-z0-9]+/g, '');
+  const normalizeEmail = (v) => (v || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[\.;,]+$/, '');         // tolerate accidental trailing punctuation
+
   // Helper to (re)load members with cache busting
   window.reloadMembershipData = async function () {
     try {
       const url = `https://docs.google.com/spreadsheets/d/1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw/gviz/tq?sheet=Members&tqx=out:json&_=${Date.now()}`;
       const text = await fetch(url).then(r => r.text());
-      const json = JSON.parse(text.slice(47, -2));
+      // Robust GViz JSON extraction (prefix/suffix can vary)
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      const json = JSON.parse(text.slice(start, end + 1));
       const cols = (json.table.cols || []).map(c => (c.label || '').toString().trim().toLowerCase());
-      const idx = {
-        name: cols.indexOf('name'),
-        number: cols.indexOf('number'),
-        level: cols.indexOf('level'),
-        email: cols.indexOf('email'),
-        username: cols.indexOf('username'),
-        password: cols.indexOf('password')
+      const findCol = (...alts) => {
+        const i = cols.findIndex(h => alts.some(a => h === a || h.includes(a)));
+        return i;
       };
+      let idx = {
+        name: findCol('name','full name'),
+        number: findCol('number','code','pin'),
+        level: findCol('level','tier','membership'),
+        email: findCol('email','e-mail'),
+        username: findCol('username','user','handle'),
+        // include broad synonyms; keep 'code' to support legacy passcodes
+        password: findCol('password','pass','pwd','code','passcode','pass code','secret','key')
+      };
+      // Heuristic fallback: common column order A:email, B:username, C:password, D:level
+      try {
+        const totalCols = cols.length;
+        if (idx.email < 0) idx.email = 0;
+        if (idx.username < 0 && totalCols > 1) idx.username = 1;
+        if (idx.password < 0 && idx.username >= 0 && (idx.username + 1) < totalCols) idx.password = idx.username + 1;
+        if (idx.level < 0 && totalCols > 3) idx.level = 3;
+      } catch {}
+      // Expose header mapping for console inspection
+      window._memberIdx = idx;
+      console.log('🔍 Member header indexes', idx);
 
-      membershipData = (json.table.rows || [])
+      const rawRows = (json.table.rows || []);
+      // Expose raw GViz payload for debugging (safe in local dev)
+      try {
+        window._memberCols = cols.slice();
+        window._memberRowsRaw = rawRows.map(r => (r && r.c) ? r.c.map(c => ({ v: c?.v ?? '', f: c?.f ?? '' })) : []);
+        window.debugMemberRow = function (normId) {
+          const norm = (s) => (s||'').toString().trim().toLowerCase().replace(/\W+/g,'');
+          for (const r of membershipData) {
+            if (r.usernameNorm === norm(normId) || r.nameNorm === norm(normId) || r.emailLower === (normId||'').toLowerCase()) return r;
+          }
+          return null;
+        };
+      } catch {}
+
+      membershipData = rawRows
         .map(row => {
           const c = row.c || [];
-          const get = (i) => (i >= 0 && c[i] && c[i].v != null) ? c[i].v : '';
+          const get = (i) => {
+            if (!(i >= 0)) return '';
+            const cell = c[i] || {};
+            // Prefer raw value, but fall back to formatted text if raw is null
+            return (cell.v != null && cell.v !== '') ? cell.v : (cell.f != null ? cell.f : '');
+          };
           const rec = {
-            name: get(idx.name).toString().trim().toLowerCase().replace(/\s+/g, ''),
+            name: get(idx.name).toString(),
             number: get(idx.number).toString().trim(),
             level: (get(idx.level) || 'free').toString().trim().toLowerCase(),
-            email: get(idx.email).toString().trim().toLowerCase().replace(/\s+/g, ''),
-            username: get(idx.username).toString().trim().toLowerCase().replace(/\s+/g, ''),
+            email: get(idx.email).toString(),
+            username: get(idx.username).toString(),
             password: get(idx.password).toString().trim()
           };
+          // Normalized fields for resilient matching
+          rec.usernameNorm = normalizeSimpleId(rec.username);
+          rec.nameNorm = normalizeSimpleId(rec.name);
+          rec.emailLower = normalizeEmail(rec.email);
           // Skip completely empty rows
-          if (!rec.name && !rec.username && !rec.email) return null;
+          if (!(rec.name || rec.username || rec.email)) return null;
           return rec;
         })
         .filter(Boolean);
-      console.log('✅ Membership data loaded.');
+      // Quick debug snapshot: username + secret lengths only
+      try { window._memberDebug = membershipData.map(m => ({ u: m.usernameNorm, n: m.nameNorm, e: m.emailLower, pwLen: (m.password||'').length, numLen: (m.number||'').length })); } catch {}
+      // Helper to inspect a single row by username/email (no secrets)
+      try {
+        window.findMemberDebug = function (id) {
+          const idStr = (id||'').toString();
+          const idLower = idStr.toLowerCase();
+          const idNorm = idStr.trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+          const rec = membershipData.find(m => m.usernameNorm === idNorm || m.nameNorm === idNorm || m.emailLower === idLower);
+          if (!rec) return null;
+          return {
+            username: rec.username,
+            email: rec.email,
+            level: rec.level,
+            pwLen: (rec.password||'').length,
+            numLen: (rec.number||'').length
+          };
+        };
+      } catch {}
+      console.log('✅ Membership data loaded.', { count: membershipData.length });
       if (submitBtn) submitBtn.disabled = false;
     } catch (err) {
       console.error('❌ Failed to fetch membership data:', err);
@@ -4751,33 +4826,82 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
 
     // Accept username OR email in the first field
     const rawId = nameInput.value.trim();
-    const typedName = rawId.toLowerCase().replace(/\s+/g, '');
+    const typedRawLower = rawId.toLowerCase();
+    const typedName = typedRawLower.replace(/\s+/g, '');
+    const typedNorm = normalizeSimpleId(rawId);
     const typedNumber = numberInput.value.trim();
+    const typedNumberNorm = typedNumber.replace(/\s+/g, '').replace(/[^\w!-]+/g, '');
 
     // Do not log credentials
 
     // Support legacy (name+number), new (username+password), and email+password
     // Also allow username/email + legacy number (fallback) to reduce friction
     const match = membershipData.find(m => {
-      const pwOrNum = (m.password || m.number || '').toString().trim();
-      const byLegacy = m.name && m.number && (m.name === typedName && m.number === typedNumber);
-      const byUser   = m.username && (m.username === typedName && pwOrNum === typedNumber);
-      const byEmail  = m.email && (m.email === typedName && pwOrNum === typedNumber);
-      return byLegacy || byUser || byEmail;
+      const pwRaw = (m.password || '').toString();
+      const numRaw = (m.number || '').toString();
+      const pwOrNum = (pwRaw || numRaw).toString().trim();
+      const pwOrNumNorm = pwOrNum.replace(/\s+/g, '').replace(/[^\w!-]+/g, '');
+      const idMatchesUsername = !!m.usernameNorm && (m.usernameNorm === typedNorm);
+      const idMatchesName = !!m.nameNorm && (m.nameNorm === typedNorm);
+      const idMatchesEmail = !!m.emailLower && (m.emailLower === typedRawLower);
+      // Username/name login rules:
+      // - If a password exists for the record, REQUIRE the password (do not accept legacy number)
+      // - If no password is set, accept the legacy number/code
+      if (idMatchesUsername || idMatchesName) {
+        const a2 = (pwRaw || '').trim();   // password
+        const b2 = (numRaw || '').trim();  // legacy number/code
+        const a2n = a2.replace(/\s+/g,'').replace(/[^\w!-]+/g,'');
+        const b2n = b2.replace(/\s+/g,'').replace(/[^\w!-]+/g,'');
+        const hasPassword = a2.length > 0;
+        if (hasPassword) {
+          if (a2 === typedNumber || a2n === typedNumberNorm) return true;
+        } else {
+          if (b2 === typedNumber || b2n === typedNumberNorm) return true;
+        }
+      }
+      // Email login rules (same as above): require password if present; otherwise accept legacy number
+      if (idMatchesEmail) {
+        const a = (pwRaw || '').trim();
+        const b = (numRaw || '').trim();
+        const an = a.replace(/\s+/g,'').replace(/[^\w!-]+/g,'');
+        const bn = b.replace(/\s+/g,'').replace(/[^\w!-]+/g,'');
+        const hasPassword = a.length > 0;
+        if (hasPassword) {
+          if (a === typedNumber || an === typedNumberNorm) return true;
+        } else {
+          if (b === typedNumber || bn === typedNumberNorm) return true;
+        }
+      }
+      return false;
     });
 
     // Do not log match content to avoid leaking data
 
     if (!match) {
-      alert('❌ Member not found or incorrect password/code.');
+      // Check if the ID part matched any record, to tailor feedback
+      let idOnly = null;
+      try {
+        idOnly = membershipData.find(m => m.usernameNorm === typedNorm || m.nameNorm === typedNorm || m.emailLower === typedRawLower) || null;
+      } catch {}
+      try {
+        const sample = membershipData.map(m => ({ u: m.usernameNorm, n: m.nameNorm, e: m.emailLower })).slice(0, 20);
+        const debug = idOnly ? { pwLen: (idOnly.password||'').length, numLen: (idOnly.number||'').length, level: idOnly.level } : {};
+        console.warn('🔎 Login no match', { id: typedNorm, pwLen: typedNumber.length, records: membershipData.length, idMatch: !!idOnly, ...debug, sample });
+      } catch {}
+
+      if (idOnly) {
+        alert('❌ Password/code is incorrect for this account.');
+      } else {
+        alert('❌ Member not found or incorrect password/code.');
+      }
       return;
     }
 
     localStorage.setItem('memberName', nameInput.value.trim());
     localStorage.setItem('membershipLevel', match.level);
     // Canonical username for favourites + backend consistency (strip spaces)
-    const canonicalUser = (match.username || match.email || nameInput.value || '')
-      .toString().trim().toLowerCase().replace(/\s+/g, '');
+    const canonicalUser = (match.usernameNorm || match.emailLower || typedNorm)
+      .toString();
     localStorage.setItem('username', canonicalUser);
     window.isPremium = match.level === 'premium';
 

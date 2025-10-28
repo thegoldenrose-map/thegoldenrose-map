@@ -57,7 +57,7 @@ async function fetchAdminMembers() {
 }
 
 window.updateAdminUI = function updateAdminUI() {
-  const role = (localStorage.getItem('memberCommunityStatus') || '').toLowerCase();
+  const role = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
   const btn = document.getElementById('adminPanelBtn');
   if (btn) btn.classList.toggle('hidden', role !== 'admin');
 };
@@ -1129,16 +1129,32 @@ function fetchCommunityForCurrentUser() {
 
 function handleGetCommunity(resp) {
   if (!resp || !resp.success) return;
-  const community = (resp.community || '').toString();
-  const status = (resp.status || 'member').toString();
+  let community = (resp.community || '').toString();
+  let status = (resp.status || '').toString();
+  // Defensive: some backends mis-map Community/Status and return community='member'/'admin' with empty status
+  const commLower = community.toLowerCase();
+  if ((commLower === 'member' || commLower === 'admin') && !status) {
+    console.warn('⚠ getCommunity returned role in community field; ignoring to avoid overwrite', resp);
+    return; // keep existing local values set by login fallback
+  }
+  if (!status) status = 'member';
+  let statusNorm = (status || 'member').toString().trim().toLowerCase();
+  // Never downgrade an existing admin role due to a bad backend response
+  try {
+    const current = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
+    if (current === 'admin' && statusNorm !== 'admin') {
+      console.warn('⚠ getCommunity attempted to downgrade admin → member; keeping admin');
+      statusNorm = 'admin';
+    }
+  } catch {}
   if (community) {
     localStorage.setItem('memberCommunity', community);
-    localStorage.setItem('memberCommunityStatus', status);
-    window.updateActivityCommunityStatus?.(status, community);
+    localStorage.setItem('memberCommunityStatus', statusNorm);
+    window.updateActivityCommunityStatus?.(statusNorm, community);
     window.updateAdminUI?.();
     const stats = window.memberStats || {};
     stats.community = community;
-    stats.status = status;
+    stats.status = statusNorm;
     window.memberStats = stats;
     window.updateMemberStatsUI?.();
     requestCommunityMeta(community);
@@ -1180,6 +1196,9 @@ function handleSetCommunity(resp) {
 
 function requestCommunityMeta(community) {
   if (!community) return;
+  // Avoid mis-mapped role strings being treated as communities
+  const cl = (community || '').toString().trim().toLowerCase();
+  if (cl === 'member' || cl === 'admin') return;
   const url = `${window.SHEET_API_URL}?type=getCommunityMeta&community=${encodeURIComponent(community)}&callback=handleCommunityMeta`;
   jsonp(url);
 }
@@ -3725,8 +3744,9 @@ document.getElementById('tryPremiumBtn')?.addEventListener('click', () => {
 
 
 function setupApp() {
-  
-console.log('🧠 isPremium:', isPremium);
+  // Ensure we read the authoritative flag and avoid shadowed globals
+  try { checkPremiumStatus(); } catch {}
+  console.log('🧠 isPremium:', window.isPremium);
 
   if (!document.getElementById('map')) return;
 
@@ -4934,8 +4954,9 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
     if (match.community) {
       localStorage.setItem('memberCommunity', match.community);
       const role = (match.communityStatus || 'member').toString();
-      localStorage.setItem('memberCommunityStatus', role);
-      try { window.updateActivityCommunityStatus?.(role.toLowerCase(), match.community); } catch {}
+      const roleNorm = role.trim().toLowerCase();
+      localStorage.setItem('memberCommunityStatus', roleNorm);
+      try { window.updateActivityCommunityStatus?.(roleNorm, match.community); } catch {}
       try { window.updateAdminUI?.(); } catch {}
       try { zoomToCommunity?.(match.community); } catch {}
     }

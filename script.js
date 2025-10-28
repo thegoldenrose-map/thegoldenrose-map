@@ -4721,8 +4721,14 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
       const json = JSON.parse(text.slice(start, end + 1));
       const cols = (json.table.cols || []).map(c => (c.label || '').toString().trim().toLowerCase());
       const findCol = (...alts) => {
-        const i = cols.findIndex(h => alts.some(a => h === a || h.includes(a)));
-        return i;
+        // 1) prefer exact header match
+        let i = cols.findIndex(h => alts.some(a => h === a));
+        if (i >= 0) return i;
+        // 2) prefer exact after removing spaces/punctuation
+        i = cols.findIndex(h => alts.some(a => h.replace(/\s+/g,'') === a.replace(/\s+/g,'')));
+        if (i >= 0) return i;
+        // 3) last resort: includes()
+        return cols.findIndex(h => alts.some(a => h.includes(a)));
       };
       let idx = {
         name: findCol('name','full name'),
@@ -4731,8 +4737,23 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
         email: findCol('email','e-mail'),
         username: findCol('username','user','handle'),
         // include broad synonyms; keep 'code' to support legacy passcodes
-        password: findCol('password','pass','pwd','code','passcode','pass code','secret','key')
+        password: findCol('password','pass','pwd','code','passcode','pass code','secret','key'),
+        community: findCol('community'),
+        communitystatus: findCol('communitystatus','community status','status')
       };
+      // Guard against fuzzy collisions (e.g., name vs username, community vs communitystatus)
+      try {
+        if (idx.name === idx.username) idx.name = -1;
+        if (idx.community >= 0 && cols[idx.community].includes('status')) {
+          // Try to find the plain community column explicitly
+          const exactComm = cols.findIndex(h => h === 'community');
+          if (exactComm >= 0) idx.community = exactComm;
+          else {
+            const notStatus = cols.findIndex(h => h.includes('community') && !h.includes('status'));
+            if (notStatus >= 0) idx.community = notStatus;
+          }
+        }
+      } catch {}
       // Heuristic fallback: common column order A:email, B:username, C:password, D:level
       try {
         const totalCols = cols.length;
@@ -4774,7 +4795,9 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
             level: (get(idx.level) || 'free').toString().trim().toLowerCase(),
             email: get(idx.email).toString(),
             username: get(idx.username).toString(),
-            password: get(idx.password).toString().trim()
+            password: get(idx.password).toString().trim(),
+            community: get(idx.community).toString().trim(),
+            communityStatus: (get(idx.communitystatus) || '').toString().trim()
           };
           // Normalized fields for resilient matching
           rec.usernameNorm = normalizeSimpleId(rec.username);
@@ -4786,7 +4809,7 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
         })
         .filter(Boolean);
       // Quick debug snapshot: username + secret lengths only
-      try { window._memberDebug = membershipData.map(m => ({ u: m.usernameNorm, n: m.nameNorm, e: m.emailLower, pwLen: (m.password||'').length, numLen: (m.number||'').length })); } catch {}
+      try { window._memberDebug = membershipData.map(m => ({ u: m.usernameNorm, n: m.nameNorm, e: m.emailLower, pwLen: (m.password||'').length, numLen: (m.number||'').length, comm: m.community, role: m.communityStatus })); } catch {}
       // Helper to inspect a single row by username/email (no secrets)
       try {
         window.findMemberDebug = function (id) {
@@ -4904,6 +4927,18 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
       .toString();
     localStorage.setItem('username', canonicalUser);
     window.isPremium = match.level === 'premium';
+
+    // Fallback: set community + status from the matched record if present
+    // This ensures Admin role and community chip appear immediately even if the backend
+    // getCommunity endpoint fails to map columns.
+    if (match.community) {
+      localStorage.setItem('memberCommunity', match.community);
+      const role = (match.communityStatus || 'member').toString();
+      localStorage.setItem('memberCommunityStatus', role);
+      try { window.updateActivityCommunityStatus?.(role.toLowerCase(), match.community); } catch {}
+      try { window.updateAdminUI?.(); } catch {}
+      try { zoomToCommunity?.(match.community); } catch {}
+    }
 
     const displayName = nameInput.value.trim();
     alert(`🌹 Welcome back ${displayName}! (${match.level})`);

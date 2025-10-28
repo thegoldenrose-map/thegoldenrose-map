@@ -4757,17 +4757,19 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
     // Do not log credentials
 
     // Support legacy (name+number), new (username+password), and email+password
+    // Also allow username/email + legacy number (fallback) to reduce friction
     const match = membershipData.find(m => {
+      const pwOrNum = (m.password || m.number || '').toString().trim();
       const byLegacy = m.name && m.number && (m.name === typedName && m.number === typedNumber);
-      const byUser   = m.username && m.password && (m.username === typedName && m.password === typedNumber);
-      const byEmail  = m.email && m.password && (m.email === typedName && m.password === typedNumber);
+      const byUser   = m.username && (m.username === typedName && pwOrNum === typedNumber);
+      const byEmail  = m.email && (m.email === typedName && pwOrNum === typedNumber);
       return byLegacy || byUser || byEmail;
     });
 
     // Do not log match content to avoid leaking data
 
     if (!match) {
-      alert('❌ Member not found or incorrect number.');
+      alert('❌ Member not found or incorrect password/code.');
       return;
     }
 

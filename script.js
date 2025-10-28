@@ -1509,6 +1509,32 @@ if (typeof window.showToast !== 'function') {
   }
 }
 
+// Share helper: copies a deep‑link to a pin (lat/lng + title)
+window.copyPinLink = function(lat, lng, title='') {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('lat', String(lat));
+    url.searchParams.set('lng', String(lng));
+    if (title) url.searchParams.set('title', String(title));
+    const link = url.toString();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => showToast('🔗 Link copied'));
+    } else {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = link;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      showToast('🔗 Link copied');
+    }
+  } catch (e) {
+    console.warn('Share failed', e);
+    alert('Could not copy link');
+  }
+};
+
 // 📩 Callback after removing a favourite
 function handleRemoveFavouriteResponse(data) {
   if (data.success) {
@@ -3996,7 +4022,8 @@ if (filterBox) {
           const catIcon = ((window.categoryIconMap || {})[catKey]) || '📍';
           let html = `
   <div class="custom-popup">
-    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')"><i data-lucide="heart" class="w-4 h-4"></i></button>
+    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')" title="Save"><i data-lucide="heart" class="w-4 h-4"></i></button>
+    <button class="share-btn" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')" title="Share"><i data-lucide="share-2" class="w-4 h-4"></i></button>
     <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide="x" class="w-4 h-4"></i></button>
     <div class="title">${title}</div>
     ${rawCat ? `<div class=\"category\">${catIcon} <span>${rawCat}</span></div>` : ''}
@@ -4009,6 +4036,7 @@ if (filterBox) {
     <div class="vcard-top">
       <span class="vbadge"><i>🌹</i> Verified Farm</span>
       <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
+      <button class="vicon share" title="Share" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"share-2\"></i></button>
       <button class="vicon close" title="Close" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide=\"x\"></i></button>
     </div>
     <div class="vgrid">
@@ -4030,6 +4058,7 @@ if (filterBox) {
     <div class="vcard-top">
       <span class="vbadge"><i>🌹</i> Verified Shop</span>
       <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
+      <button class="vicon share" title="Share" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"share-2\"></i></button>
       <button class="vicon close" title="Close" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide=\"x\"></i></button>
     </div>
     <div class="vgrid">
@@ -4085,6 +4114,33 @@ if (filterBox) {
       exec();
     });
   
+  // Handle shared pin deep‑links: ?lat=..&lng=..&title=..
+  try {
+    const params = new URL(window.location.href).searchParams;
+    const plat = parseFloat(params.get('lat'));
+    const plng = parseFloat(params.get('lng'));
+    const ptitle = (params.get('title') || '').toString();
+    if (!Number.isNaN(plat) && !Number.isNaN(plng)) {
+      const center = [plng, plat];
+      try { map.flyTo({ center, zoom: 15 }); } catch {}
+      // Try to find closest loaded feature to reuse full popup UI
+      let chosen = null;
+      try {
+        const dist2 = (a,b) => { const dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; };
+        let best = Infinity;
+        for (const m of geoMarkers) {
+          const d = dist2(m.coords, center);
+          if (d < best) { best = d; chosen = m.feature; }
+        }
+      } catch {}
+      const html = chosen ? buildPopupHTML(chosen) : `<div class=\"custom-popup\"><div class=\"title\">${ptitle || 'Location'}</div><div class=\"actions\"><button onclick=\"openDirections(${plat}, ${plng}, '${(ptitle||'').replace(/'/g, "\\'")}')\"><i data-lucide=\\"navigation\\"></i> Directions</button></div></div>`;
+      new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+        .setLngLat(center)
+        .setHTML(html)
+        .addTo(map);
+      setTimeout(() => window.lucide?.createIcons?.(), 80);
+    }
+  } catch {}
 
   document.querySelectorAll('.closeBtn').forEach(btn => {
     btn.addEventListener('click', () => {

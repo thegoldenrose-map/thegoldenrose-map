@@ -811,7 +811,8 @@ body.theme-dark .vbtn.vprimary { background: #eab308 !important; color: #000 !im
 }
 
 .custom-popup .close-btn,
-.custom-popup .favourite-btn {
+.custom-popup .favourite-btn,
+.custom-popup .share-btn {
   position: absolute;
   top: 8px;
   background: none;
@@ -864,7 +865,8 @@ body.theme-light .custom-popup .desc {
 }
 
 body.theme-light .custom-popup .close-btn,
-body.theme-light .custom-popup .favourite-btn {
+body.theme-light .custom-popup .favourite-btn,
+body.theme-light .custom-popup .share-btn {
   color: #d97706;
 }
 
@@ -1005,6 +1007,7 @@ body.theme-light .badge-chip {
 
 .custom-popup .close-btn { left: 8px; }
 .custom-popup .favourite-btn { right: 8px; }
+.custom-popup .share-btn { right: 40px; }
 
 #postForm:has(+ #lockedNewsModal:not(.hidden)) {
   pointer-events: none;

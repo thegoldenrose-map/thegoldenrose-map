@@ -4022,8 +4022,8 @@ if (filterBox) {
           const catIcon = ((window.categoryIconMap || {})[catKey]) || '📍';
           let html = `
   <div class="custom-popup">
-    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')" title="Save"><i data-lucide="heart" class="w-4 h-4"></i></button>
     <button class="share-btn" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')" title="Share"><i data-lucide="share-2" class="w-4 h-4"></i></button>
+    <button class="favourite-btn" onclick="addToFavourites('${safeTitle}')" title="Save"><i data-lucide="heart" class="w-4 h-4"></i></button>
     <button class="close-btn" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide="x" class="w-4 h-4"></i></button>
     <div class="title">${title}</div>
     ${rawCat ? `<div class=\"category\">${catIcon} <span>${rawCat}</span></div>` : ''}
@@ -4035,8 +4035,8 @@ if (filterBox) {
   <div class="vcard">
     <div class="vcard-top">
       <span class="vbadge"><i>🌹</i> Verified Farm</span>
-      <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
       <button class="vicon share" title="Share" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"share-2\"></i></button>
+      <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
       <button class="vicon close" title="Close" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide=\"x\"></i></button>
     </div>
     <div class="vgrid">
@@ -4057,8 +4057,8 @@ if (filterBox) {
   <div class="vcard">
     <div class="vcard-top">
       <span class="vbadge"><i>🌹</i> Verified Shop</span>
-      <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
       <button class="vicon share" title="Share" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"share-2\"></i></button>
+      <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
       <button class="vicon close" title="Close" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide=\"x\"></i></button>
     </div>
     <div class="vgrid">

@@ -500,32 +500,63 @@ function setFabAction(action) {
       break;
     case 'locate':
     default: {
+      const fallbackToLast = () => {
+        try {
+          const ls = localStorage.getItem('lastKnownLocation');
+          if (!ls) return false;
+          const { lat, lng } = JSON.parse(ls);
+          if (typeof lat === 'number' && typeof lng === 'number') {
+            map.flyTo({ center: [lng, lat], zoom: 13 });
+            return true;
+          }
+        } catch {}
+        return false;
+      };
+
       if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(position => {
-          const { latitude, longitude } = position.coords;
-          map.flyTo({ center: [longitude, latitude], zoom: 14 });
-          const popupHTML = `
-            <div style="
-              background: black;
-              color: gold;
-              padding: 8px 12px;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: bold;
-              border: 1px solid gold;
-              box-shadow: 0 0 10px gold;
-            ">
-              📍 Current Location
-            </div>
-          `;
-          new mapboxgl.Marker({ color: 'gold' })
-            .setLngLat([longitude, latitude])
-            .setPopup(new mapboxgl.Popup({ closeButton: false }).setHTML(popupHTML))
-            .addTo(map)
-            .togglePopup();
-        });
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            try { localStorage.setItem('lastKnownLocation', JSON.stringify({ lat: latitude, lng: longitude, t: Date.now() })); } catch {}
+            try { map.flyTo({ center: [longitude, latitude], zoom: 14 }); } catch {}
+            const popupHTML = `
+              <div style="
+                background: black;
+                color: gold;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: bold;
+                border: 1px solid gold;
+                box-shadow: 0 0 10px gold;
+              ">
+                📍 Current Location
+              </div>
+            `;
+            try {
+              new mapboxgl.Marker({ color: 'gold' })
+                .setLngLat([longitude, latitude])
+                .setPopup(new mapboxgl.Popup({ closeButton: false }).setHTML(popupHTML))
+                .addTo(map)
+                .togglePopup();
+            } catch {}
+          },
+          (err) => {
+            // Provide clear guidance per error type and try a graceful fallback
+            let msg = 'Unable to get your location.';
+            if (err && typeof err.code === 'number') {
+              if (err.code === 1) msg = 'Location permission was denied. Enable location for this site in your browser settings and try again.'; // PERMISSION_DENIED
+              else if (err.code === 2) msg = 'Position unavailable. Move to an open area or check connectivity and try again.'; // POSITION_UNAVAILABLE
+              else if (err.code === 3) msg = 'Location request timed out. Please try again.'; // TIMEOUT
+            }
+            console.warn('Geolocation error:', err);
+            const usedFallback = fallbackToLast();
+            if (!usedFallback) alert(msg);
+          },
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+        );
       } else {
-        alert('Geolocation is not supported by your browser.');
+        if (!fallbackToLast()) alert('Geolocation is not supported by your browser.');
       }
     }
   }

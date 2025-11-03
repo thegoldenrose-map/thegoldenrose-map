@@ -2981,6 +2981,15 @@ function bindActivityPostForm() {
 
   document.getElementById('closeOnboarding')?.addEventListener('click', () => {
     document.getElementById('onboardingModal')?.classList.add('hidden');
+    // Ensure floating UI returns immediately
+    try { document.body.classList.remove('onboarding-open'); } catch {}
+    try {
+      const locate = document.getElementById('floatingLocateBtn');
+      if (locate) locate.style.display = '';
+      const hj = document.getElementById('helpJoinBtn');
+      if (hj) { hj.classList.remove('hidden'); hj.style.display = ''; hj.style.visibility = ''; hj.style.opacity = ''; hj.style.pointerEvents = ''; }
+      window.updateHelpJoinBtn?.();
+    } catch {}
   });
 
   // Verification modal open/close
@@ -3458,9 +3467,11 @@ window.handleEntertainment = function (rawRows) {
     })
     .filter(it => it.imageUrl);
 
-  const feed = document.getElementById('entertainmentContent');
-  if (!feed) return console.error('❌ #entertainmentContent not found');
+  const feed = document.getElementById('entertainmentList') || document.getElementById('entertainmentContent');
+  if (!feed) return console.error('❌ #entertainmentList/#entertainmentContent not found');
 
+  // Hide loader if present; do NOT remove info card
+  try { document.getElementById('loadingEntertainment')?.classList.add('hidden'); } catch {}
   feed.innerHTML = '';
 
   if (items.length === 0) {
@@ -5049,7 +5060,7 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
     }
 
     const displayName = nameInput.value.trim();
-    alert(`🌹 Welcome back ${displayName}! (${match.level})`);
+    alert(`🌹 Welcome back ${displayName}! `);
     document.getElementById('loginModal')?.classList.add('hidden');
 
     loadUserFavourites(canonicalUser);
@@ -5578,6 +5589,15 @@ const onboardingModal = document.getElementById('onboardingModal');
 document.getElementById('closeOnboarding')?.addEventListener('click', () => {
   try { localStorage.setItem('onboardingShown_v1', '1'); } catch {}
   onboardingModal?.classList.add('hidden');
+  // Ensure floating UI returns in all cases
+  try { document.body.classList.remove('onboarding-open'); } catch {}
+  try {
+    const locate = document.getElementById('floatingLocateBtn');
+    if (locate) locate.style.display = '';
+    const hj = document.getElementById('helpJoinBtn');
+    if (hj) { hj.classList.remove('hidden'); hj.style.display = ''; hj.style.visibility = ''; hj.style.opacity = ''; hj.style.pointerEvents = ''; }
+    window.updateHelpJoinBtn?.();
+  } catch {}
 });
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -5659,7 +5679,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close onboarding (ensure floating UI returns)
     if (q('#closeOnboarding')) {
       try { document.body.classList.remove('onboarding-open'); } catch {}
-      document.getElementById('onboardingModal')?.classList.add('hidden');
+      const m = document.getElementById('onboardingModal');
+      if (m) m.classList.add('hidden');
+      // Restore floating UI in case styles were overridden
+      try {
+        const locate = document.getElementById('floatingLocateBtn');
+        if (locate) locate.style.display = '';
+        const hj = document.getElementById('helpJoinBtn');
+        if (hj) { hj.classList.remove('hidden'); hj.style.display = ''; hj.style.visibility = ''; hj.style.opacity = ''; hj.style.pointerEvents = ''; }
+        window.updateHelpJoinBtn?.();
+      } catch {}
     }
   });
 

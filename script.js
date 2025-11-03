@@ -3778,6 +3778,7 @@ document.getElementById('tryPremiumBtn')?.addEventListener('click', () => {
           m.style.display = 'block';
           m.style.opacity = '1';
           m.style.pointerEvents = 'auto';
+          try { document.body.classList.add('onboarding-open'); } catch {}
           // mark as shown so it doesn't auto-open again
           try { localStorage.setItem('onboardingShown_v1', '1'); } catch {}
           return true;
@@ -5582,6 +5583,20 @@ document.getElementById('closeOnboarding')?.addEventListener('click', () => {
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🔥 DOM loaded');
 
+  // Keep floating UI hidden while onboarding is visible
+  try {
+    const obModal = document.getElementById('onboardingModal');
+    if (obModal) {
+      const sync = () => {
+        const open = !obModal.classList.contains('hidden');
+        document.body.classList.toggle('onboarding-open', open);
+      };
+      const mo = new MutationObserver(sync);
+      mo.observe(obModal, { attributes: true, attributeFilter: ['class'] });
+      sync();
+    }
+  } catch {}
+
   checkPremiumStatus();         // ✅ sets window.isPremium
   window.updateHelpJoinBtn();   // ✅ now safe to call here
 
@@ -5607,7 +5622,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('helpJoinBtn')?.addEventListener('click', () => {
     console.log('🎯 helpJoinBtn clicked');
-    document.getElementById('onboardingModal')?.classList.remove('hidden');
+    const m = document.getElementById('onboardingModal');
+    if (m) {
+      m.classList.remove('hidden');
+      try { document.body.classList.add('onboarding-open'); } catch {}
+    }
   });
 
   // Robust delegated handlers (works even if elements render later)

@@ -5585,15 +5585,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keep floating UI hidden while onboarding is visible
   try {
-    const obModal = document.getElementById('onboardingModal');
-    if (obModal) {
+    const attachObserver = (modalEl) => {
       const sync = () => {
-        const open = !obModal.classList.contains('hidden');
-        document.body.classList.toggle('onboarding-open', open);
+        const open = modalEl && !modalEl.classList.contains('hidden');
+        document.body.classList.toggle('onboarding-open', !!open);
       };
       const mo = new MutationObserver(sync);
-      mo.observe(obModal, { attributes: true, attributeFilter: ['class'] });
+      mo.observe(modalEl, { attributes: true, attributeFilter: ['class'] });
       sync();
+    };
+    let obModal = document.getElementById('onboardingModal');
+    if (obModal) {
+      attachObserver(obModal);
+    } else {
+      const waitForModal = new MutationObserver(() => {
+        obModal = document.getElementById('onboardingModal');
+        if (obModal) {
+          attachObserver(obModal);
+          waitForModal.disconnect();
+        }
+      });
+      waitForModal.observe(document.body, { childList: true, subtree: true });
     }
   } catch {}
 
@@ -5643,6 +5655,11 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('🆕 Open Signup click detected');
       document.getElementById('loginModal')?.classList.add('hidden');
       document.getElementById('signupModal')?.classList.remove('hidden');
+    }
+    // Close onboarding (ensure floating UI returns)
+    if (q('#closeOnboarding')) {
+      try { document.body.classList.remove('onboarding-open'); } catch {}
+      document.getElementById('onboardingModal')?.classList.add('hidden');
     }
   });
 

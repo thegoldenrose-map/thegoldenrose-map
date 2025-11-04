@@ -1289,9 +1289,14 @@ function handleGetStreak(resp) {
   // Update streak chips
   try {
     const chip = document.getElementById('memberStreakChip');
+    const info = document.getElementById('memberStreakInfo');
     if (chip) {
       if (days > 0) { chip.textContent = `🔥 ${days}`; chip.classList.remove('hidden'); }
       else { chip.classList.add('hidden'); chip.textContent = ''; }
+    }
+    if (info) {
+      if (days > 0) info.textContent = `🔥 ${days} DAYS ACTIVE`;
+      else info.textContent = '';
     }
     const cardChip = document.getElementById('memberCardStreakChip');
     if (cardChip) {
@@ -1324,9 +1329,14 @@ function handleStreakPing(resp) {
   // Update streak chips
   try {
     const chip = document.getElementById('memberStreakChip');
+    const info = document.getElementById('memberStreakInfo');
     if (chip) {
       if (days > 0) { chip.textContent = `🔥 ${days}`; chip.classList.remove('hidden'); }
       else { chip.classList.add('hidden'); chip.textContent = ''; }
+    }
+    if (info) {
+      if (days > 0) info.textContent = `🔥 ${days} DAYS ACTIVE`;
+      else info.textContent = '';
     }
     const cardChip = document.getElementById('memberCardStreakChip');
     if (cardChip) {
@@ -3117,6 +3127,30 @@ function bindActivityPostForm() {
   document.getElementById('cancelRequest')?.addEventListener('click', () => {
     document.getElementById('requestModal')?.classList.add('hidden');
   });
+
+  // Streak chip info toggle
+  try {
+    const chip = document.getElementById('memberStreakChip');
+    const info = document.getElementById('memberStreakInfo');
+    if (chip && info) {
+      // Avoid duplicate listeners
+      if (!chip.dataset.bound) {
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          info.classList.toggle('hidden');
+        });
+        chip.dataset.bound = '1';
+      }
+      // Hide when clicking outside of the member info area
+      if (!info.dataset.bound) {
+        document.addEventListener('click', (e) => {
+          const within = e.target.closest('#memberStreakInfo, #memberStreakChip');
+          if (!within) info.classList.add('hidden');
+        });
+        info.dataset.bound = '1';
+      }
+    }
+  } catch {}
 
   document.getElementById('closeRequestModal')?.addEventListener('click', () => {
     document.getElementById('requestModal')?.classList.add('hidden');
@@ -5335,10 +5369,15 @@ function showMemberOptions() {
   // Render streak chip in profile menu
   try {
     const chip = document.getElementById('memberStreakChip');
+    const info = document.getElementById('memberStreakInfo');
     const days = Number(streak) || 0;
     if (chip) {
       if (days > 0) { chip.textContent = `🔥 ${days}`; chip.classList.remove('hidden'); }
       else { chip.classList.add('hidden'); chip.textContent = ''; }
+    }
+    if (info) {
+      if (days > 0) info.textContent = `🔥 ${days} DAYS ACTIVE`;
+      else info.textContent = '';
     }
   } catch {}
 

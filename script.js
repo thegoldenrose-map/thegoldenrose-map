@@ -3152,6 +3152,21 @@ function bindActivityPostForm() {
     document.getElementById('requestModal')?.classList.remove('hidden');
   });
 
+  // Download App modal open/close
+  document.querySelectorAll('.openDownloadAppBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('downloadAppModal')?.classList.remove('hidden');
+      document.getElementById('profileMenu')?.classList.add('hidden');
+      try { document.getElementById('downloadAppModal').scrollTop = 0; } catch {}
+    });
+  });
+  document.getElementById('closeDownloadApp')?.addEventListener('click', () => {
+    document.getElementById('downloadAppModal')?.classList.add('hidden');
+  });
+  document.getElementById('downloadAppDone')?.addEventListener('click', () => {
+    document.getElementById('downloadAppModal')?.classList.add('hidden');
+  });
+
 
   document.getElementById('requestsBtn')?.addEventListener('click', () => {
     document.getElementById('requestsSubMenu')?.classList.toggle('hidden');

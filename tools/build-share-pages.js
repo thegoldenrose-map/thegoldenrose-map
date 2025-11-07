@@ -216,7 +216,7 @@ async function buildActivity() {
     const html = buildHtml({
       title: `Activity — ${post.username || 'Anonymous'} • The Golden Rose`,
       description: desc,
-      image: `${SITE_ORIGIN}/flower.png`,
+      image: `${SITE_ORIGIN}/favicon.png`,
       url: shareUrl,
       type: 'article',
       bodyHtml: body,

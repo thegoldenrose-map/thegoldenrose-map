@@ -158,6 +158,13 @@ async function buildEntertainment() {
   return count;
 }
 
+function activityIdFor(post) {
+  const explicit = (post.postId || '').toString().trim();
+  if (explicit) return explicit;
+  // Fallback to stable hash of essential fields
+  return fnv1a([post.username||'', post.text||'', post.timestamp||''].join('|'));
+}
+
 async function buildActivity() {
   const out = path.join(OUT_DIR, 'activity');
   ensureDir(out);
@@ -178,13 +185,18 @@ async function buildActivity() {
         timestamp: r[4]
       };
       if (post.postId && !all.has(post.postId)) all.set(post.postId, post);
+      if (!post.postId) {
+        const fid = activityIdFor(post);
+        if (!all.has(fid)) all.set(fid, { ...post, postId: fid });
+      }
     }
   }
 
   let count = 0;
   for (const post of all.values()) {
-    const file = path.join(out, `${post.postId}.html`);
-    const shareUrl = `${SITE_ORIGIN}/share/activity/${post.postId}.html`;
+    const id = activityIdFor(post);
+    const file = path.join(out, `${id}.html`);
+    const shareUrl = `${SITE_ORIGIN}/share/activity/${id}.html`;
     const deeplink = `${SITE_ORIGIN}/?v=activity&post=${encodeURIComponent(post.postId)}`;
     const desc = (post.text || '').toString().slice(0, 200);
     const body = `
@@ -218,4 +230,3 @@ async function buildActivity() {
   const act = await buildActivity().catch(e => { console.error('Activity failed:', e); return 0; });
   console.log(`Done. Entertainment: ${ent}, Activity: ${act}`);
 })();
-

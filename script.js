@@ -2873,7 +2873,8 @@ function handleActivity(rawRows) {
   shareBtn.className = 'text-xs text-yellow-300 hover:text-yellow-100 ml-auto flex items-center gap-1';
   shareBtn.innerHTML = '<i data-lucide="share" class="w-4 h-4"></i> Share';
   shareBtn.addEventListener('click', () => {
-    const url = getActivityShareUrl(post.postId);
+    const id = (post.postId && String(post.postId).trim()) || fnv1aHash([post.username||'', post.post||'', post.timestamp||''].join('|'));
+    const url = `${location.origin}/share/activity/${encodeURIComponent(id)}.html`;
     const title = `Activity — ${post.username || 'Anonymous'}`;
     const text = (post.post || '').toString().slice(0, 140);
     shareOrCopy({ title, text, url });

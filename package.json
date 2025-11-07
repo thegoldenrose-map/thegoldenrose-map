@@ -1,0 +1,10 @@
+{
+  "name": "thegoldenrose-map.github.io",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Golden Rose — map, marketplace, community, entertainment",
+  "scripts": {
+    "build:share": "node tools/build-share-pages.js"
+  }
+}
+

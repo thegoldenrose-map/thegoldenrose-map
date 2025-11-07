@@ -5,6 +5,17 @@
   <title>The Golden Rose Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000000">
+  <!-- Default Open Graph / Twitter (overridden by per-post share pages) -->
+  <meta property="og:site_name" content="The Golden Rose">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="The Golden Rose — Map, Marketplace, Community, Entertainment">
+  <meta property="og:description" content="Grassroots, people-powered network: Map, Marketplace, Community + Entertainment — no algorithms, no censorship.">
+  <meta property="og:image" content="/favicon.png">
+  <meta property="og:url" content="https://thegoldenrose.uk/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Golden Rose — Map, Marketplace, Community, Entertainment">
+  <meta name="twitter:description" content="Grassroots, people-powered network: Map, Marketplace, Community + Entertainment.">
+  <meta name="twitter:image" content="https://thegoldenrose.uk/favicon.png">
   <link rel="icon" type="image/png" href="favicon.png">
 
   <!-- CSS -->
@@ -77,6 +88,9 @@ window.loadAllUI = async function () {
     } else {
       console.warn('⚠️ Lucide not found');
     }
+
+    // ✅ Apply deep link (open correct sidebar + scroll to item)
+    try { window.applyDeepLink?.(); } catch {}
   };
 
   document.body.appendChild(script);

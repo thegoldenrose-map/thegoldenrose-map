@@ -18,6 +18,48 @@ const BADGE_DEFS = [
   { id: 'conversationalist', label: 'Conversationalist', icon: 'message-circle', test: (s) => s.comments >= 1 },
 ];
 
+// ─────────── Sharing helpers (Open Graph share pages) ───────────
+function fnv1aHash(str = '') {
+  let h = 0x811c9dc5 >>> 0;
+  for (let i = 0; i < String(str).length; i++) {
+    h ^= String(str).charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return ('00000000' + h.toString(16)).slice(-8);
+}
+
+function getActivityShareUrl(postId) {
+  if (!postId) return location.href;
+  return `${location.origin}/share/activity/${encodeURIComponent(postId)}.html`;
+}
+
+function getEntertainmentShareId(imageUrl) {
+  return fnv1aHash(imageUrl || '');
+}
+function getEntertainmentShareUrl(imageUrl) {
+  const id = getEntertainmentShareId(imageUrl);
+  return `${location.origin}/share/entertainment/${id}.html`;
+}
+
+async function shareOrCopy({ title = 'The Golden Rose', text = '', url = location.href } = {}) {
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text, url });
+      return true;
+    }
+  } catch (e) {
+    // fall through to copy
+  }
+  try {
+    await navigator.clipboard?.writeText(url);
+    alert('Link copied to clipboard');
+    return true;
+  } catch (e) {
+    prompt('Copy this link', url);
+    return false;
+  }
+}
+
 // Admin panel data sources
 const ADMIN_SHEET_ID = '1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw';
 const ADMIN_MEMBERS_GID = '1135863289';
@@ -96,6 +138,17 @@ window.openAdminPanel = async function openAdminPanel() {
             const dd = String(d.getDate()).padStart(2,'0');
             const mm = String(d.getMonth()+1).padStart(2,'0');
             const yy = String(d.getFullYear()).slice(-2);
+            return `${dd}/${mm}/${yy}`;
+          }
+          // Handle Google GViz date literal: Date(YYYY,MM,DD[,hh,mm,ss]) — MM is 0-based
+          const g = str.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})(?:,[^)]*)?\)$/i);
+          if (g) {
+            const y = Number(g[1]);
+            const m = Number(g[2]) + 1; // convert 0-based to 1-based
+            const d = Number(g[3]);
+            const dd = String(d).padStart(2,'0');
+            const mm = String(m).padStart(2,'0');
+            const yy = String(y).slice(-2);
             return `${dd}/${mm}/${yy}`;
           }
           // Try to coerce YYYY-MM-DD style without timezone
@@ -2725,6 +2778,7 @@ function handleActivity(rawRows) {
   visible.forEach(post => {
   const postDiv = document.createElement('div');
   postDiv.className = 'relative border border-yellow-500 rounded-2xl p-5 bg-black/70 text-yellow-300 shadow-lg transition hover:border-yellow-400';
+  if (post.postId) postDiv.id = `activity-post-${post.postId}`;
 
   const header = document.createElement('div');
   header.className = 'flex justify-between items-center mb-2';
@@ -2810,7 +2864,21 @@ function handleActivity(rawRows) {
 
   const actionsRow = document.createElement('div');
   actionsRow.className = 'flex items-center justify-between mt-3';
-  actionsRow.append(toggleCommentsBtn, likeBtn);
+  // Left side: comments + like
+  const leftRow = document.createElement('div');
+  leftRow.className = 'flex items-center gap-4';
+  leftRow.append(toggleCommentsBtn, likeBtn);
+  // Right side: share
+  const shareBtn = document.createElement('button');
+  shareBtn.className = 'text-xs text-yellow-300 hover:text-yellow-100 ml-auto flex items-center gap-1';
+  shareBtn.innerHTML = '<i data-lucide="share" class="w-4 h-4"></i> Share';
+  shareBtn.addEventListener('click', () => {
+    const url = getActivityShareUrl(post.postId);
+    const title = `Activity — ${post.username || 'Anonymous'}`;
+    const text = (post.post || '').toString().slice(0, 140);
+    shareOrCopy({ title, text, url });
+  });
+  actionsRow.append(leftRow, shareBtn);
 
   postDiv.append(content, actionsRow, commentsDiv, replyInput);
   feed.appendChild(postDiv);
@@ -2821,6 +2889,19 @@ function handleActivity(rawRows) {
   // Ensure the sidebar is visible once data is rendered
   const sidebarEl = document.getElementById('activitySidebar');
   sidebarEl?.classList.remove('translate-x-full');
+
+  // Deep-link scroll (if any)
+  try {
+    const targetId = window.deeplinkActivityPostId;
+    if (targetId) {
+      const el = document.getElementById(`activity-post-${targetId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.boxShadow = '0 0 0 2px #eab308';
+        setTimeout(() => { el.style.boxShadow = ''; }, 1500);
+      }
+    }
+  } catch {}
 
   console.log('📦 Activity feed rendered to DOM');
   // Re-attach fixed nodes (as siblings of the scroll area so they stay fixed)
@@ -3547,6 +3628,8 @@ window.handleEntertainment = function (rawRows) {
   items.forEach(item => {
     const card = document.createElement('div');
     card.className = 'border border-yellow-500 rounded-2xl overflow-hidden bg-black/70 text-yellow-300 shadow-lg';
+    // Deterministic id for deep-linking and sharing
+    try { card.id = `ent-${getEntertainmentShareId(item.imageUrl)}`; } catch {}
 
     // Header with username
     const header = document.createElement('div');
@@ -3702,7 +3785,17 @@ window.handleEntertainment = function (rawRows) {
       input.classList.add('hidden');
     });
     left.append(likeBtn, commentBtn);
-    actions.append(left);
+    // Right side: share
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'text-yellow-300 hover:text-yellow-100 ml-auto flex items-center gap-1';
+    shareBtn.innerHTML = '<i data-lucide="share" class="w-4 h-4"></i> Share';
+    shareBtn.addEventListener('click', () => {
+      const url = getEntertainmentShareUrl(item.imageUrl);
+      const title = `Entertainment — ${item.username || 'Creator'}`;
+      const text = (item.caption || '').toString().slice(0, 140);
+      shareOrCopy({ title, text, url });
+    });
+    actions.append(left, shareBtn);
     card.appendChild(actions);
 
     feed.appendChild(card);
@@ -3710,6 +3803,18 @@ window.handleEntertainment = function (rawRows) {
 
   if (window.lucide) lucide.createIcons();
   console.log(`📸 Rendered ${items.length} entertainment items`);
+  // Deep-link scroll (if any)
+  try {
+    const targetId = window.deeplinkEntertainmentId;
+    if (targetId) {
+      const el = document.getElementById(`ent-${targetId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.boxShadow = '0 0 0 2px #eab308';
+        setTimeout(() => { el.style.boxShadow = ''; }, 1500);
+      }
+    }
+  } catch {}
 };
 
 // ─────────── NAV + FAB VISIBILITY ───────────
@@ -6364,3 +6469,33 @@ function forceShowModal(id) {
     return true;
   } catch (_) { return false; }
 }
+
+// ─────────── Deep-link handling for shared URLs ───────────
+window.applyDeepLink = function applyDeepLink() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const view = (params.get('v') || '').toLowerCase();
+    if (view === 'activity') {
+      const postId = params.get('post');
+      if (postId) {
+        window.deeplinkActivityPostId = postId;
+        window.setActiveNav?.('activityBtn');
+        document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+        document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');
+        document.getElementById('activitySidebar')?.classList.remove('translate-x-full');
+        window.keepActivityOpen = true;
+        loadActivity?.();
+      }
+    } else if (view === 'entertainment') {
+      const id = params.get('id');
+      if (id) {
+        window.deeplinkEntertainmentId = id;
+        window.setActiveNav?.('entertainmentBtn');
+        document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
+        document.getElementById('activitySidebar')?.classList.add('translate-x-full');
+        document.getElementById('entertainmentSidebar')?.classList.remove('translate-x-full');
+        loadEntertainment?.();
+      }
+    }
+  } catch {}
+};

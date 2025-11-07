@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *' # hourly refresh
+    - cron: '*/5 * * * *' # every 5 minutes
 
 permissions:
   contents: write
@@ -41,4 +41,3 @@ jobs:
           else
             echo "No changes in share/"
           fi
-

@@ -62,11 +62,13 @@ function timeISO(ts) {
   try { return new Date(ts).toISOString(); } catch { return new Date().toISOString(); }
 }
 
-function buildHtml({ title, description, image, url, type = 'article', bodyHtml = '' }) {
+function buildHtml({ title, description, image, url, type = 'article', bodyHtml = '', redirectUrl }) {
   const fullTitle = title || 'The Golden Rose';
   const desc = description || '';
   const img = image || `${SITE_ORIGIN}/favicon.png`;
   const canonical = url || SITE_ORIGIN;
+  const refresh = redirectUrl ? `<meta http-equiv="refresh" content="0;url=${esc(redirectUrl)}" />` : '';
+  const openBtn = redirectUrl ? `<a class="cta" href="${esc(redirectUrl)}">Open on The Golden Rose</a>` : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,18 +78,21 @@ function buildHtml({ title, description, image, url, type = 'article', bodyHtml 
   <meta name="theme-color" content="#000000" />
   <link rel="icon" type="image/png" href="${SITE_ORIGIN}/favicon.png" />
   <link rel="canonical" href="${esc(canonical)}" />
+  ${refresh}
 
   <meta property="og:site_name" content="The Golden Rose" />
   <meta property="og:type" content="${esc(type)}" />
   <meta property="og:title" content="${esc(fullTitle)}" />
   <meta property="og:description" content="${esc(desc)}" />
   <meta property="og:image" content="${esc(img)}" />
+  <meta property="og:image:alt" content="The Golden Rose" />
   <meta property="og:url" content="${esc(canonical)}" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(fullTitle)}" />
   <meta name="twitter:description" content="${esc(desc)}" />
   <meta name="twitter:image" content="${esc(img)}" />
+  <meta name="twitter:site" content="@_thegoldenrose" />
 
   <style>
     :root { color-scheme: dark; }
@@ -141,7 +146,7 @@ async function buildEntertainment() {
         <h1 class="title">Entertainment • ${esc(username)}</h1>
         ${caption ? `<p class="text" style="margin-top:6px">${esc(caption)}</p>` : ''}
         <img class="img" loading="eager" src="${esc(imageUrl)}" alt="${esc(caption || 'Entertainment image')}" />
-        <a class="cta" href="${deeplink}">Open on The Golden Rose</a>
+        ${openBtn}
       </article>`;
 
     const html = buildHtml({
@@ -150,7 +155,8 @@ async function buildEntertainment() {
       image: imageUrl,
       url: shareUrl,
       type: 'article',
-      bodyHtml: body
+      bodyHtml: body,
+      redirectUrl: deeplink
     });
     fs.writeFileSync(file, html);
     count++;
@@ -182,7 +188,8 @@ async function buildActivity() {
         text: r[1],
         likes: r[2],
         postId: r[3],
-        timestamp: r[4]
+        timestamp: r[4],
+        category: cat
       };
       if (post.postId && !all.has(post.postId)) all.set(post.postId, post);
       if (!post.postId) {
@@ -197,22 +204,23 @@ async function buildActivity() {
     const id = activityIdFor(post);
     const file = path.join(out, `${id}.html`);
     const shareUrl = `${SITE_ORIGIN}/share/activity/${id}.html`;
-    const deeplink = `${SITE_ORIGIN}/?v=activity&post=${encodeURIComponent(post.postId)}`;
+    const deeplink = `${SITE_ORIGIN}/?v=activity&post=${encodeURIComponent(id)}&cat=${encodeURIComponent(post.category || 'general')}`;
     const desc = (post.text || '').toString().slice(0, 200);
     const body = `
       <article class="card">
         <h1 class="title">Activity • ${esc(post.username || 'Anonymous')}</h1>
         <div class="byline">${esc(new Date(post.timestamp || Date.now()).toLocaleString())}</div>
         <p class="text" style="margin-top:8px">${esc(post.text)}</p>
-        <a class="cta" href="${deeplink}">Open on The Golden Rose</a>
+        ${openBtn}
       </article>`;
     const html = buildHtml({
       title: `Activity — ${post.username || 'Anonymous'} • The Golden Rose`,
       description: desc,
-      image: `${SITE_ORIGIN}/favicon.png`,
+      image: `${SITE_ORIGIN}/flower.png`,
       url: shareUrl,
       type: 'article',
-      bodyHtml: body
+      bodyHtml: body,
+      redirectUrl: deeplink
     });
     fs.writeFileSync(file, html);
     count++;

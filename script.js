@@ -2791,7 +2791,11 @@ function handleActivity(rawRows) {
   visible.forEach(post => {
   const postDiv = document.createElement('div');
   postDiv.className = 'relative border border-yellow-500 rounded-2xl p-5 bg-black/70 text-yellow-300 shadow-lg transition hover:border-yellow-400';
-  if (post.postId) postDiv.id = `activity-post-${post.postId}`;
+  // Ensure every post has a stable DOM id (sheet postId or deterministic hash)
+  try {
+    const stableId = (post.postId && String(post.postId).trim()) || fnv1aHash([post.username||'', post.post||'', post.timestamp||''].join('|'));
+    postDiv.id = `activity-post-${stableId}`;
+  } catch {}
 
   const header = document.createElement('div');
   header.className = 'flex justify-between items-center mb-2';
@@ -6493,8 +6497,10 @@ window.applyDeepLink = function applyDeepLink() {
     const view = (params.get('v') || '').toLowerCase();
     if (view === 'activity') {
       const postId = params.get('post');
+      const cat = (params.get('cat') || '').toLowerCase();
       if (postId) {
         window.deeplinkActivityPostId = postId;
+        if (cat) window.activityFilter = cat;
         window.setActiveNav?.('activityBtn');
         document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
         document.getElementById('entertainmentSidebar')?.classList.add('translate-x-full');

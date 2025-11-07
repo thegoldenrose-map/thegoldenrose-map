@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Golden Rose — Not Found</title>
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #000; color: #fef9c3; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 48px 16px; }
+    .card { background: rgba(0,0,0,0.7); border: 1px solid rgba(234,179,8,0.5); border-radius: 16px; padding: 20px; box-shadow: 0 10px 24px rgba(0,0,0,0.5); }
+    h1 { color: #facc15; margin: 0 0 8px; }
+    p { color: #fde68a; }
+    a.btn { display:inline-block; margin-top: 14px; padding: 10px 14px; border-radius: 999px; background: #eab308; color: #000; font-weight: 700; text-decoration: none; border: 1px solid #eab308; }
+    code { color: #fef08a; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Opening The Golden Rose…</h1>
+      <p>If this page doesn’t redirect, tap Open.</p>
+      <a id="open" class="btn" href="/">Open</a>
+      <p style="margin-top:10px;font-size:12px;opacity:.8">Tip: if you shared a link moments ago, the preview file may not be built yet. This link will still open in‑app.</p>
+    </div>
+  </div>
+  <script>
+    (function() {
+      try {
+        var path = (location.pathname || '').replace(/^\/+/, '');
+        // Expected: share/activity/<id>.html or share/entertainment/<id>.html
+        var m = path.match(/^share\/(activity|entertainment)\/([^\/]+)\.html$/i);
+        var url = '/';
+        if (m) {
+          var kind = m[1].toLowerCase();
+          var id = m[2];
+          if (kind === 'activity') url = '/?v=activity&post=' + encodeURIComponent(id);
+          else if (kind === 'entertainment') url = '/?v=entertainment&id=' + encodeURIComponent(id);
+        }
+        document.getElementById('open').setAttribute('href', url);
+        // Replace location so browser history remains clean
+        location.replace(url);
+      } catch (_) {}
+    })();
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=/" />
+  </noscript>
+</body>
+</html>
+

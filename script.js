@@ -41,7 +41,20 @@ function getEntertainmentShareUrl(imageUrl) {
   return `${location.origin}/share/entertainment/${id}.html`;
 }
 
-async function shareOrCopy({ title = 'The Golden Rose', text = '', url = location.href } = {}) {
+async function urlExists(url) {
+  try {
+    const r = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+    return !!r.ok;
+  } catch { return false; }
+}
+
+async function shareOrCopy({ title = 'The Golden Rose', text = '', url = location.href, fallbackUrl } = {}) {
+  try {
+    if (fallbackUrl) {
+      const ok = await urlExists(url);
+      if (!ok) url = fallbackUrl;
+    }
+  } catch {}
   try {
     if (navigator.share) {
       await navigator.share({ title, text, url });
@@ -2875,9 +2888,10 @@ function handleActivity(rawRows) {
   shareBtn.addEventListener('click', () => {
     const id = (post.postId && String(post.postId).trim()) || fnv1aHash([post.username||'', post.post||'', post.timestamp||''].join('|'));
     const url = `${location.origin}/share/activity/${encodeURIComponent(id)}.html`;
+    const fallbackUrl = `${location.origin}/?v=activity&post=${encodeURIComponent(id)}`;
     const title = `Activity — ${post.username || 'Anonymous'}`;
     const text = (post.post || '').toString().slice(0, 140);
-    shareOrCopy({ title, text, url });
+    shareOrCopy({ title, text, url, fallbackUrl });
   });
   actionsRow.append(leftRow, shareBtn);
 
@@ -3792,9 +3806,10 @@ window.handleEntertainment = function (rawRows) {
     shareBtn.innerHTML = '<i data-lucide="share" class="w-4 h-4"></i> Share';
     shareBtn.addEventListener('click', () => {
       const url = getEntertainmentShareUrl(item.imageUrl);
+      const fallbackUrl = `${location.origin}/?v=entertainment&id=${encodeURIComponent(getEntertainmentShareId(item.imageUrl))}`;
       const title = `Entertainment — ${item.username || 'Creator'}`;
       const text = (item.caption || '').toString().slice(0, 140);
-      shareOrCopy({ title, text, url });
+      shareOrCopy({ title, text, url, fallbackUrl });
     });
     actions.append(left, shareBtn);
     card.appendChild(actions);

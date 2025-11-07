@@ -120,6 +120,36 @@ window.updateAdminUI = function updateAdminUI() {
   if (btn) btn.classList.toggle('hidden', role !== 'admin');
 };
 
+// Show a badge with count of new members since last seen (admin only)
+window.updateAdminNewMembersBadge = async function updateAdminNewMembersBadge() {
+  try {
+    const role = (localStorage.getItem('memberCommunityStatus') || '').toLowerCase();
+    const badge = document.getElementById('adminNewMembersBadge');
+    if (!badge) return;
+    if (role !== 'admin') { badge.classList.add('hidden'); return; }
+    // Fetch current total members via GViz
+    const list = await fetchAdminMembers().catch(() => []);
+    const total = Array.isArray(list) ? list.length : 0;
+    const keySeen = 'adminMembersSeenCount';
+    const keyInit = 'adminMembersSeenInit';
+    const seenRaw = Number(localStorage.getItem(keySeen) || '0');
+    const isInitialised = localStorage.getItem(keyInit) === '1';
+    if (!isInitialised) {
+      // First run baseline: record and show 0
+      localStorage.setItem(keySeen, String(total));
+      localStorage.setItem(keyInit, '1');
+      badge.textContent = '0';
+      badge.classList.remove('hidden');
+      return;
+    }
+    const diff = Math.max(0, total - seenRaw);
+    badge.textContent = String(diff);
+    badge.classList.remove('hidden');
+  } catch (e) {
+    console.warn('updateAdminNewMembersBadge failed', e);
+  }
+};
+
 window.openAdminPanel = async function openAdminPanel() {
   const role = (localStorage.getItem('memberCommunityStatus') || '').toLowerCase();
   if (role !== 'admin') return;
@@ -138,6 +168,13 @@ window.openAdminPanel = async function openAdminPanel() {
   try {
     const list = await fetchAdminMembers();
     if (meta) meta.textContent = `${list.length} rows`;
+    // Mark current total as seen and clear the new-members badge
+    try {
+      localStorage.setItem('adminMembersSeenCount', String(list.length));
+      localStorage.setItem('adminMembersSeenInit', '1');
+      const badge = document.getElementById('adminNewMembersBadge');
+      if (badge) { badge.textContent = '0'; badge.classList.add('hidden'); }
+    } catch {}
     if (body) {
       if (!list.length) {
         body.innerHTML = '<tr><td class="px-4 py-3 text-yellow-400" colspan="3">No data</td></tr>';
@@ -2966,7 +3003,7 @@ function ensureActivityPostFormNode() {
   form.id = 'activityPostForm';
   form.className = 'absolute bottom-0 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20';
   form.innerHTML = `
-    <input id="postInput" type="text" placeholder="Write your post..." required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
+    <input id="postInput" type="text" placeholder="◆ Share something with your community…" required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
     <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
       <i data-lucide="send" class="w-5 h-5 text-black"></i>
     </button>
@@ -3059,6 +3096,79 @@ function bindActivityPostForm() {
   const input = document.getElementById('postInput');
 
   if (!form || !input) return;
+
+  // AI-style prompt typing animation — only when Activity sidebar opens
+  try {
+    if (!input._typingBound) {
+      input._typingBound = true;
+      const aiPrompts = [
+        'The town hall is looking great at the moment!',
+        'Any local events this weekend?',
+        'Spotted something interesting around town?',
+        'Who needs a hand today?',
+        'Recommendations for a cozy cafe?',
+        'Share a quick update with the community.',
+        'What’s happening in your neighbourhood?',
+        'A small win worth celebrating today?',
+        'Traffic or roadworks to be aware of?',
+        'Local business shout-out?'
+      ];
+      const sidebar = document.getElementById('activitySidebar');
+      const runTyping = () => {
+        // Prevent re-running
+        if (input._typedOnce) return;
+        input._typedOnce = true;
+        const pick = aiPrompts[Math.floor(Math.random() * aiPrompts.length)];
+        const fullText = `◆ ${pick}`;
+        input.placeholder = '';
+        let i = 0;
+        let cancelled = false;
+        const typeNext = () => {
+          if (cancelled) return;
+          if (document.activeElement === input || (input.value && input.value.length > 0)) {
+            input.placeholder = fullText;
+            return;
+          }
+          input.placeholder = fullText.slice(0, i);
+          i += 1;
+          if (i <= fullText.length) {
+            setTimeout(typeNext, 35);
+          } else {
+            let ticks = 0;
+            const cursor = '▍';
+            const blink = setInterval(() => {
+              if (document.activeElement === input || (input.value && input.value.length > 0)) {
+                clearInterval(blink);
+                input.placeholder = fullText;
+                return;
+              }
+              input.placeholder = ticks % 2 === 0 ? `${fullText} ${cursor}` : fullText;
+              ticks += 1;
+              if (ticks > 8) {
+                clearInterval(blink);
+                input.placeholder = fullText;
+              }
+            }, 400);
+          }
+        };
+        input.addEventListener('focus', () => { cancelled = true; input.placeholder = fullText; }, { once: true });
+        input.addEventListener('input', () => { cancelled = true; input.placeholder = fullText; }, { once: true });
+        setTimeout(typeNext, 250);
+      };
+      const isOpen = () => sidebar && !sidebar.classList.contains('translate-x-full');
+      if (isOpen()) {
+        runTyping();
+      } else if (sidebar) {
+        const observer = new MutationObserver(() => {
+          if (isOpen()) {
+            observer.disconnect();
+            runTyping();
+          }
+        });
+        observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+      }
+    }
+  } catch {}
 
   const startedAt = Date.now();
 
@@ -3865,6 +3975,11 @@ window.handleEntertainment = function (rawRows) {
       const anyOpen = sidebars.some(el => el && !el.classList.contains('translate-x-full'))
         || (profileMenu && !profileMenu.classList.contains('hidden'));
       if (locateBtn) locateBtn.style.display = anyOpen ? 'none' : 'flex';
+      try {
+        if (profileMenu && !profileMenu.classList.contains('hidden')) {
+          window.updateAdminNewMembersBadge?.();
+        }
+      } catch {}
     };
 
     const observer = new MutationObserver(update);
@@ -5255,9 +5370,10 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
       const role = (match.communityStatus || 'member').toString();
       const roleNorm = role.trim().toLowerCase();
       localStorage.setItem('memberCommunityStatus', roleNorm);
-      try { window.updateActivityCommunityStatus?.(roleNorm, match.community); } catch {}
-      try { window.updateAdminUI?.(); } catch {}
-      try { zoomToCommunity?.(match.community); } catch {}
+  try { window.updateActivityCommunityStatus?.(roleNorm, match.community); } catch {}
+  try { window.updateAdminUI?.(); } catch {}
+  try { window.updateAdminNewMembersBadge?.(); } catch {}
+  try { zoomToCommunity?.(match.community); } catch {}
     }
 
     const displayName = nameInput.value.trim();
@@ -5844,6 +5960,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindMarketplacePostForm?.();
   window.updateLockedOverlays?.();
   window.updateAdminUI?.();
+  window.updateAdminNewMembersBadge?.();
   // If already logged in (legacy username or memberName), sync UI and community
   if (window.isLoggedIn?.()) {
     document.body.classList.add('logged-in');

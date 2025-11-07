@@ -323,7 +323,6 @@
         ]
       },
       "id": 115
-
     },
     {
       "type": "Feature",
@@ -338,6 +337,38 @@
         "coordinates": [
           0.03277477223286951,
           51.09852110350974
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "POT HOLE",
+        "description": "",
+        "category": "reports",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03340000000002874,
+          51.09789999999998
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "N",
+        "description": "",
+        "category": "events",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03340000000002874,
+          51.09789999999998
         ]
       }
     }

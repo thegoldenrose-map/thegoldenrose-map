@@ -65,7 +65,7 @@ function timeISO(ts) {
 function buildHtml({ title, description, image, url, type = 'article', bodyHtml = '', redirectUrl }) {
   const fullTitle = title || 'The Golden Rose';
   const desc = description || '';
-  const img = image || `${SITE_ORIGIN}/favicon.png`;
+  const img = image || `${SITE_ORIGIN}/apple-touch-icon.png`;
   const canonical = url || SITE_ORIGIN;
   const refresh = redirectUrl ? `<meta http-equiv="refresh" content="0;url=${esc(redirectUrl)}" />` : '';
   const openBtn = redirectUrl ? `<a class="cta" href="${esc(redirectUrl)}">Open on The Golden Rose</a>` : '';
@@ -76,7 +76,8 @@ function buildHtml({ title, description, image, url, type = 'article', bodyHtml 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(fullTitle)}</title>
   <meta name="theme-color" content="#000000" />
-  <link rel="icon" type="image/png" href="${SITE_ORIGIN}/favicon.png" />
+  <link rel="icon" type="image/png" href="${SITE_ORIGIN}/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" href="${SITE_ORIGIN}/apple-touch-icon.png" />
   <link rel="canonical" href="${esc(canonical)}" />
   ${refresh}
 
@@ -112,7 +113,7 @@ function buildHtml({ title, description, image, url, type = 'article', bodyHtml 
   <div class="wrap">
     ${bodyHtml}
     <div class="brand">
-      <img src="${SITE_ORIGIN}/favicon.png" alt="TGR" />
+      <img src="${SITE_ORIGIN}/apple-touch-icon.png" alt="TGR" />
       <span>The Golden Rose</span>
     </div>
   </div>
@@ -216,7 +217,7 @@ async function buildActivity() {
     const html = buildHtml({
       title: `Activity — ${post.username || 'Anonymous'} • The Golden Rose`,
       description: desc,
-      image: `${SITE_ORIGIN}/favicon.png`,
+      image: `${SITE_ORIGIN}/apple-touch-icon.png`,
       url: shareUrl,
       type: 'article',
       bodyHtml: body,

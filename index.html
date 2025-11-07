@@ -2,22 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>The Golden Rose Map</title>
+  <title>The Golden Rose — Map, Marketplace & Community</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000000">
+  <meta name="description" content="The Golden Rose is a grassroots, people-powered network in the UK — map, marketplace, community and entertainment. No algorithms, no censorship.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <link rel="canonical" href="https://thegoldenrose.uk/">
+  <link rel="alternate" hreflang="en-GB" href="https://thegoldenrose.uk/">
   <!-- Default Open Graph / Twitter (overridden by per-post share pages) -->
   <meta property="og:site_name" content="The Golden Rose">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="The Golden Rose - Alternative Social Media Platform">
-  <meta property="og:description" content="Grassroots, people-powered network: Map, Marketplace, Community + Entertainment — no algorithms, no censorship.">
-  <meta property="og:image" content="/favicon.png">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:title" content="The Golden Rose — Map, Marketplace & Community">
+  <meta property="og:description" content="Grassroots, people-powered network: Map, Marketplace, Community & Entertainment — no algorithms, no censorship.">
+  <meta property="og:image" content="https://thegoldenrose.uk/apple-touch-icon.png">
   <meta property="og:url" content="https://thegoldenrose.uk/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="The Golden Rose - Alternative Social Media Platform">
-  <meta name="twitter:description" content="Grassroots, people-powered network: Map, Marketplace, Community + Entertainment.">
-  <meta name="twitter:image" content="https://thegoldenrose.uk/favicon.png">
+  <meta name="twitter:title" content="The Golden Rose — Map, Marketplace & Community">
+  <meta name="twitter:description" content="Grassroots, people-powered network: Map, Marketplace, Community & Entertainment.">
+  <meta name="twitter:image" content="https://thegoldenrose.uk/apple-touch-icon.png">
   <meta name="twitter:site" content="@_thegoldenrose">
-  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.mapbox.com" crossorigin>
+  <link rel="dns-prefetch" href="//fonts.googleapis.com">
+  <link rel="dns-prefetch" href="//fonts.gstatic.com">
+  <link rel="dns-prefetch" href="//api.mapbox.com">
 
   <!-- CSS -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
@@ -27,9 +39,38 @@
     <script src="https://unpkg.com/lucide@latest" defer></script>
   <style>body { font-family: 'Inter', sans-serif; }</style>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="d2be9e15-1cbf-4252-9882-edb635cf51b1"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "The Golden Rose",
+    "url": "https://thegoldenrose.uk/",
+    "logo": "https://thegoldenrose.uk/favicon.png",
+    "sameAs": [
+      "https://x.com/_thegoldenrose"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "The Golden Rose",
+    "url": "https://thegoldenrose.uk/"
+  }
+  </script>
 </head>
 
 <body class="theme-dark bg-black text-white">
+  <header class="sr-only">
+    <h1>The Golden Rose — Map, Marketplace and Community</h1>
+    <p>Discover meetups, local news, shops, services and entertainment across the UK.</p>
+  </header>
+  <noscript>
+    <div style="background:#111;color:#fef3c7;padding:12px 16px;text-align:center">
+      JavaScript is required to load the interactive map. Please enable JavaScript to use The Golden Rose.
+    </div>
+  </noscript>
   <!-- Map -->
   <div id="map"></div>
 
@@ -38,7 +79,7 @@
 
   <!-- JS LIBS (must come BEFORE anything that uses them) -->
 
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <script defer src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 
   <!-- Inline loader to fetch UI components and THEN inject script.js -->
 

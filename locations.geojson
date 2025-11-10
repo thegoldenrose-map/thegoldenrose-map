@@ -378,7 +378,9 @@
         "title": "Forest Row Turkish Barbers",
         "description": "",
         "category": "shops",
-        "verified": false
+        "verified": true,
+        "image": "forestrowturkisbarbers.jpg",
+        "hours": "Mon-Sun 9-6"
       },
       "geometry": {
         "type": "Point",

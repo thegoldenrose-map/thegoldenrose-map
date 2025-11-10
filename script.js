@@ -1617,6 +1617,21 @@ function bindSubmissionForm() {
   // Timestamp when form becomes available
   const formReadyAt = Date.now();
 
+  // Admin-only fields visibility
+  try {
+    const role = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
+    const admin = role === 'admin';
+    const sec = document.getElementById('submissionAdminSection');
+    if (sec) sec.classList.toggle('hidden', !admin);
+    const cb = document.getElementById('submissionVerified');
+    const vf = document.getElementById('submissionVerifiedFields');
+    if (cb && vf) {
+      const sync = () => vf.classList.toggle('hidden', !cb.checked);
+      cb.addEventListener('change', sync);
+      sync();
+    }
+  } catch {}
+
   form.addEventListener('submit', e => {
     e.preventDefault(); // ✅ this now works!
 
@@ -1635,11 +1650,19 @@ function bindSubmissionForm() {
     const name = sanitize(document.getElementById('locationName').value).slice(0,120);
     const address = sanitize(document.getElementById('submissionLocation').value).slice(0,160);
     const descOpt = sanitize(document.getElementById('submissionDescription')?.value || '').slice(0,280);
-    const location = descOpt ? `${address} — ${descOpt}`.slice(0,320) : address;
+    const location = address;
     const category = sanitize(document.getElementById('locationCoords').value).slice(0,80);
 
+    // Admin-only extras
+    const role = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
+    const isAdmin = role === 'admin';
+    const verified = isAdmin && document.getElementById('submissionVerified')?.checked === true;
+    const website = isAdmin ? (document.getElementById('submissionWebsite')?.value || '') : '';
+    const image = isAdmin ? (document.getElementById('submissionImage')?.value || '') : '';
+    const hours = isAdmin ? (document.getElementById('submissionHours')?.value || '') : '';
+
     // Stash details for potential auto-add (admin)
-    try { window._lastSubmission = { name, location, category, pin: window._pendingPin ? { ...window._pendingPin } : null }; } catch {}
+    try { window._lastSubmission = { name, location, category, description: descOpt, verified, website, image, hours, pin: window._pendingPin ? { ...window._pendingPin } : null }; } catch {}
 
     let url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
               + `&name=${encodeURIComponent(name)}`
@@ -1664,6 +1687,21 @@ function bindLocationFormFallback() {
   if (form._bound) return; // avoid duplicate listeners
   form._bound = true;
 
+  // Admin-only section visibility and toggle
+  try {
+    const role = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
+    const admin = role === 'admin';
+    const sec = document.getElementById('locationAdminSection');
+    if (sec) sec.classList.toggle('hidden', !admin);
+    const cb = document.getElementById('locationVerified');
+    const vf = document.getElementById('locationVerifiedFields');
+    if (cb && vf) {
+      const sync = () => vf.classList.toggle('hidden', !cb.checked);
+      cb.addEventListener('change', sync);
+      sync();
+    }
+  } catch {}
+
   const startedAt = Date.now();
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -1678,8 +1716,16 @@ function bindLocationFormFallback() {
     const location = S(document.getElementById('locationShortDesc')?.value || '').slice(0,320); // optional
     const category = S(document.getElementById('locationCategory')?.value || '').slice(0,80);
 
+    // Admin-only extras
+    const role = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
+    const isAdmin = role === 'admin';
+    const verified = isAdmin && document.getElementById('locationVerified')?.checked === true;
+    const website = isAdmin ? (document.getElementById('locationWebsite')?.value || '') : '';
+    const image = isAdmin ? (document.getElementById('locationImage')?.value || '') : '';
+    const hours = isAdmin ? (document.getElementById('locationHours')?.value || '') : '';
+
     // Stash details for potential auto-add (admin)
-    try { window._lastSubmission = { name, location, category, pin: window._pendingPin ? { ...window._pendingPin } : null }; } catch {}
+    try { window._lastSubmission = { name, location, category, description: location, verified, website, image, hours, pin: window._pendingPin ? { ...window._pendingPin } : null }; } catch {}
 
     let url = `${window.SHEET_API_URL}?type=submission&callback=handleSubmissionResponse`
       + `&name=${encodeURIComponent(name)}`
@@ -1931,10 +1977,14 @@ function handleSubmissionResponse(data) {
             const url = `${window.SHEET_API_URL}?type=persistGeoPin`
               + `&actor=${encodeURIComponent(actor)}`
               + `&title=${encodeURIComponent(last.name || '')}`
-              + `&desc=${encodeURIComponent(last.location || '')}`
+              + `&desc=${encodeURIComponent(last.description || last.location || '')}`
               + `&category=${encodeURIComponent(last.category || '')}`
               + `&lat=${encodeURIComponent(pin.lat)}`
               + `&lng=${encodeURIComponent(pin.lng)}`
+              + (last.verified ? `&verified=1` : '')
+              + (last.website ? `&website=${encodeURIComponent(last.website)}` : '')
+              + (last.image ? `&image=${encodeURIComponent(last.image)}` : '')
+              + (last.hours ? `&hours=${encodeURIComponent(last.hours)}` : '')
               + `&callback=handlePersistGeoPin`;
             jsonp(url);
           }
@@ -4759,6 +4809,7 @@ if (filterBox) {
           const rawCat = (feature.properties.category || '').toString();
           const catKey = rawCat.toLowerCase();
           const catIcon = ((window.categoryIconMap || {})[catKey]) || '📍';
+          const isVerified = !!feature.properties.verified;
           let html = `
   <div class="custom-popup">
     <button class="share-btn" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')" title="Share"><i data-lucide="share-2" class="w-4 h-4"></i></button>
@@ -4811,6 +4862,35 @@ if (filterBox) {
     <div class="vactions">
       <button class="vbtn" onclick="openDirections(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"navigation\"></i><span>Directions</span></button>
       <button class="vbtn vprimary" onclick="window.open('${TRADEPRICE_DETAILS.website}', '_blank')"><span>Visit Site</span></button>
+    </div>
+  </div>`;
+          } else if (isVerified) {
+            const website = (feature.properties.website || '').toString().trim();
+            const image = (feature.properties.image || feature.properties.imageUrl || '').toString().trim();
+            const desc = (feature.properties.description || '').toString().trim();
+            const hours = (feature.properties.hours || '').toString().trim();
+            const badgeText = rawCat ? `Verified ${rawCat.charAt(0).toUpperCase()}${rawCat.slice(1)}` : 'Verified Place';
+            const hero = image ? `<div class="vhero" style="background-image:url('${image.replace(/'/g, "\\'")}')"></div>` : '';
+            const actionBtn = website ? `<button class="vbtn vprimary" onclick="window.open('${website.replace(/'/g, "\\'")}', '_blank')"><span>Visit Site</span></button>` : '';
+            html = `
+  <div class="vcard">
+    <div class="vcard-top">
+      <span class="vbadge"><i>🌹</i> ${badgeText}</span>
+      <button class="vicon share" title="Share" onclick="copyPinLink(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"share-2\"></i></button>
+      <button class="vicon fav" title="Save" onclick="addToFavourites('${safeTitle}')"><i data-lucide=\"heart\"></i></button>
+      <button class="vicon close" title="Close" onclick="this.closest('.mapboxgl-popup')?.remove()"><i data-lucide=\"x\"></i></button>
+    </div>
+    <div class="vgrid">
+      ${hero}
+      <div class="vbody">
+        <div class="vtitle">${title}</div>
+        ${desc ? `<div class=\"vdesc\">${desc}</div>` : ''}
+        ${hours ? `<div class=\"vmeta\"><i data-lucide=\"clock-3\"></i><span>${hours}</span></div>` : ''}
+      </div>
+    </div>
+    <div class="vactions">
+      <button class="vbtn" onclick="openDirections(${lat}, ${lon}, '${safeTitle}')"><i data-lucide=\"navigation\"></i><span>Directions</span></button>
+      ${actionBtn}
     </div>
   </div>`;
           }
@@ -6527,6 +6607,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <select id="locationCategory" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" required>
             <option value="" disabled selected>Select category…</option>
           </select>
+          <div id="locationAdminSection" class="hidden border-t border-yellow-500/30 pt-3">
+            <label class="flex items-center gap-2 text-sm text-yellow-300">
+              <input type="checkbox" id="locationVerified" class="rounded border-yellow-500/40 bg-zinc-900"> Mark as Verified
+            </label>
+            <div id="locationVerifiedFields" class="hidden mt-2 space-y-2">
+              <input id="locationWebsite" type="url" placeholder="Website URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+              <input id="locationImage" type="url" placeholder="Image URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+              <input id="locationHours" type="text" placeholder="Opening hours (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+            </div>
+          </div>
           <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
         </form>`;
       document.body.appendChild(modal);

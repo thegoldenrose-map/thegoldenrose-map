@@ -317,6 +317,19 @@
     <select id="locationCoords" class="w-full mb-3 p-3 text-sm rounded-lg bg-zinc-900 border border-yellow-500/40 text-yellow-200 focus:outline-none" required>
       <option value="" disabled selected>Select category…</option>
     </select>
+
+    <!-- Admin-only: Verified toggle + extra fields -->
+    <div id="submissionAdminSection" class="hidden border-t border-yellow-500/30 pt-3 mt-2">
+      <label class="flex items-center gap-2 text-sm text-yellow-300">
+        <input type="checkbox" id="submissionVerified" class="rounded border-yellow-500/40 bg-zinc-900"> Mark as Verified
+      </label>
+      <div id="submissionVerifiedFields" class="hidden mt-2 space-y-2">
+        <input type="url" id="submissionWebsite" class="w-full p-2 text-sm rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200" placeholder="Website URL (optional)">
+        <input type="url" id="submissionImage" class="w-full p-2 text-sm rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200" placeholder="Image URL (optional)">
+        <input type="text" id="submissionHours" class="w-full p-2 text-sm rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200" placeholder="Opening hours (optional)">
+        <p class="text-[11px] text-yellow-500/80">Tip: Description above appears on the verified card.</p>
+      </div>
+    </div>
     <div class="flex justify-between gap-2">
       <button type="submit" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 rounded-lg">Add to Map</button>
       <button type="button" onclick="closeModal()" class="flex-1 bg-black border border-yellow-500 hover:bg-yellow-600 text-yellow-300 hover:text-black font-bold py-2 rounded-lg">Cancel</button>
@@ -365,6 +378,18 @@
     <select id="locationCategory" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200" required>
       <option value="" disabled selected>Select category…</option>
     </select>
+
+    <!-- Admin-only (fallback form): Verified toggle + extra fields -->
+    <div id="locationAdminSection" class="hidden border-t border-yellow-500/30 pt-3">
+      <label class="flex items-center gap-2 text-sm text-yellow-300">
+        <input type="checkbox" id="locationVerified" class="rounded border-yellow-500/40 bg-zinc-900"> Mark as Verified
+      </label>
+      <div id="locationVerifiedFields" class="hidden mt-2 space-y-2">
+        <input id="locationWebsite" type="url" placeholder="Website URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+        <input id="locationImage" type="url" placeholder="Image URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+        <input id="locationHours" type="text" placeholder="Opening hours (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+      </div>
+    </div>
     <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-black w-full py-2 rounded font-semibold">Submit</button>
   </form>
 </div>

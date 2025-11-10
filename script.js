@@ -5461,6 +5461,77 @@ window.setExclusiveCategory = (cat) => {
 const searchInput = document.getElementById('search');
 const suggestionsBox = document.getElementById('suggestions');
 
+// Generative-style placeholder typing for the search bar
+// Edit the phrases or the speed below
+try {
+  // Change phrases here
+  const phrases = [
+    'Search places, cafés, pubs',
+    'Find local places...',
+    'A new favourite location?',
+    'Expand your horizons...',
+  ];
+
+  // Tweak speeds here (milliseconds). Increase for slower.
+  const AI_SEARCH_CONFIG = {
+    typeMs: 150,      // time between typed characters
+    backspaceMs: 120, // time between deletions
+    holdMs: 2100,     // pause when a phrase is fully typed
+    gapMs: 1200,      // pause between phrases before typing next
+    caret: '▍'        // caret symbol ('' to disable)
+  };
+
+  let phraseIndex = 0;
+  let charIndex = 0;
+  let mode = 'typing'; // 'typing' | 'hold' | 'deleting' | 'gap'
+  let nextAt = performance.now();
+
+  const step = (now) => {
+    const el = searchInput;
+    if (!el) return;
+    // If user is focused/typing, skip animation
+    if (document.activeElement === el) { requestAnimationFrame(step); return; }
+    if (now < nextAt) { requestAnimationFrame(step); return; }
+
+    const current = phrases[phraseIndex % phrases.length] || '';
+
+    switch (mode) {
+      case 'typing': {
+        charIndex = Math.min(charIndex + 1, current.length);
+        el.setAttribute('placeholder', current.slice(0, charIndex) + (AI_SEARCH_CONFIG.caret || ''));
+        nextAt = now + AI_SEARCH_CONFIG.typeMs;
+        if (charIndex >= current.length) { mode = 'hold'; nextAt = now + AI_SEARCH_CONFIG.holdMs; }
+        break;
+      }
+      case 'hold': {
+        mode = 'deleting';
+        nextAt = now + AI_SEARCH_CONFIG.backspaceMs;
+        break;
+      }
+      case 'deleting': {
+        charIndex = Math.max(0, charIndex - 1);
+        el.setAttribute('placeholder', current.slice(0, charIndex));
+        nextAt = now + AI_SEARCH_CONFIG.backspaceMs;
+        if (charIndex === 0) { mode = 'gap'; nextAt = now + AI_SEARCH_CONFIG.gapMs; }
+        break;
+      }
+      case 'gap': {
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        mode = 'typing';
+        nextAt = now + AI_SEARCH_CONFIG.typeMs;
+        break;
+      }
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+
+  // Add sparkle while typing
+  const wrapTyping = (on) => searchInput?.classList?.toggle('ai-typing', !!on);
+  searchInput?.addEventListener('input', () => wrapTyping(true));
+  searchInput?.addEventListener('blur', () => wrapTyping(false));
+} catch {}
+
 searchInput.addEventListener('input', async () => {
   const normalize = (s) => s
     .toLowerCase()

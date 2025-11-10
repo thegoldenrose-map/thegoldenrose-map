@@ -91,7 +91,7 @@ function parseGvizResponse(text) {
 }
 
 async function fetchAdminMembers() {
-  const url = `https://docs.google.com/spreadsheets/d/${ADMIN_SHEET_ID}/gviz/tq?gid=${ADMIN_MEMBERS_GID}&tqx=out:json`;
+  const url = `https://docs.google.com/spreadsheets/d/${ADMIN_SHEET_ID}/gviz/tq?gid=${ADMIN_MEMBERS_GID}&tqx=out:json&_=${Date.now()}`;
   const res = await fetch(url, { cache: 'no-store' });
   const txt = await res.text();
   const data = parseGvizResponse(txt);
@@ -127,9 +127,12 @@ window.updateAdminNewMembersBadge = async function updateAdminNewMembersBadge() 
     const badge = document.getElementById('adminNewMembersBadge');
     if (!badge) return;
     if (role !== 'admin') { badge.classList.add('hidden'); return; }
-    // Fetch current total members via GViz
-    const list = await fetchAdminMembers().catch(() => []);
-    const total = Array.isArray(list) ? list.length : 0;
+    // Prefer in-memory membershipData (fresh after signup/login), fallback to GViz
+    let total = Array.isArray(membershipData) && membershipData.length ? membershipData.length : 0;
+    if (!total) {
+      const list = await fetchAdminMembers().catch(() => []);
+      total = Array.isArray(list) ? list.length : 0;
+    }
     const keySeen = 'adminMembersSeenCount';
     const keyInit = 'adminMembersSeenInit';
     const seenRaw = Number(localStorage.getItem(keySeen) || '0');
@@ -1152,6 +1155,33 @@ const MOCK_MARKETPLACE_LISTINGS = {
   ]
 };
 
+// Merge Services + Courses into a single Commerce bucket for display
+MOCK_MARKETPLACE_LISTINGS.commerce = [
+  ...(MOCK_MARKETPLACE_LISTINGS.services || []),
+  ...(MOCK_MARKETPLACE_LISTINGS.courses || [])
+];
+
+// Bring back the bakery as a curated Commerce example
+MOCK_MARKETPLACE_LISTINGS.commerce.unshift({
+  id: 'rose-crown-bakery',
+  logo: { text: '🥖' },
+  title: 'Rose & Crown Bakery',
+  subtitle: 'Small-batch sourdough and seasonal pastries',
+  description: 'Stoneground flour, organic butter, and long fermentation for flavour. Ships nationwide.',
+  byline: 'York, North Yorkshire',
+  primaryAction: { label: 'Visit Site', url: 'https://roseandcrownbakery.example.com' }
+});
+
+// Facebook‑style Exchange mock items (image tiles)
+const MOCK_EXCHANGE_ITEMS = [
+  { id: 'bike-001', title: 'Vintage Road Bike', price: '£120', location: 'Brighton', image: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=600&q=70' },
+  { id: 'sofa-002', title: '2‑Seater Sofa', price: '£60', location: 'Lewes', image: 'https://images.unsplash.com/photo-1582582621959-48d98f2b4f34?auto=format&fit=crop&w=600&q=70' },
+  { id: 'tools-003', title: 'DIY Tool Set', price: '£25', location: 'Uckfield', image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=70' },
+  { id: 'pram-004', title: 'Baby Pram', price: '£40', location: 'Hastings', image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=600&q=70' },
+  { id: 'guitar-005', title: 'Acoustic Guitar', price: '£85', location: 'Eastbourne', image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=600&q=70' },
+  { id: 'chair-006', title: 'Oak Dining Chair', price: '£15', location: 'Seaford', image: 'https://images.unsplash.com/photo-1549187774-b4e9b0445b41?auto=format&fit=crop&w=600&q=70' }
+];
+
 const COMMUNITY_OPTIONS = [
   // East Sussex focus
   'Crowborough','Forest Row','East Grinstead','Uckfield','Lewes','Eastbourne','Hastings','Bexhill','Hailsham','Polegate','Seaford','Newhaven','Peacehaven','Rye','Battle','Heathfield','Wadhurst','Robertsbridge','Ringmer','Plumpton','Hove','Brighton',
@@ -1530,6 +1560,56 @@ function handleFavouritesResponse(data) {
     console.warn('⚠️ No favourites found or user not found:', data.message);
   }
 }
+// Ensure JSONP callback is globally reachable
+try { window.handleFavouritesResponse = handleFavouritesResponse; } catch {}
+
+// Fallback loader: read favourites directly from Google Sheets via GViz if the
+// Apps Script endpoint is unavailable or returns no data.
+if (typeof window.tryLoadFavouritesFallback !== 'function') {
+  window.tryLoadFavouritesFallback = async function tryLoadFavouritesFallback() {
+    try {
+      const rawUser = (localStorage.getItem('username') || localStorage.getItem('memberName') || '').toString();
+      const norm = (s='') => s.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const id = norm(rawUser);
+      if (!id) return;
+
+      const url = `https://docs.google.com/spreadsheets/d/1aPjgxKvFXp5uaZwyitf3u3DveCfSWZKgcqrFs-jQIsw/gviz/tq?sheet=Members&tqx=out:json&_=${Date.now()}`;
+      const text = await fetch(url, { cache: 'no-store' }).then(r => r.text());
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      const json = JSON.parse(text.slice(start, end + 1));
+      const cols = (json.table.cols || []).map(c => (c.label || '').toString());
+      const lc = cols.map(c => c.toLowerCase());
+      const idxUser = lc.findIndex(c => c.replace(/\s+/g,'') === 'username');
+      const idxName = lc.findIndex(c => c.replace(/\s+/g,'') === 'name');
+      const idxEmail = lc.findIndex(c => c.replace(/\s+/g,'') === 'email' || c.includes('e-mail'));
+      // Accept British and American spellings; also tolerate synonyms
+      const idxFav = (() => {
+        let i = lc.findIndex(c => c === 'favourites' || c === 'favorites');
+        if (i >= 0) return i;
+        i = lc.findIndex(c => /favo?u?rites?/.test(c));
+        if (i >= 0) return i;
+        return lc.findIndex(c => c.includes('saved'));
+      })();
+      if (!(idxFav >= 0)) { console.warn('No Favourites column found in GViz sheet'); return; }
+      const rows = (json.table.rows || []).map(r => r.c || []);
+      let favStr = '';
+      for (const r of rows) {
+        const u = (r[idxUser]?.v ?? r[idxUser]?.f ?? '').toString();
+        const n = (r[idxName]?.v ?? r[idxName]?.f ?? '').toString();
+        const e = (r[idxEmail]?.v ?? r[idxEmail]?.f ?? '').toString();
+        if (!u && !n && !e) continue;
+        const match = [u,n,e].some(val => val && norm(val) === id);
+        if (match) { favStr = (r[idxFav]?.v ?? r[idxFav]?.f ?? '').toString(); break; }
+      }
+      if (!favStr) { console.log('GViz: no favourites for user'); return; }
+      const favs = favStr.split('|').map(s => s.trim()).filter(Boolean);
+      renderFavouritesDropdown(favs);
+    } catch (e) {
+      console.warn('Favourites GViz fallback failed', e);
+    }
+  }
+}
 function bindSubmissionForm() {
   const form = document.getElementById('submissionForm');
   if (!form) return;
@@ -1697,6 +1777,17 @@ document.querySelectorAll('.categoryBtn').forEach(btn => {
     // 🔁 Update active button highlight
     document.querySelectorAll('.categoryBtn').forEach(b => b.classList.remove('active-category'));
     btn.classList.add('active-category');
+
+    // 🔁 Update marketplace placeholder based on category
+    const inputEl = document.getElementById('marketplacePostInput');
+    if (inputEl) {
+      const map = {
+        exchange: '◆ List an item — Title, price, location',
+        jobs: '◆ Share a job or opportunity…',
+        commerce: '◆ Promote a shop, service or course…'
+      };
+      inputEl.placeholder = map[cat] || '◆ Share something…';
+    }
   });
 });
 
@@ -1752,10 +1843,10 @@ function renderFavouritesDropdown(favs) {
     : favs.map(title => {
         const safe = title.replace(/'/g, "\\'");
         return `
-          <div class="text-sm px-4 py-2 text-yellow-400 flex justify-between items-center">
-            ${title}
-            <button onclick="removeFavourite('${safe}')">
-              <i data-lucide="x" class="w-4 h-4 text-yellow-500 hover:text-red-500"></i>
+          <div class="text-sm px-4 py-2 text-yellow-400 flex justify-between items-center gap-2">
+            <button class=\"text-left flex-1 hover:text-yellow-200\" onclick=\"window.flyToPinByTitle?.('${safe}')\">${title}</button>
+            <button title="Remove" onclick=\"removeFavourite('${safe}')\">
+              <i data-lucide=\"x\" class=\"w-4 h-4 text-yellow-500 hover:text-red-500\"></i>
             </button>
           </div>`;
       }).join('');
@@ -1766,6 +1857,35 @@ function renderFavouritesDropdown(favs) {
     containers.forEach(container => { container.innerHTML = content; });
   }
   lucide.createIcons?.();
+}
+
+// Fly to a local pin by its title (used by favourites list)
+if (typeof window.flyToPinByTitle !== 'function') {
+  window.flyToPinByTitle = function (title='') {
+    const norm = (s) => s
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[’'`]/g, '')
+      .replace(/[^\p{L}\p{N} ]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const q = norm(title);
+    const hit = (Array.isArray(geoMarkers) ? geoMarkers : []).find(m => m.title.includes(q));
+    if (!hit || !map) return;
+    try { map.flyTo({ center: hit.coords, zoom: 16 }); } catch { try { map.easeTo({ center: hit.coords, zoom: 16 }); } catch {} }
+    setTimeout(() => {
+      try {
+        const html = (typeof window.buildPopupHTML === 'function' && hit.feature)
+          ? window.buildPopupHTML(hit.feature)
+          : `<div class=\"custom-popup\"><div class=\"title\">${hit.feature?.properties?.title || ''}</div></div>`;
+        new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+          .setLngLat(hit.coords)
+          .setHTML(html)
+          .addTo(map);
+        try { window.lucide?.createIcons?.(); } catch {}
+      } catch {}
+    }, 250);
+  }
 }
 
 window.submitRequest = function (requestType, message) {
@@ -2532,7 +2652,7 @@ function renderMarketplaceListingCard(container, item) {
   if (subtitle.textContent) header.append(subtitle);
 
   const description = document.createElement('p');
-  description.className = 'text-sm leading-relaxed text-yellow-200/90';
+  description.className = 'text-sm leading-relaxed text-yellow-200/90 hidden';
   description.textContent = item.description || item.postText || '';
 
   const byline = document.createElement('p');
@@ -2559,6 +2679,27 @@ function renderMarketplaceListingCard(container, item) {
 
   const primaryBtn = makeButton(item.primaryAction, true);
   const secondaryBtn = makeButton(item.secondaryAction, false);
+
+  // Owner username button + contact seller
+  if (item.username) {
+    const userBtn = document.createElement('button');
+    userBtn.type = 'button';
+    userBtn.className = 'inline-flex items-center gap-1 text-xs font-semibold text-yellow-300 hover:text-yellow-100';
+    userBtn.innerHTML = `<i data-lucide="user" class="w-3.5 h-3.5"></i><span>${item.username}</span>`;
+    userBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      try { window.showMemberCard?.(item.username, userBtn); } catch {}
+    });
+    const contactBtn = document.createElement('button');
+    contactBtn.type = 'button';
+    contactBtn.className = 'inline-flex items-center gap-2 rounded-full border border-yellow-500 px-3 py-1.5 text-xs text-yellow-200 hover:bg-yellow-500 hover:text-black';
+    contactBtn.innerHTML = `<i data-lucide="message-square" class="w-3.5 h-3.5"></i><span>Contact Seller</span>`;
+    contactBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      try { window.openChatPanel?.(item.username); } catch {}
+    });
+    actions.append(userBtn, contactBtn);
+  }
 
   if (primaryBtn) actions.appendChild(primaryBtn);
   if (secondaryBtn) actions.appendChild(secondaryBtn);
@@ -2632,7 +2773,135 @@ function renderMarketplaceListingCard(container, item) {
   }
 
   card.append(badge, body);
+
+  // Toggle description on card click
+  card.addEventListener('click', (e) => {
+    // Avoid toggling when clicking links or buttons
+    if (e.target.closest('a,button,input,textarea,select')) return;
+    description.classList.toggle('hidden');
+  });
   container.appendChild(card);
+}
+
+// Parse Exchange composed text into fields
+function parseExchangePost(text = '') {
+  const lines = (text || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const first = lines[0] || '';
+  const restLines = lines.slice(1);
+  // Price: accept with or without £; normalize to include £ in result
+  const priceMatch = text.match(/(?:^|\b)(?:Price:\s*)?((?:£\s*)?\d+(?:\.\d{2})?)/i);
+  const locMatch = text.match(/(?:^|\b)Location:\s*([^\n]+)/i);
+  const condMatch = text.match(/(?:^|\b)Condition:\s*([^\n]+)/i);
+  const descMatch = text.match(/(?:^|\b)Description:\s*([\s\S]+)/i);
+  const imgMatch = text.match(/(?:^|\b)Image:\s*(https?:[^\s\n]+)\b/i);
+
+  const rawPrice = priceMatch ? priceMatch[1].replace(/\s+/g, '') : '';
+  const normPrice = rawPrice ? (rawPrice.startsWith('£') ? rawPrice.replace(/^£?/, '£') : ('£' + rawPrice)) : '';
+  // Remove meta lines (Price/Location/Condition/Image/Description) from the freeform description
+  const cleanedRest = restLines
+    .filter(l => !/^(price|location|condition|image|description)\s*:/i.test(l))
+    .join('\n');
+  return {
+    title: first,
+    price: normPrice,
+    location: locMatch ? locMatch[1].trim() : '',
+    condition: condMatch ? condMatch[1].trim() : '',
+    description: descMatch ? descMatch[1].trim() : cleanedRest,
+    image: imgMatch ? imgMatch[1].trim() : ''
+  };
+}
+
+// Build a single Exchange tile (image-first, price badge)
+function makeExchangeTile(item) {
+  const wrap = document.createElement('div');
+  wrap.className = 'rounded-xl overflow-hidden border border-yellow-500/30 bg-black/60 hover:border-yellow-400 transition shadow';
+
+  const imgWrap = document.createElement('div');
+  imgWrap.className = 'relative bg-zinc-900 aspect-square';
+
+  if (item.image) {
+    const url = String(item.image || '').trim();
+    const looksImage = /\.(png|jpe?g|webp|gif|bmp|svg)(\?.*)?$/i.test(url) || url.startsWith('data:image/');
+    if (looksImage) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = item.title || 'Listing';
+      img.className = 'h-full w-full object-cover';
+      img.loading = 'lazy';
+      imgWrap.appendChild(img);
+    }
+  }
+  if (imgWrap.childElementCount === 0) {
+    const ph = document.createElement('div');
+    ph.className = 'h-full w-full flex items-center justify-center text-yellow-700';
+    ph.textContent = (item.title || '?').slice(0, 1).toUpperCase();
+    imgWrap.appendChild(ph);
+  }
+
+  if (item.price) {
+    const badge = document.createElement('div');
+    badge.className = 'absolute top-2 left-2 px-2 py-1 text-xs font-semibold rounded bg-yellow-500 text-black';
+    badge.textContent = item.price;
+    imgWrap.appendChild(badge);
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'px-2.5 py-2 text-yellow-200';
+  const title = document.createElement('div');
+  title.className = 'text-[13px] font-semibold text-yellow-100 truncate';
+  title.textContent = item.title || 'Listing';
+  const loc = document.createElement('div');
+  loc.className = 'text-[11px] text-yellow-500/80 truncate';
+  loc.textContent = item.location || '';
+
+  // Hidden details
+  const details = document.createElement('div');
+  details.className = 'mt-2 text-[12px] text-yellow-200/90 hidden';
+  const bits = [];
+  if (item.condition) bits.push(`Condition: ${item.condition}`);
+  const desc = (item.description || '').trim();
+  const infoHtml = [bits.join(' • '), desc].filter(Boolean).map(s => `<div>${s}</div>`).join('');
+  details.innerHTML = infoHtml || '';
+
+  // Footer: owner + contact
+  const footer = document.createElement('div');
+  footer.className = 'mt-2 flex items-center justify-between';
+  if (item.username) {
+    const userBtn = document.createElement('button');
+    userBtn.type = 'button';
+    userBtn.className = 'text-[11px] text-yellow-300 hover:text-yellow-100';
+    userBtn.textContent = item.username;
+    userBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      try { window.showMemberCard?.(item.username, userBtn); } catch {}
+    });
+    const contactBtn = document.createElement('button');
+    contactBtn.type = 'button';
+    contactBtn.className = 'text-[11px] rounded-full border border-yellow-500 px-2 py-0.5 text-yellow-200 hover:bg-yellow-500 hover:text-black';
+    contactBtn.textContent = 'Contact Seller';
+    contactBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      try { openChatPanel?.(item.username); } catch {}
+    });
+    footer.append(userBtn, contactBtn);
+  }
+
+  meta.append(title, loc, details, footer);
+
+  wrap.append(imgWrap, meta);
+
+  // Toggle details on tile click
+  wrap.addEventListener('click', (e) => {
+    if (e.target.closest('a,button,input,textarea,select')) return;
+    details.classList.toggle('hidden');
+  });
+  return wrap;
+}
+
+function renderExchangeGrid(gridEl, items = []) {
+  if (!gridEl) return;
+  gridEl.innerHTML = '';
+  items.forEach(item => gridEl.appendChild(makeExchangeTile(item)));
 }
 
 // Callback that your server will invoke with the raw 2D array
@@ -2658,40 +2927,71 @@ function handleMarketplace(rawRows) {
       comments:  r[5],
       category:  (r[6] || '').toString().trim().toLowerCase() || 'jobs'
     }))
-    .filter(p => ['shop','services','courses','jobs'].includes(p.category))
+    .map(p => {
+      // Map legacy categories into the new scheme
+      if (['shop','services','courses'].includes(p.category)) return { ...p, category: 'commerce' };
+      return p;
+    })
+    .filter(p => ['commerce','jobs','exchange'].includes(p.category))
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   const selectedCategory = window.marketplaceFilter || 'jobs';
   const listingsContainer = document.getElementById('marketplaceListingsContent');
-  const shopContainer = document.getElementById('marketplaceShopContent');
+  const exchangeSection = document.getElementById('marketplaceExchangeContent');
+  const exchangeGrid = document.getElementById('exchangeGrid');
+  const exchangeForm = document.getElementById('exchangeForm');
   const loadingNode = document.getElementById('loadingMarketplace');
   const formNode = document.getElementById('marketplacePostForm');
   const refreshNode = document.getElementById('refreshMarketplace');
 
-  if (!listingsContainer || !shopContainer) {
+  if (!listingsContainer) {
     console.error('❌ Marketplace containers missing');
     return;
   }
 
   listingsContainer.innerHTML = '';
-  shopContainer.innerHTML = '';
+  if (exchangeGrid) exchangeGrid.innerHTML = '';
 
   console.log('📛 Current filter:', selectedCategory);
 
-  if (selectedCategory === 'shop') {
-    shopContainer.classList.remove('hidden');
+  // Exchange: show grid view
+  if (selectedCategory === 'exchange') {
+    if (exchangeSection) exchangeSection.classList.remove('hidden');
     listingsContainer.classList.add('hidden');
-
     if (formNode) formNode.style.display = 'none';
-    if (refreshNode) refreshNode.style.display = 'none';
+    if (exchangeForm) exchangeForm.classList.remove('hidden');
+    if (refreshNode) refreshNode.style.display = '';
 
-    renderMarketplaceShop(shopContainer);
+    const visibleExchangePosts = allMarketplacePosts.filter(p => p.category === 'exchange');
+    const items = Array.isArray(MOCK_EXCHANGE_ITEMS) ? MOCK_EXCHANGE_ITEMS.slice() : [];
+    // Render curated items first
+    if (exchangeGrid) renderExchangeGrid(exchangeGrid, items);
+    // Then render user posts as simple tiles
+    if (exchangeGrid && visibleExchangePosts.length) {
+      visibleExchangePosts.forEach(p => {
+        const parsed = parseExchangePost(p.post || '');
+        const tile = makeExchangeTile({
+          title: parsed.title || 'Community listing',
+          price: parsed.price || '',
+          location: parsed.location || '',
+          condition: parsed.condition || '',
+          description: parsed.description || '',
+          username: p.username || 'Anonymous',
+          image: parsed.image || null
+        });
+        exchangeGrid.appendChild(tile);
+      });
+    }
 
+    lucide.createIcons?.();
     if (loadingNode) loadingNode.classList.add('hidden');
+    window.ensurePostFormsVisibility?.();
     return;
   }
 
-  shopContainer.classList.add('hidden');
+  // Default: list view (Commerce / Jobs)
+  if (exchangeSection) exchangeSection.classList.add('hidden');
+  if (exchangeForm) exchangeForm.classList.add('hidden');
   listingsContainer.classList.remove('hidden');
 
   if (formNode) formNode.style.display = '';
@@ -2741,23 +3041,26 @@ function handleMarketplace(rawRows) {
 
 
 function loadMarketplace(category = 'jobs') {
+  window.currentView = 'marketplace';
   window.currentMarketplaceCategory = category;
 
   const loadingNode = document.getElementById('loadingMarketplace');
   const listingsContainer = document.getElementById('marketplaceListingsContent');
-  const shopContainer = document.getElementById('marketplaceShopContent');
+  const exchangeSection = document.getElementById('marketplaceExchangeContent');
+  const exchangeForm = document.getElementById('exchangeForm');
   const formNode = document.getElementById('marketplacePostForm');
   const refreshNode = document.getElementById('refreshMarketplace');
 
   if (loadingNode) loadingNode.classList.remove('hidden');
   if (listingsContainer) listingsContainer.classList.add('hidden');
-  if (shopContainer) shopContainer.classList.add('hidden');
+  if (exchangeSection) exchangeSection.classList.add('hidden');
+  if (exchangeForm) exchangeForm.classList.add('hidden');
 
   const activeCategory = category || window.marketplaceFilter || 'jobs';
-  if (activeCategory === 'shop') {
-    if (formNode) formNode.style.display = 'none';
-    if (refreshNode) refreshNode.style.display = 'none';
-  }
+  // Show post form for all marketplace categories (gated by login elsewhere)
+  if (formNode) formNode.style.display = (activeCategory === 'exchange') ? 'none' : '';
+  if (exchangeForm) exchangeForm.classList.toggle('hidden', activeCategory !== 'exchange');
+  if (refreshNode) refreshNode.style.display = '';
 
   jsonp(`${window.SHEET_API_URL}?type=getMarketplace&callback=handleMarketplace`);
 }
@@ -3024,9 +3327,13 @@ function handlePostResponse(resp) {
       window.lastLikedBtn.innerHTML = `<i data-lucide="heart" class="w-4 h-4"></i> ${resp.likes}`;
       lucide.createIcons();
     } else {
-      // fallback: reload
-      if (window.currentView === 'marketplace') loadMarketplace();
-      else loadActivity();
+      // Reload current view; keep selected marketplace category (e.g., Exchange)
+      if (window.currentView === 'marketplace') {
+        const cat = window.marketplaceFilter || window.currentMarketplaceCategory || 'jobs';
+        loadMarketplace(cat);
+      } else {
+        loadActivity();
+      }
     }
     // Count this as daily activity for streaks (first time per day only)
     try { pingDailyStreakForCurrentUser?.(); } catch {}
@@ -3087,6 +3394,73 @@ function bindMarketplacePostForm() {
     });
 
     input.value = '';
+    _rate.posts = now;
+  });
+}
+
+function bindExchangeForm() {
+  const form = document.getElementById('exchangeForm');
+  if (!form) return;
+  const titleEl = document.getElementById('exchangeTitle');
+  const priceEl = document.getElementById('exchangePrice');
+  const condEl = document.getElementById('exchangeCondition');
+  const locEl = document.getElementById('exchangeLocation');
+  const imgEl = document.getElementById('exchangeImageUrl');
+  const descEl = document.getElementById('exchangeDescription');
+
+  // Auto-prefix £ on blur
+  try {
+    priceEl?.addEventListener('blur', () => {
+      const raw = (priceEl.value || '').replace(/[^0-9.]/g, '').trim();
+      priceEl.value = raw ? `£${raw}` : '';
+    });
+  } catch {}
+
+  let startedAt = Date.now();
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (Date.now() - startedAt < 1500) return alert('Please wait a moment before posting.');
+    const now = Date.now();
+    if (now - (_rate.posts || 0) < 30000) return alert('You are posting too fast. Please wait.');
+
+    const sanitize = (s='') => (s || '').toString().replace(/[<>]/g, '').trim();
+    const title = sanitize(titleEl?.value).slice(0, 120);
+    let price = sanitize(priceEl?.value).replace(/[^0-9.£]/g,'');
+    price = price.replace(/^£?\s*/, '');
+    price = price ? `£${price}` : '';
+    const condition = sanitize(condEl?.value).slice(0, 40);
+    const location = sanitize(locEl?.value).slice(0, 120);
+    const imageUrl = sanitize(imgEl?.value);
+    const looksImg = /\.(png|jpe?g|webp|gif|bmp|svg)(\?.*)?$/i.test(imageUrl) || imageUrl.startsWith('data:image/');
+    if (imageUrl && !looksImg) {
+      // Soft warning; still allow submit
+      console.warn('Image URL may not be a direct image:', imageUrl);
+    }
+    const description = sanitize(descEl?.value).slice(0, 600);
+
+    if (!title) return alert('Add a title.');
+
+    // Compose text for the existing marketplace sheet contract
+    const lines = [
+      title,
+      price ? `Price: ${price}` : '',
+      condition ? `Condition: ${condition}` : '',
+      location ? `Location: ${location}` : '',
+      imageUrl ? `Image: ${imageUrl}` : '',
+      description ? `Description: ${description}` : ''
+    ].filter(Boolean);
+    const text = lines.join('\n');
+
+    const username = localStorage.getItem('memberName') || localStorage.getItem('username') || 'Anonymous';
+    window.post('post', { username, post: text, category: 'exchange' });
+
+    // Reset + throttle
+    try {
+      if (titleEl) titleEl.value = '';
+      if (priceEl) priceEl.value = '';
+      if (imgEl) imgEl.value = '';
+      if (descEl) descEl.value = '';
+    } catch {}
     _rate.posts = now;
   });
 }
@@ -3214,13 +3588,47 @@ function bindActivityPostForm() {
   // Also bind a fallback Add Location form if present
   try { bindLocationFormFallback(); } catch {}
   bindMarketplacePostForm();
+  bindExchangeForm();
   bindActivityPostForm();
+
+  // Set initial placeholder for marketplace post input
+  try {
+    const inputEl = document.getElementById('marketplacePostInput');
+    if (inputEl) {
+      const cat = window.marketplaceFilter || 'jobs';
+      const map = {
+        exchange: '◆ List an item — Title, price, location',
+        jobs: '◆ Share a job or opportunity…',
+        commerce: '◆ Promote a shop, service or course…'
+      };
+      inputEl.placeholder = map[cat] || '◆ Share something…';
+    }
+  } catch {}
+
+  // Highlight the active marketplace category button on load
+  try {
+    const cat = window.marketplaceFilter || 'jobs';
+    document.querySelectorAll('.categoryBtn').forEach(b => b.classList.remove('active-category'));
+    const activeBtn = document.querySelector(`.categoryBtn[data-cat="${cat}"]`);
+    activeBtn?.classList.add('active-category');
+  } catch {}
 
   document.querySelectorAll('.categoryBtn').forEach(btn => {
     btn.addEventListener('click', () => {
       const cat = btn.getAttribute('data-cat');
       window.currentMarketplaceCategory = cat;
       loadMarketplace(cat);
+
+      // Update marketplace placeholder based on category
+      const inputEl = document.getElementById('marketplacePostInput');
+      if (inputEl) {
+        const map = {
+          exchange: '◆ List an item — Title, price, location',
+          jobs: '◆ Share a job or opportunity…',
+          commerce: '◆ Promote a shop, service or course…'
+        };
+        inputEl.placeholder = map[cat] || '◆ Share something…';
+      }
     });
   });
 
@@ -3572,6 +3980,7 @@ function bindActivityPostForm() {
   });
 
   document.getElementById('marketplaceBtn')?.addEventListener('click', () => {
+    window.currentView = 'marketplace';
     window.setActiveNav?.('marketplaceBtn');
     // Close other sidebars first, then open marketplace
     document.getElementById('activitySidebar')?.classList.add('translate-x-full');
@@ -3650,6 +4059,7 @@ function bindActivityPostForm() {
   // No guest-only request/favourite/add location entries
 
   document.getElementById('activityBtn')?.addEventListener('click', () => {
+    window.currentView = 'activity';
     window.setActiveNav?.('activityBtn');
     window.keepActivityOpen = true;
     document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
@@ -3661,6 +4071,7 @@ function bindActivityPostForm() {
   });
 
   document.getElementById('entertainmentBtn')?.addEventListener('click', () => {
+    window.currentView = 'entertainment';
     window.setActiveNav?.('entertainmentBtn');
     document.getElementById('marketplaceSidebar')?.classList.add('translate-x-full');
     if (!window.keepActivityOpen) document.getElementById('activitySidebar')?.classList.add('translate-x-full');
@@ -4405,6 +4816,8 @@ if (filterBox) {
           }
           return html;
         };
+        // Expose builder so search can reuse consistent popup content
+        try { window.buildPopupHTML = buildPopupHTML; } catch {}
         map.on('click', 'places', (e) => {
           const feat = e.features && e.features[0];
           if (!feat) return;
@@ -4498,7 +4911,9 @@ if (filterBox) {
 
   // 🔍 Category Filters (using symbol layer filter)
   window.filterByCategory = () => {
-    const checked = Array.from(document.querySelectorAll('#categoryFilters input:checked')).map(i => i.value);
+    // Read from both the primary panel and the portal fallback
+    const inputs = document.querySelectorAll('#categoryFilters input:checked, #categoryFiltersPortal input:checked');
+    const checked = Array.from(inputs).map(i => i.value);
     const filter = (!checked.length)
       ? ['==', ['get', 'category'], '___none___']
       : ['in', ['get', 'category'], ['literal', checked]];
@@ -4509,7 +4924,7 @@ if (filterBox) {
 
   // Show all markers
   window.showAllLocations = () => {
-    document.querySelectorAll('#categoryFilters input[type="checkbox"]').forEach(cb => { cb.checked = true; });
+    document.querySelectorAll('#categoryFilters input[type="checkbox"], #categoryFiltersPortal input[type="checkbox"]').forEach(cb => { cb.checked = true; });
     try { map.setFilter('places', null); } catch {}
     try { map.setFilter('places-verified-glow', null); } catch {}
     try { map.setFilter('places-event-glow', null); } catch {}
@@ -4882,7 +5297,8 @@ window.initCommunityPicker = () => {
 
 window.handleCategoryToggle = (event) => {
   const input = event.target;
-  const boxes = Array.from(document.querySelectorAll('#categoryFilters input[type="checkbox"]'));
+  // Consider both primary and portal containers
+  const boxes = Array.from(document.querySelectorAll('#categoryFilters input[type="checkbox"], #categoryFiltersPortal input[type="checkbox"]'));
 
   if (!input.checked) {
     const stillChecked = boxes.filter(cb => cb !== input && cb.checked);
@@ -4892,19 +5308,26 @@ window.handleCategoryToggle = (event) => {
     }
   }
 
+  // Optional: keep matching checkbox in the other container in sync
+  try {
+    const val = (input.value || '').toLowerCase();
+    boxes.forEach(cb => {
+      if (cb === input) return;
+      if ((cb.value || '').toLowerCase() === val) cb.checked = input.checked;
+    });
+  } catch {}
+
   filterByCategory();
 };
 
 window.setExclusiveCategory = (cat) => {
-  const boxes = Array.from(document.querySelectorAll('#categoryFilters input[type="checkbox"]'));
+  const boxes = Array.from(document.querySelectorAll('#categoryFilters input[type="checkbox"], #categoryFiltersPortal input[type="checkbox"]'));
   let targetFound = false;
+  const want = (cat || '').toLowerCase();
   boxes.forEach(cb => {
-    if ((cb.value || '').toLowerCase() === cat.toLowerCase()) {
-      cb.checked = true;
-      targetFound = true;
-    } else {
-      cb.checked = false;
-    }
+    const isMatch = ((cb.value || '').toLowerCase() === want);
+    cb.checked = isMatch;
+    if (isMatch) targetFound = true;
   });
 
   if (targetFound) {
@@ -4944,29 +5367,26 @@ searchInput.addEventListener('input', async () => {
       div.textContent = m.feature?.properties?.title || m.title;
       
       div.addEventListener('click', () => {
-        console.log('🛫 Flying to:', m.coords);
-        if (map && m.marker) {
+        console.log('🛫 Flying to local:', m.coords);
+        if (map && Array.isArray(m.coords) && m.coords.length === 2) {
           try {
             map.flyTo({ center: m.coords, zoom: 16 });
           } catch (e) {
             console.warn('flyTo failed, retrying with easeTo', e);
-            map.easeTo({ center: m.coords, zoom: 16 });
+            try { map.easeTo({ center: m.coords, zoom: 16 }); } catch {}
           }
           setTimeout(() => {
-            if (m.marker && m.marker.togglePopup) {
-              try { m.marker.togglePopup(); } catch(_) {}
-            } else {
-              // No DOM marker: show a popup at coords
-              try {
-                new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
-                  .setLngLat(m.coords)
-                  .setHTML(`<div class="custom-popup"><div class="title">${m.feature?.properties?.title || ''}</div></div>`)
-                  .addTo(map);
-              } catch {}
-            }
-          }, 350);
-        } else {
-          console.warn('⚠️ Marker or map not ready');
+            try {
+              const html = (typeof window.buildPopupHTML === 'function' && m.feature)
+                ? window.buildPopupHTML(m.feature)
+                : `<div class="custom-popup"><div class="title">${m.feature?.properties?.title || ''}</div></div>`;
+              new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+                .setLngLat(m.coords)
+                .setHTML(html)
+                .addTo(map);
+              try { window.lucide?.createIcons?.(); } catch {}
+            } catch {}
+          }, 250);
         }
 
         searchInput.value = '';
@@ -5020,20 +5440,21 @@ const handleSuggestionActivate = async (text) => {
 
   // Try local marker by best contains match
   const local = geoMarkers.filter(m => m.title.includes(q));
-  if (local.length && map && local[0].marker) {
-    try { map.flyTo({ center: local[0].coords, zoom: 16 }); } catch { map.easeTo({ center: local[0].coords, zoom: 16 }); }
+  if (local.length && map) {
+    const mm = local[0];
+    try { map.flyTo({ center: mm.coords, zoom: 16 }); } catch { try { map.easeTo({ center: mm.coords, zoom: 16 }); } catch {} }
     setTimeout(() => {
-      const mm = local[0];
-      if (mm.marker && mm.marker.togglePopup) { try { mm.marker.togglePopup(); } catch(_) {} }
-      else {
-        try {
-          new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
-            .setLngLat(mm.coords)
-            .setHTML(`<div class=\"custom-popup\"><div class=\"title\">${mm.feature?.properties?.title || ''}</div></div>`)
-            .addTo(map);
-        } catch {}
-      }
-    }, 350);
+      try {
+        const html = (typeof window.buildPopupHTML === 'function' && mm.feature)
+          ? window.buildPopupHTML(mm.feature)
+          : `<div class=\"custom-popup\"><div class=\"title\">${mm.feature?.properties?.title || ''}</div></div>`;
+        new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+          .setLngLat(mm.coords)
+          .setHTML(html)
+          .addTo(map);
+        try { window.lucide?.createIcons?.(); } catch {}
+      } catch {}
+    }, 250);
     searchInput.value = '';
     suggestionsBox.innerHTML = '';
     suggestionsBox.style.display = 'none';
@@ -5081,20 +5502,21 @@ searchInput.addEventListener('keydown', async (e) => {
 
   // Try local marker match first
   const local = geoMarkers.filter(m => m.title.includes(query));
-  if (local.length && map && local[0].marker) {
-    try { map.flyTo({ center: local[0].coords, zoom: 16 }); } catch { map.easeTo({ center: local[0].coords, zoom: 16 }); }
+  if (local.length && map) {
+    const mm = local[0];
+    try { map.flyTo({ center: mm.coords, zoom: 16 }); } catch { try { map.easeTo({ center: mm.coords, zoom: 16 }); } catch {} }
     setTimeout(() => {
-      const mm = local[0];
-      if (mm.marker && mm.marker.togglePopup) { try { mm.marker.togglePopup(); } catch(_) {} }
-      else {
-        try {
-          new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
-            .setLngLat(mm.coords)
-            .setHTML(`<div class=\"custom-popup\"><div class=\"title\">${mm.feature?.properties?.title || ''}</div></div>`)
-            .addTo(map);
-        } catch {}
-      }
-    }, 350);
+      try {
+        const html = (typeof window.buildPopupHTML === 'function' && mm.feature)
+          ? window.buildPopupHTML(mm.feature)
+          : `<div class=\"custom-popup\"><div class=\"title\">${mm.feature?.properties?.title || ''}</div></div>`;
+        new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+          .setLngLat(mm.coords)
+          .setHTML(html)
+          .addTo(map);
+        try { window.lucide?.createIcons?.(); } catch {}
+      } catch {}
+    }, 250);
     suggestionsBox.innerHTML = '';
     suggestionsBox.style.display = 'none';
     return;
@@ -5262,6 +5684,7 @@ console.log('form:', loginForm, '| nameInput:', nameInput, '| numberInput:', num
         };
       } catch {}
       console.log('✅ Membership data loaded.', { count: membershipData.length });
+      try { window.updateAdminNewMembersBadge?.(); } catch {}
       if (submitBtn) submitBtn.disabled = false;
     } catch (err) {
       console.error('❌ Failed to fetch membership data:', err);
@@ -5503,7 +5926,10 @@ window.handleSignupResponse = function (resp) {
       document.getElementById('loginModal')?.classList.remove('hidden');
     };
     if (window.reloadMembershipData) {
-      window.reloadMembershipData().then?.(doOpen) || doOpen();
+      window.reloadMembershipData().then?.(() => {
+        try { window.updateAdminNewMembersBadge?.(); } catch {}
+        doOpen();
+      }) || doOpen();
     } else {
       doOpen();
     }
@@ -5833,18 +6259,38 @@ window.ensurePostFormsVisibility = function () {
 
   // Marketplace remains gated to logged-in users
   const mktForm = document.getElementById('marketplacePostForm');
+  const exchForm = document.getElementById('exchangeForm');
   const mktLock = document.getElementById('lockedMarketplaceModal');
-  if (mktForm && mktLock) {
+  const cat = window.marketplaceFilter || 'jobs';
+  if (mktLock) {
     if (loggedIn) {
       mktLock.classList.add('hidden');
-      mktForm.classList.remove('hidden');
-      mktForm.style.opacity = '1';
-      mktForm.style.pointerEvents = 'auto';
-      mktForm.style.filter = 'none';
     } else {
       mktLock.classList.remove('hidden');
-      mktForm.classList.add('hidden');
     }
+  }
+  // Show only the relevant form when logged in
+  if (loggedIn) {
+    if (cat === 'exchange') {
+      if (mktForm) mktForm.classList.add('hidden');
+      if (exchForm) {
+        exchForm.classList.remove('hidden');
+        exchForm.style.opacity = '1';
+        exchForm.style.pointerEvents = 'auto';
+        exchForm.style.filter = 'none';
+      }
+    } else {
+      if (exchForm) exchForm.classList.add('hidden');
+      if (mktForm) {
+        mktForm.classList.remove('hidden');
+        mktForm.style.opacity = '1';
+        mktForm.style.pointerEvents = 'auto';
+        mktForm.style.filter = 'none';
+      }
+    }
+  } else {
+    if (mktForm) mktForm.classList.add('hidden');
+    if (exchForm) exchForm.classList.add('hidden');
   }
 }
 
@@ -6035,6 +6481,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fav = document.getElementById('favouritesBtn');
     fav?.addEventListener('click', (e) => {
       e.preventDefault();
+      try { e.stopPropagation(); } catch {}
       window.openFavouritesStrict?.();
     });
   } catch {}
@@ -6090,15 +6537,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try { (modal.querySelector('#locationName') || modal.querySelector('#locationTitle'))?.focus(); } catch {}
     try { modal.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
   };
+  // Delegate to the robust creator/show function defined later
   window.forceShowFavourites = function () {
-    const dropdowns = document.querySelectorAll('#favouritesDropdown');
-    if (!dropdowns.length) return;
-    dropdowns.forEach(dd => {
-      dd.classList.remove('hidden');
-      dd.style.display = 'block';
-      dd.style.opacity = '1';
-      dd.style.pointerEvents = 'auto';
-    });
+    try { window.openFavouritesStrict?.(); } catch {}
   };
 
   // Keyboard shortcuts: Shift+A (Add Location), Shift+F (Favourites)
@@ -6171,6 +6612,7 @@ document.addEventListener('click', (ev) => {
   // Favourites dropdown (force open)
   if (q('#favouritesBtn')) {
     ev.preventDefault();
+    try { ev.stopPropagation(); } catch {}
     window.openFavouritesStrict?.();
     return;
   }
@@ -6289,6 +6731,8 @@ if (typeof window.forceShowFavourites !== 'function') {
     try {
       const u = localStorage.getItem('username');
       if (u) setTimeout(() => loadUserFavourites(u), 0);
+      // Also try GViz fallback shortly after in case Apps Script is down
+      setTimeout(() => window.tryLoadFavouritesFallback?.(), 800);
     } catch {}
   };
 }
@@ -6315,6 +6759,7 @@ if (typeof window.toggleFavourites !== 'function') {
       try {
         const u = localStorage.getItem('username');
         if (u) setTimeout(() => loadUserFavourites(u), 0);
+        setTimeout(() => window.tryLoadFavouritesFallback?.(), 800);
       } catch {}
     }
   };
@@ -6324,18 +6769,19 @@ if (typeof window.toggleFavourites !== 'function') {
 if (typeof window.openFavouritesStrict !== 'function') {
   window.openFavouritesStrict = function () {
     if (window._disableFavAdd) return;
+
+    // Dedupe any duplicates (keep the first)
+    try {
+      const all = Array.from(document.querySelectorAll('#favouritesDropdown'));
+      if (all.length > 1) all.slice(1).forEach(n => { try { n.remove(); } catch {} });
+    } catch {}
+
     let dd = document.getElementById('favouritesDropdown');
     if (!dd) {
-      // If not present, use the robust creator
-      window.forceShowFavourites?.();
-      dd = document.getElementById('favouritesDropdown');
-    }
-    if (!dd) {
-      // Ultimate fallback: build a minimal dropdown
-      const el = document.createElement('div');
-      el.id = 'favouritesDropdown';
-      el.className = 'fixed bottom-24 right-4 z-[100600] w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-xl shadow-lg p-4 text-yellow-400 space-y-2';
-      el.innerHTML = `
+      dd = document.createElement('div');
+      dd.id = 'favouritesDropdown';
+      dd.className = 'fixed bottom-24 right-4 z-[100600] w-72 max-h-64 overflow-y-auto bg-black border border-yellow-500 rounded-xl shadow-lg p-4 text-yellow-400 space-y-2';
+      dd.innerHTML = `
         <div class="flex justify-between items-center mb-2">
           <h3 class="text-sm font-semibold">🌹 Saved Favourites</h3>
           <button onclick="document.getElementById('favouritesDropdown')?.classList.add('hidden')" class="text-yellow-400 hover:text-red-500 text-sm">✕</button>
@@ -6343,18 +6789,49 @@ if (typeof window.openFavouritesStrict !== 'function') {
         <div id="favouritesList" class="space-y-2 text-sm">
           <p class="text-yellow-600 italic">No favourites yet.</p>
         </div>`;
-      document.body.appendChild(el);
-      dd = el;
+      document.body.appendChild(dd);
     }
-    // Force visible state
+
+    // Re-parent to body to escape hidden ancestors
+    try { if (dd.parentElement !== document.body) document.body.appendChild(dd); } catch {}
+
+    // Strong visible state + sizing
     dd.classList.remove('hidden');
+    dd.style.position = 'fixed';
+    dd.style.right = '16px';
+    dd.style.bottom = '96px';
+    dd.style.left = 'auto';
+    dd.style.top = 'auto';
+    dd.style.transform = 'none';
+    dd.style.minWidth = '288px';
+    dd.style.maxWidth = '360px';
+    dd.style.maxHeight = '60vh';
+    dd.style.overflow = 'auto';
+    dd.style.background = 'rgba(0,0,0,0.95)';
+    dd.style.border = '1px solid rgba(234,179,8,0.5)';
+    dd.style.padding = '12px';
     dd.style.display = 'block';
     dd.style.opacity = '1';
     dd.style.pointerEvents = 'auto';
+    dd.style.zIndex = '100900';
+
+    // If still zero-sized, inject placeholder to force layout
+    try {
+      const r = dd.getBoundingClientRect();
+      if (!r.width || !r.height) {
+        const list = dd.querySelector('#favouritesList');
+        if (list && list.childElementCount === 0) list.innerHTML = '<div class="text-sm px-4 py-2 text-yellow-400">Loading…</div>';
+      }
+    } catch {}
+
+    // Close the profile menu to avoid overlay conflicts
     try { document.getElementById('profileMenu')?.classList.add('hidden'); } catch {}
+
+    // Load latest favourites (primary + fallback)
     try {
       const u = localStorage.getItem('username');
       if (u) setTimeout(() => loadUserFavourites(u), 0);
+      setTimeout(() => window.tryLoadFavouritesFallback?.(), 800);
     } catch {}
   };
 }

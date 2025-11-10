@@ -10,15 +10,12 @@
     </div>
   </div>
 
-  <div id="marketplaceCategoryButtons" class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 grid grid-cols-4 gap-1 px-2 py-2 pr-16 relative">
-    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="shop">
-      <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Shop
+  <div id="marketplaceCategoryButtons" class="sticky top-0 z-30 bg-black/90 backdrop-blur-sm border-b border-yellow-500 grid grid-cols-3 gap-1 px-2 py-2 pr-16 relative">
+    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="commerce">
+      <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Commerce
     </button>
-    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="services">
-      <i data-lucide="wrench" class="w-3.5 h-3.5"></i> Services
-    </button>
-    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="courses">
-      <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i> Courses
+    <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="exchange">
+      <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i> Exchange
     </button>
     <button class="categoryBtn w-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-full border border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-500 active:scale-95 transition-all shadow-lg bg-black/40" data-cat="jobs">
       <i data-lucide="briefcase" class="w-3.5 h-3.5"></i> Jobs
@@ -30,9 +27,9 @@
   </div>
 
   <!-- 🔸 Scrollable Marketplace Content -->
-  <div id="marketplaceContent" class="relative flex-1 overflow-y-auto pt-8 px-4 pb-16 text-yellow-300 space-y-6">
+  <div id="marketplaceContent" class="relative flex-1 overflow-y-auto pt-8 px-4 pb-24 text-yellow-300 space-y-6">
     <div id="marketplaceInfoCard" class="hidden rounded-2xl border border-yellow-500/40 bg-black/70 p-3 text-sm text-yellow-200 shadow">
-      <span class="font-semibold text-yellow-300">Marketplace</span> — Find local services and products. Get verified on the map to set up your shop here.
+      <span class="font-semibold text-yellow-300">Marketplace</span> — Commerce combines shops, services and courses. Exchange is peer‑to‑peer listings: sell, swap or give away items locally. Jobs let you hire or find work.
     </div>
     <div id="loadingMarketplace" class="flex flex-col items-center justify-center py-6 text-yellow-400">
       <svg class="animate-spin h-6 w-6 text-yellow-400 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -42,7 +39,64 @@
       <span class="text-sm font-medium">Loading posts...</span>
     </div>
 
-    <section id="marketplaceShopContent" class="hidden space-y-6"></section>
+    <!-- Exchange form + grid (Facebook‑style listings) -->
+    <section id="marketplaceExchangeContent" class="hidden space-y-4">
+      <!-- Logged-in users see this form; guests see the locked modal below -->
+      <form id="exchangeForm" class="hidden rounded-2xl border border-yellow-500/30 bg-black/70 p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="exchangeTitle" class="block text-xs font-semibold uppercase tracking-wider text-yellow-500/80 mb-1">Title</label>
+            <input id="exchangeTitle" type="text" placeholder="Vintage Road Bike" required class="w-full p-2 rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200" />
+          </div>
+          <div>
+            <label for="exchangePrice" class="block text-xs font-semibold uppercase tracking-wider text-yellow-500/80 mb-1">Price</label>
+            <input id="exchangePrice" type="text" placeholder="120" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="exchangeCondition" class="block text-xs font-semibold uppercase tracking-wider text-yellow-500/80 mb-1">Condition</label>
+            <select id="exchangeCondition" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200">
+              <option value="New">New</option>
+              <option value="Like New">Like New</option>
+              <option value="Good">Good</option>
+              <option value="Used">Used</option>
+              <option value="For parts">For parts</option>
+            </select>
+          </div>
+          <div>
+            <label for="exchangeLocation" class="block text-xs font-semibold uppercase tracking-wider text-yellow-500/80 mb-1">Location</label>
+            <input id="exchangeLocation" type="text" placeholder="Brighton" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200" />
+          </div>
+        </div>
+        <div>
+          <label for="exchangeImageUrl" class="block text-xs font-semibold uppercase tracking-wider text-yellow-500/80 mb-1">Image URL (optional)</label>
+          <input id="exchangeImageUrl" type="url" inputmode="url" placeholder="https://example.com/photo.jpg" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200" />
+        </div>
+        <div>
+          <label for="exchangeDescription" class="block text-xs font-semibold uppercase tracking-wider text-yellow-500/80 mb-1">Description</label>
+          <textarea id="exchangeDescription" rows="3" placeholder="Add details about the item, delivery/collection, etc." class="w-full p-2 rounded bg-zinc-900 border border-yellow-500/30 text-yellow-200"></textarea>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-yellow-500 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-400 transition">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>List Item</span>
+          </button>
+        </div>
+      </form>
+
+      <div id="exchangeGrid" class="grid grid-cols-2 sm:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- List-style cards for Commerce/Jobs -->
     <div id="marketplaceListingsContent" class="space-y-4"></div>
   </div>
+
+  <!-- Fixed Post Form for Commerce/Jobs (appears when logged in) -->
+  <form id="marketplacePostForm" class="absolute bottom-24 sm:bottom-14 left-0 right-0 flex items-center gap-3 px-4 py-3 bg-black/70 backdrop-blur-sm border-t border-yellow-500/20 hidden">
+    <input id="marketplacePostInput" type="text" placeholder="◆ List an item — Title, price, location" required class="flex-1 p-3 text-sm rounded-full bg-zinc-900 border border-yellow-500/30 text-yellow-300 placeholder-yellow-600 focus:outline-none" />
+    <button type="submit" class="p-3 bg-yellow-500 rounded-full shadow-md hover:bg-yellow-600 active:scale-95 transition">
+      <i data-lucide="send" class="w-5 h-5 text-black"></i>
+    </button>
+  </form>
 </div>

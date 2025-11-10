@@ -58,7 +58,7 @@
         <span id="inboxCountBadge" class="ml-auto inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-500 text-black text-[11px] font-bold">0</span>
       </button>
 
-      <button id="favouritesBtn" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
+      <button id="favouritesBtn" type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openFavouritesStrict?.(); return false;" class=" flex items-center gap-2 w-full text-left text-yellow-400 hover:text-black hover:bg-yellow-500 rounded-md px-2 py-1">
         <i data-lucide="heart"></i> Favourites
       </button>
 

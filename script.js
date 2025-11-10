@@ -5390,6 +5390,7 @@ searchInput.addEventListener('input', async () => {
         }
 
         searchInput.value = '';
+        try { searchInput.blur(); } catch {}
         suggestionsBox.innerHTML = '';
         suggestionsBox.style.display = 'none';
       });
@@ -5412,6 +5413,7 @@ searchInput.addEventListener('input', async () => {
         div.onclick = () => {
           map.flyTo({ center: feature.center, zoom: 14 });
           searchInput.value = '';
+          try { searchInput.blur(); } catch {}
           suggestionsBox.innerHTML = '';
           suggestionsBox.style.display = 'none';
         };
@@ -5456,6 +5458,7 @@ const handleSuggestionActivate = async (text) => {
       } catch {}
     }, 250);
     searchInput.value = '';
+    try { searchInput.blur(); } catch {}
     suggestionsBox.innerHTML = '';
     suggestionsBox.style.display = 'none';
     return;
@@ -5486,9 +5489,9 @@ suggestionsBox.addEventListener('mousedown', (e) => {
 });
 
 // Enter to go to best match
-searchInput.addEventListener('keydown', async (e) => {
-  if (e.key !== 'Enter') return;
-  e.preventDefault();
+    searchInput.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
 
   const normalize = (s) => s
     .toLowerCase()
@@ -5517,6 +5520,7 @@ searchInput.addEventListener('keydown', async (e) => {
         try { window.lucide?.createIcons?.(); } catch {}
       } catch {}
     }, 250);
+    try { searchInput.blur(); } catch {}
     suggestionsBox.innerHTML = '';
     suggestionsBox.style.display = 'none';
     return;
@@ -5529,6 +5533,7 @@ searchInput.addEventListener('keydown', async (e) => {
     const feat = data.features?.[0];
     if (feat) {
       map.flyTo({ center: feat.center, zoom: 14 });
+      try { searchInput.blur(); } catch {}
       suggestionsBox.innerHTML = '';
       suggestionsBox.style.display = 'none';
     }

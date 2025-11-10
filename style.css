@@ -489,6 +489,25 @@ body.theme-light #activityPostForm input#postInput {
   border-color: #d97706 !important;
 }
 
+/* Mobile: keep the Activity post box anchored and account for safe area */
+@media (max-width: 640px) {
+  #activityPostForm {
+    bottom: env(safe-area-inset-bottom, 0px);
+  }
+  #marketplacePostForm {
+    bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Prevent iOS zoom on focus by using >=16px font-size */
+#bottom-nav #search,
+input#postInput {
+  font-size: 16px;
+}
+input#marketplacePostInput { font-size: 16px; }
+
+
+
 /* Light mode: Activity sidebar readability */
 body.theme-light #activitySidebar {
   background-color: #fff9e6; /* cream panel */

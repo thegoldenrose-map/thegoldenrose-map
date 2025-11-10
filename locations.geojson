@@ -389,6 +389,22 @@
           51.09656431025178
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "G",
+        "description": "",
+        "category": "🚜 FARMS",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03340000000002874,
+          51.09789999999998
+        ]
+      }
     }
   ]
 }

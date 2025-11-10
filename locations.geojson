@@ -371,6 +371,22 @@
           51.09789999999998
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Forest Row Turkish Barbers",
+        "description": "",
+        "category": "shops",
+        "verified": false
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03598760899413378,
+          51.09656431025178
+        ]
+      }
     }
   ]
 }

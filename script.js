@@ -1,4 +1,32 @@
-console.log("✅ Script loaded");
+// Minimal console noise: silence verbose logs by default.
+// Enable via ?debug=1 or localStorage.debugLogs = '1'. Call window.enableVerboseLogs(true/false) to toggle at runtime.
+(function () {
+  try {
+    const url = new URL(window.location.href);
+    const qsDebug = url.searchParams.get('debug') === '1';
+    const saved = (localStorage.getItem('debugLogs') || '') === '1';
+    const enable = qsDebug || saved;
+    // Preserve originals
+    if (!console._orig) {
+      console._orig = { log: console.log, info: console.info };
+    }
+    if (!enable) {
+      console.log = function () {};
+      console.info = function () {};
+    }
+    window.enableVerboseLogs = function (on = true) {
+      try { localStorage.setItem('debugLogs', on ? '1' : '0'); } catch {}
+      if (on) {
+        if (console._orig?.log) console.log = console._orig.log;
+        if (console._orig?.info) console.info = console._orig.info;
+      } else {
+        if (!console._orig) console._orig = { log: console.log, info: console.info };
+        console.log = function () {};
+        console.info = function () {};
+      }
+    };
+  } catch {}
+})();
 
 let map;
 let geoMarkers = [];
@@ -4619,18 +4647,22 @@ function setupApp() {
       const step = () => {
         try {
           if (!map || !map.getLayer('places')) { window._glowPulseStarted = false; return; }
-          t += 0.05;
+          t += 0.08; // slightly faster pulse
           const z = typeof map.getZoom === 'function' ? map.getZoom() : 12;
-          // Base radius by zoom (kept modest)
-          let base = 8; if (z > 9) base = 10; if (z > 11) base = 12; if (z > 13) base = 14; if (z > 15) base = 18;
-          const vRadius = base * (1 + 0.28 * Math.sin(t));
-          const eRadius = (base * 0.95) * (1 + 0.35 * Math.sin(t + 0.6));
-          const vOpacity = 0.38 + 0.18 * Math.abs(Math.sin(t));
-          const eOpacity = 0.38 + 0.2 * Math.abs(Math.sin(t + 0.6));
+          // Base radius by zoom (amplified for stronger glow)
+          let base = 14; if (z > 9) base = 18; if (z > 11) base = 26; if (z > 13) base = 36; if (z > 15) base = 52; if (z > 17) base = 68;
+          const vRadius = (base * 1.25) * (1 + 0.55 * Math.sin(t));
+          const eRadius = (base * 1.05) * (1 + 0.55 * Math.sin(t + 0.6));
+          const vOpacity = 0.75 + 0.20 * Math.abs(Math.sin(t));
+          const eOpacity = 0.65 + 0.22 * Math.abs(Math.sin(t + 0.6));
+          const blurV = 3.0 + 1.0 * Math.abs(Math.sin(t));
+          const blurE = 2.6 + 1.0 * Math.abs(Math.sin(t + 0.6));
           map.setPaintProperty('places-verified-glow', 'circle-radius', vRadius);
           map.setPaintProperty('places-verified-glow', 'circle-opacity', vOpacity);
+          map.setPaintProperty('places-verified-glow', 'circle-blur', blurV);
           map.setPaintProperty('places-event-glow', 'circle-radius', eRadius);
           map.setPaintProperty('places-event-glow', 'circle-opacity', eOpacity);
+          map.setPaintProperty('places-event-glow', 'circle-blur', blurE);
         } catch {}
         requestAnimationFrame(step);
       };
@@ -4723,10 +4755,10 @@ if (filterBox) {
           map.getSource('places').setData(data);
         }
         const addLayerNow = () => {
-          // Remove existing layers if present
-          try { map.removeLayer('places'); } catch {}
-          try { map.removeLayer('places-verified-glow'); } catch {}
-          try { map.removeLayer('places-event-glow'); } catch {}
+          // Remove existing layers if present (guard with getLayer to avoid console errors)
+          try { if (map.getLayer('places')) map.removeLayer('places'); } catch {}
+          try { if (map.getLayer('places-verified-glow')) map.removeLayer('places-verified-glow'); } catch {}
+          try { if (map.getLayer('places-event-glow')) map.removeLayer('places-event-glow'); } catch {}
 
           // Soft gold glow for verified
           map.addLayer({
@@ -4736,9 +4768,9 @@ if (filterBox) {
             filter: ['==', ['get', 'verified'], true],
             paint: {
               'circle-color': 'rgba(253, 224, 71, 1.0)',
-              'circle-blur': 2.0,
-              'circle-opacity': 0.5,
-              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 8, 10, 12, 14, 16, 16, 20]
+              'circle-blur': 3.0,
+              'circle-opacity': 0.75,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 16, 10, 24, 14, 34, 16, 44]
             }
           });
 
@@ -4750,13 +4782,13 @@ if (filterBox) {
             filter: ['match', ['downcase', ['to-string', ['get', 'category']]], ['events','event'], true, false],
             paint: {
               'circle-color': 'rgba(236, 72, 153, 1.0)',
-              'circle-blur': 2.0,
-              'circle-opacity': 0.5,
-              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 7, 10, 10, 14, 14, 16, 18]
+              'circle-blur': 2.6,
+              'circle-opacity': 0.70,
+              'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 14, 10, 20, 14, 28, 16, 36]
             }
           });
 
-          // Main symbol layer, pick icon per category and scale by zoom
+          // Main symbol layer, pick icon per verified/category and scale by zoom
           // Keep a clear, consistent icon size across zooms
           const baseSize = 0.06;
           map.addLayer({
@@ -4764,8 +4796,12 @@ if (filterBox) {
             type: 'symbol',
             source: 'places',
             layout: {
-              'icon-image': ['match', ['downcase', ['to-string', ['get', 'category']]], ['events','event'], 'gr-event', 'gr-flower'],
-              'icon-size': ['*', baseSize, ['case', ['boolean', ['get', 'verified'], false], 1.15, 1]],
+              'icon-image': [
+                'case',
+                  ['boolean', ['get', 'verified'], false], 'gr-verified',
+                  ['match', ['downcase', ['to-string', ['get', 'category']]], ['events','event'], 'gr-event', 'gr-flower']
+              ],
+              'icon-size': ['*', baseSize, ['case', ['boolean', ['get', 'verified'], false], 1.25, 1]],
               'icon-anchor': 'bottom',
               'icon-allow-overlap': true,
               'icon-ignore-placement': true,
@@ -4775,11 +4811,12 @@ if (filterBox) {
             }
           });
         };
-        // Ensure both images are available (flower + event)
+        // Ensure required images are available (flower + event + verified)
         const ensureImages = (cb) => {
           const needFlower = !map.hasImage('gr-flower');
           const needEvent = !map.hasImage('gr-event');
-          let pending = (needFlower?1:0) + (needEvent?1:0);
+          const needVerified = !map.hasImage('gr-verified');
+          let pending = (needFlower?1:0) + (needEvent?1:0) + (needVerified?1:0);
           if (pending === 0) { cb(); return; }
           const done = () => { pending -= 1; if (pending <= 0) cb(); };
           if (needFlower) {
@@ -4791,6 +4828,12 @@ if (filterBox) {
           if (needEvent) {
             map.loadImage('events.icon.png', (err, img) => {
               if (!err && img) { try { map.addImage('gr-event', img, { sdf: false }); } catch {} }
+              done();
+            });
+          }
+          if (needVerified) {
+            map.loadImage('verified-shop.png', (err, img) => {
+              if (!err && img) { try { map.addImage('gr-verified', img, { sdf: false }); } catch {} }
               done();
             });
           }

@@ -396,25 +396,6 @@
     {
       "type": "Feature",
       "properties": {
-        "title": "Pro Bodyworks",
-        "description": "",
-        "category": "🛍️ SHOPS",
-        "verified": true,
-        "image": "",
-        "website": "https://pro-bodyworks.co.uk",
-        "hours": "Mom-Gri"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -0.1010213656460337,
-          51.11184082938442
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "title": "ProBodyworks",
         "description": "Car Body Shop",
         "category": "🛍️ SHOPS",

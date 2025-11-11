@@ -1307,7 +1307,7 @@ function zoomToCommunity(name) {
   if (!map || !name) return;
   const coords = COMMUNITY_COORDS[name];
   if (coords) {
-    try { map.flyTo({ center: coords, zoom: 13 }); } catch { map.easeTo({ center: coords, zoom: 12 }); }
+    try { map.flyTo({ center: coords, zoom: 12 }); } catch { map.easeTo({ center: coords, zoom: 12 }); }
   }
 }
 
@@ -4627,8 +4627,8 @@ function setupApp() {
   mapboxgl.accessToken = 'pk.eyJ1IjoiaG93ZWxsdHJ1c3QiLCJhIjoiY21iZ3FtNGdqMDF4YjJsc2d4Z3JwZGJ2MiJ9.8u6Y-_RYGb-qxODBGT5-LA';
   // Logged-out users should see East Grinstead / Forest Row more closely
   const _loggedIn = !!(window.isLoggedIn?.());
-  const _initCenter = _loggedIn ? [0.3, 50.95] : [-0.01, 51.11];
-  const _initZoom = _loggedIn ? 9 : 12.5;
+  const _initCenter = _loggedIn ? [0.3, 50.95] : [0.035, 51.105];
+  const _initZoom = _loggedIn ? 9 : 13;
   map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/howelltrust/cmbkwcx8f00oq01qw9wxy8uw4',

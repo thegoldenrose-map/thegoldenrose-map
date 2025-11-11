@@ -1685,8 +1685,14 @@ function bindSubmissionForm() {
     const role = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
     const isAdmin = role === 'admin';
     const verified = isAdmin && document.getElementById('submissionVerified')?.checked === true;
-    const website = isAdmin ? (document.getElementById('submissionWebsite')?.value || '') : '';
-    const image = isAdmin ? (document.getElementById('submissionImage')?.value || '') : '';
+    const normalizeUrl = (u='') => {
+      u = (u || '').trim();
+      if (!u) return '';
+      if (/^(https?:|mailto:|tel:)/i.test(u)) return u;
+      return 'https://' + u.replace(/^\/+/, '');
+    };
+    const website = isAdmin ? normalizeUrl(document.getElementById('submissionWebsite')?.value || '') : '';
+    const image = isAdmin ? normalizeUrl(document.getElementById('submissionImage')?.value || '') : '';
     const hours = isAdmin ? (document.getElementById('submissionHours')?.value || '') : '';
 
     // Stash details for potential auto-add (admin)
@@ -1748,8 +1754,14 @@ function bindLocationFormFallback() {
     const role = (localStorage.getItem('memberCommunityStatus') || '').toString().trim().toLowerCase();
     const isAdmin = role === 'admin';
     const verified = isAdmin && document.getElementById('locationVerified')?.checked === true;
-    const website = isAdmin ? (document.getElementById('locationWebsite')?.value || '') : '';
-    const image = isAdmin ? (document.getElementById('locationImage')?.value || '') : '';
+    const normalizeUrl = (u='') => {
+      u = (u || '').trim();
+      if (!u) return '';
+      if (/^(https?:|mailto:|tel:)/i.test(u)) return u;
+      return 'https://' + u.replace(/^\/+/, '');
+    };
+    const website = isAdmin ? normalizeUrl(document.getElementById('locationWebsite')?.value || '') : '';
+    const image = isAdmin ? normalizeUrl(document.getElementById('locationImage')?.value || '') : '';
     const hours = isAdmin ? (document.getElementById('locationHours')?.value || '') : '';
 
     // Stash details for potential auto-add (admin)
@@ -6730,8 +6742,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <input type="checkbox" id="locationVerified" class="rounded border-yellow-500/40 bg-zinc-900"> Mark as Verified
             </label>
             <div id="locationVerifiedFields" class="hidden mt-2 space-y-2">
-              <input id="locationWebsite" type="url" placeholder="Website URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
-              <input id="locationImage" type="url" placeholder="Image URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+              <input id="locationWebsite" type="text" inputmode="url" autocapitalize="none" spellcheck="false" placeholder="Website URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
+              <input id="locationImage" type="text" inputmode="url" autocapitalize="none" spellcheck="false" placeholder="Image URL (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
               <input id="locationHours" type="text" placeholder="Opening hours (optional)" class="w-full p-2 rounded bg-zinc-900 border border-yellow-500 text-yellow-200">
             </div>
           </div>

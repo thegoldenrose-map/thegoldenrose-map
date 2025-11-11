@@ -4625,11 +4625,15 @@ function setupApp() {
 
   // global map variable
   mapboxgl.accessToken = 'pk.eyJ1IjoiaG93ZWxsdHJ1c3QiLCJhIjoiY21iZ3FtNGdqMDF4YjJsc2d4Z3JwZGJ2MiJ9.8u6Y-_RYGb-qxODBGT5-LA';
+  // Logged-out users should see East Grinstead / Forest Row more closely
+  const _loggedIn = !!(window.isLoggedIn?.());
+  const _initCenter = _loggedIn ? [0.3, 50.95] : [-0.01, 51.11];
+  const _initZoom = _loggedIn ? 9 : 12.5;
   map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/howelltrust/cmbkwcx8f00oq01qw9wxy8uw4',
-    center: [0.3, 50.95],
-    zoom: 9
+    center: _initCenter,
+    zoom: _initZoom
   });
 
   // Keep projection in sync when viewport changes size
@@ -4648,7 +4652,7 @@ function setupApp() {
         try {
           if (!map || !map.getLayer('places')) { window._glowPulseStarted = false; return; }
           t += 0.08; // slightly faster pulse
-          const z = typeof map.getZoom === 'function' ? map.getZoom() : 12;
+          const z = typeof map.getZoom === 'function' ? map.getZoom() : 11;
           // Base radius by zoom (amplified for stronger glow)
           let base = 14; if (z > 9) base = 18; if (z > 11) base = 26; if (z > 13) base = 36; if (z > 15) base = 52; if (z > 17) base = 68;
           const vRadius = (base * 1.25) * (1 + 0.55 * Math.sin(t));

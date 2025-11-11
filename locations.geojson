@@ -398,7 +398,7 @@
       "properties": {
         "title": "ProBodyworks",
         "description": "Car Body Shop",
-        "category": "🛍️ SHOPS",
+        "category": "🧹 SERVICE",
         "verified": true,
         "image": "",
         "website": "https://pro-bodyworks.co.uk",
@@ -417,7 +417,7 @@
       "properties": {
         "title": "Helpful Hands",
         "description": "Cleaning Agency",
-        "category": "🛍️ SHOPS",
+        "category": "🧹SERVICE",
         "verified": true,
         "image": "",
         "website": "",
@@ -426,8 +426,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          -0.19531092143733986,
-          50.848131716971864
+         -0.15975336527334055,
+        50.82688927130657
         ]
       }
     }

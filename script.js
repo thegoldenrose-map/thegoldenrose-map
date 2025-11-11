@@ -5002,23 +5002,35 @@ if (filterBox) {
     const ptitle = (params.get('title') || '').toString();
     if (!Number.isNaN(plat) && !Number.isNaN(plng)) {
       const center = [plng, plat];
-      try { map.flyTo({ center, zoom: 15 }); } catch {}
-      // Try to find closest loaded feature to reuse full popup UI
-      let chosen = null;
-      try {
-        const dist2 = (a,b) => { const dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; };
-        let best = Infinity;
-        for (const m of geoMarkers) {
-          const d = dist2(m.coords, center);
-          if (d < best) { best = d; chosen = m.feature; }
-        }
-      } catch {}
-      const html = chosen ? buildPopupHTML(chosen) : `<div class=\"custom-popup\"><div class=\"title\">${ptitle || 'Location'}</div><div class=\"actions\"><button onclick=\"openDirections(${plat}, ${plng}, '${(ptitle||'').replace(/'/g, "\\'")}')\"><i data-lucide=\\"navigation\\"></i> Directions</button></div></div>`;
-      new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
-        .setLngLat(center)
-        .setHTML(html)
-        .addTo(map);
-      setTimeout(() => window.lucide?.createIcons?.(), 80);
+      // Wait until markers + popup builder are ready so we can render the full verified card
+      const tnorm = (s='') => s.toLowerCase().normalize('NFKD').replace(/[’'`]/g,'').replace(/[^\p{L}\p{N} ]+/gu,' ').replace(/\s+/g,' ').trim();
+      const want = tnorm(ptitle);
+      let tries = 0;
+      const openWhenReady = () => {
+        const builder = (typeof window.buildPopupHTML === 'function') ? window.buildPopupHTML : null;
+        const ready = Array.isArray(geoMarkers) && geoMarkers.length > 0 && builder;
+        if (!ready && tries++ < 60) { return setTimeout(openWhenReady, 100); }
+        try { map.flyTo({ center, zoom: 15 }); } catch {}
+        // Choose by exact title match first, else nearest
+        let chosen = null;
+        try {
+          const dist2 = (a,b) => { const dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; };
+          let best = Infinity;
+          for (const m of (geoMarkers || [])) {
+            const d = dist2(m.coords, center);
+            const titleMatch = want && (m.title === want);
+            const score = titleMatch ? d * 0.1 : d; // prioritise title matches
+            if (score < best) { best = score; chosen = m.feature; }
+          }
+        } catch {}
+        const html = (builder && chosen) ? builder(chosen) : `<div class=\"custom-popup\"><div class=\"title\">${ptitle || 'Location'}</div><div class=\"actions\"><button onclick=\"openDirections(${plat}, ${plng}, '${(ptitle||'').replace(/'/g, "\\'")}')\"><i data-lucide=\\"navigation\\"></i> Directions</button></div></div>`;
+        new mapboxgl.Popup({ closeButton: false, anchor: 'bottom', offset: 28 })
+          .setLngLat(center)
+          .setHTML(html)
+          .addTo(map);
+        setTimeout(() => window.lucide?.createIcons?.(), 80);
+      };
+      openWhenReady();
     }
   } catch {}
 

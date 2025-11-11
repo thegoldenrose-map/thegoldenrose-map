@@ -411,6 +411,25 @@
           51.11184082938442
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "ProBodyworks",
+        "description": "Car Body Shop",
+        "category": "🛍️ SHOPS",
+        "verified": true,
+        "image": "",
+        "website": "https://pro-bodyworks.co.uk",
+        "hours": "Mon-Fri 9-6PM"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.10104390767548921,
+          51.11189505481508
+        ]
+      }
     }
   ]
 }

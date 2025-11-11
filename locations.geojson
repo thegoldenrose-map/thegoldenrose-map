@@ -411,6 +411,25 @@
           51.11189505481508
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Helpful Hands",
+        "description": "Cleaning Agency",
+        "category": "🛍️ SHOPS",
+        "verified": true,
+        "image": "",
+        "website": "",
+        "hours": "Contact for opening hours"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.19531092143733986,
+          50.848131716971864
+        ]
+      }
     }
   ]
 }

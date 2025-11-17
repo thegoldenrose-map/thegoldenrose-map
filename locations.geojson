@@ -426,8 +426,27 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-         -0.15975336527334055,
-        50.82688927130657
+          -0.15975336527334055,
+          50.82688927130657
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Noods Candles",
+        "description": "Handmade artisan wax candles",
+        "category": "🛍️ SHOPS",
+        "verified": true,
+        "image": "",
+        "website": "https://noodscandles.co.uk/products/large-winter-wonderland-christmas-tree-scented-candle?fbclid=PARlRTSAOH161leHRuA2FlbQIxMABzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQIY2FsbHNpdGUBMgABp3M7UDYNRpKgvZG-5Tj-iJ8sBt1Q14NublgAdXFYBzes3-H5-h_D4he5y5bG_aem_3WwN4gE-T6IGozs9BO6liA",
+        "hours": "Contact for opening hours"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.046085005576969706,
+          51.094712890322114
         ]
       }
     }

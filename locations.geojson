@@ -449,6 +449,25 @@
           51.094712890322114
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "title": "Coco Cafe",
+        "description": "Artisan Cafe",
+        "category": "🛍️ SHOPS",
+        "verified": true,
+        "image": "",
+        "website": "",
+        "hours": "8-5PM"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.03366874520310148,
+          51.09854804091481
+        ]
+      }
     }
   ]
 }
